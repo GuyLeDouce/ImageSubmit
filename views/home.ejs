@@ -1,22 +1,39 @@
 <%- include("partials/header") %>
 
 <section class="hero">
-  <div>
+  <div class="hero-copy stack-gap">
     <p class="eyebrow">Discord-authenticated moderation flow</p>
-    <h1>Submit a Squig Survival image for admin review.</h1>
+    <h1>Submit a Squig Survival image with a cleaner path from upload to approval.</h1>
     <p class="lead">
-      Log in with Discord, confirm your Ugly Labs membership, upload an image, and let admins approve it before it reaches the live game image table.
+      Log in with Discord, confirm your Ugly Labs membership, upload an image, and route it into admin review before it reaches the live game image table.
     </p>
+    <div class="hero-highlights">
+      <div class="mini-panel">
+        <strong>Verified access</strong>
+        <span>Only approved Discord members can submit.</span>
+      </div>
+      <div class="mini-panel">
+        <strong>Fast moderation</strong>
+        <span>Admins can review, reward, and publish in one place.</span>
+      </div>
+    </div>
   </div>
 
-  <div class="panel stack-gap">
+  <div class="panel stack-gap hero-panel">
     <% if (!user) { %>
-      <a class="button" href="/auth/discord">Login with Discord</a>
-      <p class="muted">You must be in the Ugly Labs server to submit. If you are not in the server yet, join at <a href="https://squigs.io/discord" target="_blank" rel="noreferrer">squigs.io/discord</a>.</p>
+      <h2>Start a submission</h2>
+      <p class="muted">You must be in the Ugly Labs server to upload. If you are not in the server yet, join first and then sign back in.</p>
+      <div class="actions">
+        <a class="button" href="/auth/discord">Login with Discord</a>
+        <a class="button secondary" href="https://squigs.io/discord" target="_blank" rel="noreferrer">Join Discord</a>
+      </div>
     <% } else { %>
-      <p><strong>Logged in as:</strong> <%= user.username %> (<%= user.id %>)</p>
-      <p><strong>Display name:</strong> <%= user.displayName || "Not set" %></p>
-      <p><strong>Ugly Labs membership:</strong> <%= user.isGuildMember ? "Verified" : "Not verified" %></p>
+      <h2>Account status</h2>
+      <div class="status-list">
+        <p><strong>Logged in as:</strong> <%= user.username %> (<%= user.id %>)</p>
+        <p><strong>Display name:</strong> <%= user.displayName || "Not set" %></p>
+        <p><strong>Ugly Labs membership:</strong> <%= user.isGuildMember ? "Verified" : "Not verified" %></p>
+      </div>
       <% if (user.isGuildMember) { %>
         <a class="button" href="/submit">Go to submission form</a>
       <% } else { %>

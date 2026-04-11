@@ -1,6 +1,6 @@
 <%- include("partials/header") %>
 
-<section class="stack-gap narrow">
+<section class="stack-gap narrow form-shell">
   <p class="eyebrow">Submission form</p>
   <h1>Submit your image</h1>
   <p class="muted">Logged in as <strong><%= user.username %></strong> (<%= user.id %>)</p>
@@ -11,7 +11,7 @@
     </div>
   <% } %>
 
-  <form action="/submit" method="post" enctype="multipart/form-data" class="stack-gap">
+  <form action="/submit" method="post" enctype="multipart/form-data" class="stack-gap panel form-panel">
     <label class="field">
       <span>Era</span>
       <select name="era_key" required>

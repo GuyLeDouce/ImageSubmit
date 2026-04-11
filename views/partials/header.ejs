@@ -9,19 +9,57 @@
   <body>
     <div class="page-shell">
       <header class="topbar">
-        <a class="brand" href="/">Squig Survival Image Submissions</a>
+        <div class="topbar-brand">
+          <a
+            class="logo-button"
+            href="https://squigs.io"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Open Squigs website"
+          >
+            <img src="https://i.imgur.com/7BhOkhC.png" alt="Squigs logo" />
+          </a>
+          <div class="brand-copy">
+            <a class="brand-kicker" href="/">Squig Survival</a>
+            <a class="brand" href="/">Image Submission Portal</a>
+          </div>
+        </div>
+
         <nav class="nav">
-          <% if (user) { %>
-            <a href="/submit">Submit</a>
-            <% if (isAdmin) { %>
-              <a href="/admin">Admin</a>
+          <div class="nav-links">
+            <% if (user) { %>
+              <a href="/submit">Submit</a>
+              <% if (isAdmin) { %>
+                <a href="/admin">Admin</a>
+              <% } %>
+              <form action="/logout" method="post" class="inline-form">
+                <button type="submit" class="link-button">Log out</button>
+              </form>
+            <% } else { %>
+              <a href="/auth/discord">Login with Discord</a>
             <% } %>
-            <form action="/logout" method="post" class="inline-form">
-              <button type="submit" class="link-button">Log out</button>
-            </form>
-          <% } else { %>
-            <a href="/auth/discord">Login with Discord</a>
-          <% } %>
+          </div>
+
+          <div class="social-links" aria-label="Squigs links">
+            <a
+              class="social-button"
+              href="https://squigs.io/discord"
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Open Squigs Discord"
+            >
+              <img src="https://i.imgur.com/1gXY4wm.png" alt="Discord logo" />
+            </a>
+            <a
+              class="social-button"
+              href="https://x.com/SquigsNFT"
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Open Squigs on X"
+            >
+              <img src="https://i.imgur.com/miO8HjA.png" alt="X logo" />
+            </a>
+          </div>
         </nav>
       </header>
 
