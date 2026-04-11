@@ -1,0 +1,48 @@
+<%- include("partials/header") %>
+
+<section class="stack-gap">
+  <div>
+    <p class="eyebrow">Admin review</p>
+    <h1>Pending submissions</h1>
+    <p class="muted">Only allowlisted Discord admins can access this page.</p>
+  </div>
+
+  <% if (!submissions.length) { %>
+    <div class="panel">No pending submissions.</div>
+  <% } %>
+
+  <% submissions.forEach((submission) => { %>
+    <article class="submission-card">
+      <div class="submission-media">
+        <img src="<%= submission.image_url %>" alt="Submission <%= submission.id %> preview" />
+      </div>
+      <div class="submission-body">
+        <h2>Submission #<%= submission.id %></h2>
+        <dl class="meta-grid">
+          <div><dt>Discord username</dt><dd><%= submission.discord_username %></dd></div>
+          <div><dt>Discord user ID</dt><dd><%= submission.discord_user_id %></dd></div>
+          <div><dt>Display name</dt><dd><%= submission.discord_display_name || "Not set" %></dd></div>
+          <div><dt>Era</dt><dd><%= submission.era_key %></dd></div>
+          <div><dt>Submitted</dt><dd><%= new Date(submission.submitted_at).toLocaleString() %></dd></div>
+          <div><dt>Image URL</dt><dd><a href="<%= submission.image_url %>" target="_blank" rel="noreferrer">Open image</a></dd></div>
+        </dl>
+
+        <div class="actions review-actions">
+          <form action="/admin/submissions/<%= submission.id %>/approve" method="post" class="approve-form">
+            <label class="field small-field">
+              <span>Reward points</span>
+              <input type="number" min="0" max="100000" name="reward_points" value="100" required />
+            </label>
+            <button type="submit" class="button">Accept</button>
+          </form>
+
+          <form action="/admin/submissions/<%= submission.id %>/decline" method="post">
+            <button type="submit" class="button danger">Decline</button>
+          </form>
+        </div>
+      </div>
+    </article>
+  <% }) %>
+</section>
+
+<%- include("partials/footer") %>

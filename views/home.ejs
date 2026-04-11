@@ -1,0 +1,32 @@
+<%- include("partials/header") %>
+
+<section class="hero">
+  <div>
+    <p class="eyebrow">Discord-authenticated moderation flow</p>
+    <h1>Submit a Squig Survival image for admin review.</h1>
+    <p class="lead">
+      Log in with Discord, confirm your Ugly Labs membership, upload an image, and let admins approve it before it reaches the live game image table.
+    </p>
+  </div>
+
+  <div class="panel stack-gap">
+    <% if (!user) { %>
+      <a class="button" href="/auth/discord">Login with Discord</a>
+      <p class="muted">You must be in the Ugly Labs server to submit. If you are not in the server yet, join at <a href="https://squigs.io/discord" target="_blank" rel="noreferrer">squigs.io/discord</a>.</p>
+    <% } else { %>
+      <p><strong>Logged in as:</strong> <%= user.username %> (<%= user.id %>)</p>
+      <p><strong>Display name:</strong> <%= user.displayName || "Not set" %></p>
+      <p><strong>Ugly Labs membership:</strong> <%= user.isGuildMember ? "Verified" : "Not verified" %></p>
+      <% if (user.isGuildMember) { %>
+        <a class="button" href="/submit">Go to submission form</a>
+      <% } else { %>
+        <a class="button secondary" href="https://squigs.io/discord" target="_blank" rel="noreferrer">Join the Discord server</a>
+      <% } %>
+      <% if (isAdmin) { %>
+        <a class="button secondary" href="/admin">Open admin review</a>
+      <% } %>
+    <% } %>
+  </div>
+</section>
+
+<%- include("partials/footer") %>

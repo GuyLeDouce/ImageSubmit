@@ -1,0 +1,34 @@
+<%- include("partials/header") %>
+
+<section class="stack-gap narrow">
+  <p class="eyebrow">Submission form</p>
+  <h1>Submit your image</h1>
+  <p class="muted">Logged in as <strong><%= user.username %></strong> (<%= user.id %>)</p>
+
+  <% if (submitted) { %>
+    <div class="success-box">
+      Your image has been submitted for review. Watch for approval in squigs.io/discord.
+    </div>
+  <% } %>
+
+  <form action="/submit" method="post" enctype="multipart/form-data" class="stack-gap">
+    <label class="field">
+      <span>Era</span>
+      <select name="era_key" required>
+        <option value="">Choose an era</option>
+        <% eras.forEach((era) => { %>
+          <option value="<%= era.key %>"><%= era.label %></option>
+        <% }) %>
+      </select>
+    </label>
+
+    <label class="field">
+      <span>Image upload</span>
+      <input type="file" name="image" accept="image/png,image/jpeg,image/webp,image/gif" required />
+    </label>
+
+    <button type="submit" class="button">Submit</button>
+  </form>
+</section>
+
+<%- include("partials/footer") %>
