@@ -140,6 +140,12 @@ body::before {
   align-items: start;
   min-height: 70vh;
 }
+.home-panel-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 70vh;
+}
 .panel, .submission-card {
   background: var(--paper);
   border: 1px solid var(--line);
@@ -170,6 +176,10 @@ h2 {
 .hero-panel {
   align-self: stretch;
   background: linear-gradient(180deg, rgba(23, 22, 52, 0.88), rgba(18, 17, 40, 0.78));
+}
+.home-entry-panel {
+  width: min(100%, 520px);
+  margin-top: 4vh;
 }
 .hero-highlights {
   display: grid;

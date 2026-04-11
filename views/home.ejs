@@ -1,25 +1,7 @@
 <%- include("partials/header") %>
 
-<section class="hero">
-  <div class="hero-copy stack-gap">
-    <p class="eyebrow">Discord-authenticated moderation flow</p>
-    <h1>Submit a Squig Survival image with a cleaner path from upload to approval.</h1>
-    <p class="lead">
-      Log in with Discord, confirm your Ugly Labs membership, upload an image, and route it into admin review before it reaches the live game image table.
-    </p>
-    <div class="hero-highlights">
-      <div class="mini-panel">
-        <strong>Verified access</strong>
-        <span>Only approved Discord members can submit.</span>
-      </div>
-      <div class="mini-panel">
-        <strong>Fast moderation</strong>
-        <span>Admins can review, reward, and publish in one place.</span>
-      </div>
-    </div>
-  </div>
-
-  <div class="panel stack-gap hero-panel">
+<section class="home-panel-wrap">
+  <div class="panel stack-gap hero-panel home-entry-panel">
     <% if (!user) { %>
       <h2>Start a submission</h2>
       <p class="muted">You must be in the Ugly Labs server to upload. If you are not in the server yet, join first and then sign back in.</p>
