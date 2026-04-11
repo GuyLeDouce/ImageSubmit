@@ -7,8 +7,10 @@ const {
   pool,
   createPendingSubmission,
   listPendingSubmissions,
+  listApprovedSubmissions,
   approveSubmission,
   declineSubmission,
+  updateApprovedSubmission,
 } = require("./db");
 const { config, validateConfig } = require("./config");
 const { SURVIVAL_ERAS } = require("./eras");
@@ -188,10 +190,14 @@ function createApp() {
 
   app.get("/admin", requireAdmin, async (req, res, next) => {
     try {
-      const pendingSubmissions = await listPendingSubmissions();
+      const [pendingSubmissions, approvedSubmissions] = await Promise.all([
+        listPendingSubmissions(),
+        listApprovedSubmissions(),
+      ]);
       res.render("admin", {
         title: "Admin Review",
         submissions: pendingSubmissions,
+        approvedSubmissions,
         eras: SURVIVAL_ERAS,
       });
     } catch (error) {
@@ -233,6 +239,33 @@ function createApp() {
       const reviewedBy = `${req.session.user.username} (${req.session.user.id})`;
       await declineSubmission({ submissionId, reviewedBy });
       setFlash(req, "success", "Submission declined.");
+      res.redirect("/admin");
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/admin/submissions/:id/update-approved", requireAdmin, async (req, res, next) => {
+    try {
+      const submissionId = Number(req.params.id);
+      if (!Number.isInteger(submissionId) || submissionId <= 0) throw new Error("Invalid submission id.");
+      const rewardPoints = parseRewardPoints(req.body.reward_points || "100");
+      const discordUserId = parseOptionalDiscordUserId(req.body.override_discord_user_id);
+      const discordUsername = parseOptionalText(req.body.override_discord_username, "Discord username", 64);
+      const discordDisplayName = parseOptionalText(req.body.override_discord_display_name, "Display name", 64);
+      const overrideEraKey = String(req.body.override_era_key || "").trim();
+      if (!validateEraKey(overrideEraKey)) throw new Error("Please choose a valid era.");
+      const reviewedBy = `${req.session.user.username} (${req.session.user.id})`;
+      await updateApprovedSubmission({
+        submissionId,
+        rewardPoints,
+        reviewedBy,
+        overrideDiscordUserId: discordUserId,
+        overrideDiscordUsername: discordUsername,
+        overrideDiscordDisplayName: discordDisplayName,
+        overrideEraKey,
+      });
+      setFlash(req, "success", "Approved image updated.");
       res.redirect("/admin");
     } catch (error) {
       next(error);

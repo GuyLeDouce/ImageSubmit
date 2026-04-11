@@ -149,6 +149,31 @@ async function listPendingSubmissions() {
   return result.rows;
 }
 
+async function listApprovedSubmissions() {
+  const result = await pool.query(`
+    SELECT
+      id,
+      discord_user_id,
+      discord_username,
+      discord_display_name,
+      era_key,
+      image_url,
+      storage_key,
+      mime_type,
+      size_bytes,
+      status,
+      reward_points,
+      submitted_at,
+      reviewed_at,
+      reviewed_by
+    FROM squig_survival_image_submissions
+    WHERE status = 'approved'
+    ORDER BY reviewed_at DESC NULLS LAST, submitted_at DESC
+  `);
+
+  return result.rows;
+}
+
 async function approveSubmission({
   submissionId,
   rewardPoints,
@@ -272,11 +297,109 @@ async function declineSubmission({ submissionId, reviewedBy }) {
   return result.rows[0];
 }
 
+async function updateApprovedSubmission({
+  submissionId,
+  rewardPoints,
+  reviewedBy,
+  overrideDiscordUserId,
+  overrideDiscordUsername,
+  overrideDiscordDisplayName,
+  overrideEraKey,
+}) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const currentResult = await client.query(
+      `
+        SELECT *
+        FROM squig_survival_image_submissions
+        WHERE id = $1
+        FOR UPDATE
+      `,
+      [submissionId]
+    );
+
+    const submission = currentResult.rows[0];
+    if (!submission) throw new Error("Approved submission not found.");
+    if (submission.status !== "approved") {
+      throw new Error("Only approved submissions can be edited here.");
+    }
+
+    const resolvedDiscordUserId = overrideDiscordUserId || submission.discord_user_id;
+    const resolvedDiscordUsername = overrideDiscordUsername || submission.discord_username;
+    const resolvedDiscordDisplayName =
+      overrideDiscordDisplayName || submission.discord_display_name;
+    const resolvedEraKey = overrideEraKey || submission.era_key;
+
+    const liveUpdate = await client.query(
+      `
+        UPDATE ${config.liveImageTable}
+        SET user_id = $1,
+            era_keys = $2,
+            reward_points = $3,
+            added_by = $4
+        WHERE image_url = $5
+          AND user_id = $6
+          AND era_keys = $7
+          AND reward_points = $8
+      `,
+      [
+        resolvedDiscordUserId,
+        resolvedEraKey,
+        rewardPoints,
+        reviewedBy,
+        submission.image_url,
+        submission.discord_user_id,
+        submission.era_key,
+        submission.reward_points,
+      ]
+    );
+
+    if (liveUpdate.rowCount !== 1) {
+      throw new Error("Could not safely update the live image row. No changes were saved.");
+    }
+
+    const updated = await client.query(
+      `
+        UPDATE squig_survival_image_submissions
+        SET discord_user_id = $2,
+            discord_username = $3,
+            discord_display_name = $4,
+            era_key = $5,
+            reward_points = $6,
+            reviewed_at = now(),
+            reviewed_by = $7
+        WHERE id = $1
+        RETURNING id, reviewed_at
+      `,
+      [
+        submissionId,
+        resolvedDiscordUserId,
+        resolvedDiscordUsername,
+        resolvedDiscordDisplayName,
+        resolvedEraKey,
+        rewardPoints,
+        reviewedBy,
+      ]
+    );
+
+    await client.query("COMMIT");
+    return updated.rows[0];
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
 module.exports = {
   pool,
   initDb,
   createPendingSubmission,
   listPendingSubmissions,
+  listApprovedSubmissions,
   approveSubmission,
   declineSubmission,
+  updateApprovedSubmission,
 };
