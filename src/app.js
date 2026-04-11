@@ -189,7 +189,11 @@ function createApp() {
   app.get("/admin", requireAdmin, async (req, res, next) => {
     try {
       const pendingSubmissions = await listPendingSubmissions();
-      res.render("admin", { title: "Admin Review", submissions: pendingSubmissions });
+      res.render("admin", {
+        title: "Admin Review",
+        submissions: pendingSubmissions,
+        eras: SURVIVAL_ERAS,
+      });
     } catch (error) {
       next(error);
     }
@@ -203,6 +207,8 @@ function createApp() {
       const discordUserId = parseOptionalDiscordUserId(req.body.override_discord_user_id);
       const discordUsername = parseOptionalText(req.body.override_discord_username, "Discord username", 64);
       const discordDisplayName = parseOptionalText(req.body.override_discord_display_name, "Display name", 64);
+      const overrideEraKey = String(req.body.override_era_key || "").trim();
+      if (!validateEraKey(overrideEraKey)) throw new Error("Please choose a valid era for approval.");
       const reviewedBy = `${req.session.user.username} (${req.session.user.id})`;
       await approveSubmission({
         submissionId,
@@ -211,6 +217,7 @@ function createApp() {
         overrideDiscordUserId: discordUserId,
         overrideDiscordUsername: discordUsername,
         overrideDiscordDisplayName: discordDisplayName,
+        overrideEraKey,
       });
       setFlash(req, "success", "Submission approved and inserted into the live Squig Survival image table.");
       res.redirect("/admin");

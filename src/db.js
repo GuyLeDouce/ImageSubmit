@@ -156,6 +156,7 @@ async function approveSubmission({
   overrideDiscordUserId,
   overrideDiscordUsername,
   overrideDiscordDisplayName,
+  overrideEraKey,
 }) {
   const client = await pool.connect();
   try {
@@ -180,16 +181,18 @@ async function approveSubmission({
     const resolvedDiscordUsername = overrideDiscordUsername || submission.discord_username;
     const resolvedDiscordDisplayName =
       overrideDiscordDisplayName || submission.discord_display_name;
+    const resolvedEraKey = overrideEraKey || submission.era_key;
 
     await client.query(
       `
         UPDATE squig_survival_image_submissions
         SET discord_user_id = $2,
             discord_username = $3,
-            discord_display_name = $4
+            discord_display_name = $4,
+            era_key = $5
         WHERE id = $1
       `,
-      [submissionId, resolvedDiscordUserId, resolvedDiscordUsername, resolvedDiscordDisplayName]
+      [submissionId, resolvedDiscordUserId, resolvedDiscordUsername, resolvedDiscordDisplayName, resolvedEraKey]
     );
 
     await client.query(
@@ -204,7 +207,7 @@ async function approveSubmission({
         )
         VALUES ($1, $2, $3, now(), $4, $5)
       `,
-      [submission.image_url, resolvedDiscordUserId, reviewedBy, submission.era_key, rewardPoints]
+      [submission.image_url, resolvedDiscordUserId, reviewedBy, resolvedEraKey, rewardPoints]
     );
 
     await client.query(
@@ -224,7 +227,7 @@ async function approveSubmission({
         submission.id,
         resolvedDiscordUserId,
         resolvedDiscordUsername,
-        submission.era_key,
+        resolvedEraKey,
         submission.image_url,
         rewardPoints,
         reviewedBy,
