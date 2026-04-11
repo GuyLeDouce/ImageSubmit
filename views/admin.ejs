@@ -51,8 +51,16 @@
               <input
                 type="text"
                 name="override_discord_display_name"
-                placeholder="<%= submission.discord_display_name || \"Not set\" %>"
+                placeholder="<%= submission.discord_display_name || 'Not set' %>"
               />
+            </label>
+            <label class="field">
+              <span>Era</span>
+              <select name="override_era_key" required>
+                <% eras.forEach((era) => { %>
+                  <option value="<%= era.key %>" <%= era.key === submission.era_key ? "selected" : "" %>><%= era.label %></option>
+                <% }) %>
+              </select>
             </label>
             <label class="field small-field">
               <span>Reward points</span>
