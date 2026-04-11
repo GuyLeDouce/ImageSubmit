@@ -51,7 +51,6 @@ async function storeFile(file) {
       Bucket: config.s3Bucket,
       Key: storageKey,
       Body: file.buffer,
-      ACL: "public-read",
       ContentType: file.mimetype,
       CacheControl: "public, max-age=31536000, immutable",
     }));

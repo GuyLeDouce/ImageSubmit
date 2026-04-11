@@ -25,3 +25,26 @@ CREATE INDEX IF NOT EXISTS idx_squig_survival_image_submissions_status
 
 CREATE INDEX IF NOT EXISTS idx_squig_survival_image_submissions_user
   ON squig_survival_image_submissions (discord_user_id, submitted_at DESC);
+
+CREATE TABLE IF NOT EXISTS squig_survival_image_approval_notifications (
+  id BIGSERIAL PRIMARY KEY,
+  submission_id BIGINT,
+  discord_user_id TEXT NOT NULL,
+  discord_username TEXT NOT NULL,
+  era_key TEXT NOT NULL,
+  image_url TEXT NOT NULL,
+  reward_points INTEGER NOT NULL DEFAULT 100,
+  approved_by TEXT,
+  approved_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  post_status TEXT NOT NULL DEFAULT 'pending',
+  post_attempts INTEGER NOT NULL DEFAULT 0,
+  posted_at TIMESTAMPTZ,
+  posted_message_id TEXT,
+  post_error TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT squig_survival_image_approval_notifications_status_check
+    CHECK (post_status IN ('pending', 'processing', 'posted', 'failed'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_squig_survival_image_approval_notifications_status
+  ON squig_survival_image_approval_notifications (post_status, approved_at ASC);
