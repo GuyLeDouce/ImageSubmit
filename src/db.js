@@ -149,7 +149,14 @@ async function listPendingSubmissions() {
   return result.rows;
 }
 
-async function approveSubmission({ submissionId, rewardPoints, reviewedBy }) {
+async function approveSubmission({
+  submissionId,
+  rewardPoints,
+  reviewedBy,
+  overrideDiscordUserId,
+  overrideDiscordUsername,
+  overrideDiscordDisplayName,
+}) {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
@@ -169,6 +176,22 @@ async function approveSubmission({ submissionId, rewardPoints, reviewedBy }) {
       throw new Error(`Submission is already ${submission.status}.`);
     }
 
+    const resolvedDiscordUserId = overrideDiscordUserId || submission.discord_user_id;
+    const resolvedDiscordUsername = overrideDiscordUsername || submission.discord_username;
+    const resolvedDiscordDisplayName =
+      overrideDiscordDisplayName || submission.discord_display_name;
+
+    await client.query(
+      `
+        UPDATE squig_survival_image_submissions
+        SET discord_user_id = $2,
+            discord_username = $3,
+            discord_display_name = $4
+        WHERE id = $1
+      `,
+      [submissionId, resolvedDiscordUserId, resolvedDiscordUsername, resolvedDiscordDisplayName]
+    );
+
     await client.query(
       `
         INSERT INTO ${config.liveImageTable} (
@@ -181,7 +204,7 @@ async function approveSubmission({ submissionId, rewardPoints, reviewedBy }) {
         )
         VALUES ($1, $2, $3, now(), $4, $5)
       `,
-      [submission.image_url, submission.discord_user_id, reviewedBy, submission.era_key, rewardPoints]
+      [submission.image_url, resolvedDiscordUserId, reviewedBy, submission.era_key, rewardPoints]
     );
 
     await client.query(
@@ -199,8 +222,8 @@ async function approveSubmission({ submissionId, rewardPoints, reviewedBy }) {
       `,
       [
         submission.id,
-        submission.discord_user_id,
-        submission.discord_username,
+        resolvedDiscordUserId,
+        resolvedDiscordUsername,
         submission.era_key,
         submission.image_url,
         rewardPoints,
@@ -213,7 +236,7 @@ async function approveSubmission({ submissionId, rewardPoints, reviewedBy }) {
         UPDATE squig_survival_image_submissions
         SET status = 'approved', reward_points = $2, reviewed_at = now(), reviewed_by = $3
         WHERE id = $1
-        RETURNING id, reviewed_at
+        RETURNING id, reviewed_at, discord_user_id
       `,
       [submissionId, rewardPoints, reviewedBy]
     );

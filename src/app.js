@@ -20,7 +20,13 @@ const {
   getDiscordGuilds,
 } = require("./discord");
 const { storeFile } = require("./storage");
-const { upload, validateEraKey, parseRewardPoints } = require("./validation");
+const {
+  upload,
+  validateEraKey,
+  parseRewardPoints,
+  parseOptionalDiscordUserId,
+  parseOptionalText,
+} = require("./validation");
 
 function createApp() {
   validateConfig();
@@ -194,8 +200,18 @@ function createApp() {
       const submissionId = Number(req.params.id);
       if (!Number.isInteger(submissionId) || submissionId <= 0) throw new Error("Invalid submission id.");
       const rewardPoints = parseRewardPoints(req.body.reward_points || "100");
+      const discordUserId = parseOptionalDiscordUserId(req.body.override_discord_user_id);
+      const discordUsername = parseOptionalText(req.body.override_discord_username, "Discord username", 64);
+      const discordDisplayName = parseOptionalText(req.body.override_discord_display_name, "Display name", 64);
       const reviewedBy = `${req.session.user.username} (${req.session.user.id})`;
-      await approveSubmission({ submissionId, rewardPoints, reviewedBy });
+      await approveSubmission({
+        submissionId,
+        rewardPoints,
+        reviewedBy,
+        overrideDiscordUserId: discordUserId,
+        overrideDiscordUsername: discordUsername,
+        overrideDiscordDisplayName: discordDisplayName,
+      });
       setFlash(req, "success", "Submission approved and inserted into the live Squig Survival image table.");
       res.redirect("/admin");
     } catch (error) {

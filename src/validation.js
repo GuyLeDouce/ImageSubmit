@@ -27,8 +27,28 @@ function parseRewardPoints(rawValue) {
   return parsed;
 }
 
+function parseOptionalDiscordUserId(rawValue) {
+  const trimmed = String(rawValue || "").trim();
+  if (!trimmed) return null;
+  if (!/^\d{17,20}$/.test(trimmed)) {
+    throw new Error("Discord user ID must be a valid numeric Discord snowflake.");
+  }
+  return trimmed;
+}
+
+function parseOptionalText(rawValue, fieldName, maxLength = 100) {
+  const trimmed = String(rawValue || "").trim();
+  if (!trimmed) return null;
+  if (trimmed.length > maxLength) {
+    throw new Error(`${fieldName} must be ${maxLength} characters or fewer.`);
+  }
+  return trimmed;
+}
+
 module.exports = {
   upload,
   validateEraKey,
   parseRewardPoints,
+  parseOptionalDiscordUserId,
+  parseOptionalText,
 };

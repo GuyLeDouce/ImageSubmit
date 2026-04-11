@@ -29,6 +29,31 @@
 
         <div class="actions review-actions">
           <form action="/admin/submissions/<%= submission.id %>/approve" method="post" class="approve-form">
+            <label class="field">
+              <span>Override Discord user ID</span>
+              <input
+                type="text"
+                name="override_discord_user_id"
+                inputmode="numeric"
+                placeholder="<%= submission.discord_user_id %>"
+              />
+            </label>
+            <label class="field">
+              <span>Override username</span>
+              <input
+                type="text"
+                name="override_discord_username"
+                placeholder="<%= submission.discord_username %>"
+              />
+            </label>
+            <label class="field">
+              <span>Override display name</span>
+              <input
+                type="text"
+                name="override_discord_display_name"
+                placeholder="<%= submission.discord_display_name || \"Not set\" %>"
+              />
+            </label>
             <label class="field small-field">
               <span>Reward points</span>
               <input type="number" min="0" max="100000" name="reward_points" value="100" required />
