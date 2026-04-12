@@ -1,30 +1,227 @@
 <%- include("partials/header") %>
 
-<section class="home-panel-wrap">
-  <div class="panel stack-gap hero-panel home-entry-panel">
-    <% if (!user) { %>
-      <h2>Start a submission</h2>
-      <p class="muted">You must be in the Ugly Labs server to upload. If you are not in the server yet, join first and then sign back in.</p>
-      <div class="actions">
-        <a class="button" href="/auth/discord">Login with Discord</a>
-        <a class="button secondary" href="https://squigs.io/discord" target="_blank" rel="noreferrer">Join Discord</a>
+<section class="creator-hero">
+  <div class="creator-hero__backdrop"></div>
+  <div class="creator-hero__content">
+    <div class="creator-hero__copy">
+      <p class="eyebrow">Squig Creator Portal</p>
+      <h1>Squig Creator Portal</h1>
+      <p class="creator-hero__tagline">Where chaos becomes canon.</p>
+      <p class="lead">
+        The Squig Creator Portal is where community creations become part of Squig Survival
+        &mdash; the live Discord game where player-submitted art can appear as real moments,
+        outcomes, revives, failures, and event scenes inside the game itself.
+      </p>
+      <p class="lead creator-hero__support">
+        Your creations do not just sit in a gallery.<br />
+        They get used.
+      </p>
+      <div class="actions creator-hero__actions">
+        <% if (!user) { %>
+          <a class="button" href="/auth/discord">Login with Discord</a>
+        <% } else if (user.isGuildMember) { %>
+          <a class="button" href="/submit">Open Submission Form</a>
+        <% } else { %>
+          <a class="button" href="https://squigs.io/discord" target="_blank" rel="noreferrer">Join Ugly Labs Discord</a>
+        <% } %>
+        <a class="button secondary" href="#how-it-works">See How It Works</a>
       </div>
-    <% } else { %>
-      <h2>Account status</h2>
-      <div class="status-list">
-        <p><strong>Logged in as:</strong> <%= user.username %> (<%= user.id %>)</p>
-        <p><strong>Display name:</strong> <%= user.displayName || "Not set" %></p>
-        <p><strong>Ugly Labs membership:</strong> <%= user.isGuildMember ? "Verified" : "Not verified" %></p>
+      <div class="creator-hero__microcopy">
+        Discord access is available from the link icon above.
       </div>
-      <% if (user.isGuildMember) { %>
-        <a class="button" href="/submit">Go to submission form</a>
+    </div>
+
+    <aside class="creator-sidecard panel stack-gap">
+      <% if (!user) { %>
+        <p class="eyebrow">Start Here</p>
+        <h2>Submit into the live game pool</h2>
+        <p class="muted">
+          Sign in with Discord, submit your image, and let the review team decide whether it enters
+          Squig Survival.
+        </p>
+        <div class="creator-sidecard__stats">
+          <div>
+            <strong>Automatic rewards</strong>
+            <span>For connected creators in the Ugly Labs Discord ecosystem.</span>
+          </div>
+          <div>
+            <strong>Collection-friendly</strong>
+            <span>Any NFT collection can be used, with higher rewards for Squigs.</span>
+          </div>
+        </div>
+        <div class="actions">
+          <a class="button" href="/auth/discord">Login with Discord</a>
+          <a class="button secondary" href="https://squigs.io/discord" target="_blank" rel="noreferrer">Join Discord</a>
+        </div>
       <% } else { %>
-        <a class="button secondary" href="https://squigs.io/discord" target="_blank" rel="noreferrer">Join the Discord server</a>
+        <p class="eyebrow">Account Status</p>
+        <h2><%= user.isGuildMember ? "You are ready to create." : "One step left." %></h2>
+        <div class="status-list">
+          <p><strong>Logged in as:</strong> <%= user.username %> (<%= user.id %>)</p>
+          <p><strong>Display name:</strong> <%= user.displayName || "Not set" %></p>
+          <p><strong>Ugly Labs membership:</strong> <%= user.isGuildMember ? "Verified" : "Not verified" %></p>
+        </div>
+        <div class="actions">
+          <% if (user.isGuildMember) { %>
+            <a class="button" href="/submit">Go to submission form</a>
+          <% } else { %>
+            <a class="button" href="https://squigs.io/discord" target="_blank" rel="noreferrer">Join the Discord server</a>
+          <% } %>
+          <% if (isAdmin) { %>
+            <a class="button secondary" href="/admin">Open admin review</a>
+          <% } %>
+        </div>
+        <p class="muted creator-sidecard__note">
+          Rewards are automatic for creators who are connected properly inside the Ugly Labs Discord ecosystem.
+        </p>
       <% } %>
-      <% if (isAdmin) { %>
-        <a class="button secondary" href="/admin">Open admin review</a>
-      <% } %>
+    </aside>
+  </div>
+</section>
+
+<section class="creator-section creator-section--intro">
+  <div class="creator-section__heading">
+    <p class="eyebrow">What Is This?</p>
+    <h2>The submission system behind live Squig Survival moments.</h2>
+  </div>
+  <div class="creator-grid creator-grid--two">
+    <article class="panel creator-card">
+      <p>
+        The Squig Creator Portal is a community-powered submission system built for Squig Survival.
+      </p>
+      <p>
+        Creators can submit images based on specific eras, outcomes, and game moments. Once approved,
+        those creations are added directly into the live game pool, where they can appear during gameplay
+        inside the Ugly Labs Discord.
+      </p>
+    </article>
+    <article class="panel creator-card">
+      <p>
+        This means your art becomes part of the game experience itself &mdash; not just something people
+        look at, but something players encounter live while playing.
+      </p>
+    </article>
+  </div>
+</section>
+
+<section class="creator-section" id="how-it-works">
+  <div class="creator-section__heading">
+    <p class="eyebrow">How It Works</p>
+    <h2>Simple submission flow, direct in-game impact.</h2>
+  </div>
+  <div class="creator-steps">
+    <article class="panel creator-step">
+      <span class="creator-step__number">1</span>
+      <p>Connect with Discord and submit your creation.</p>
+    </article>
+    <article class="panel creator-step">
+      <span class="creator-step__number">2</span>
+      <p>Choose the era or game moment your image is meant for.</p>
+    </article>
+    <article class="panel creator-step">
+      <span class="creator-step__number">3</span>
+      <p>Optionally include your prompt to help inspire other creators.</p>
+    </article>
+    <article class="panel creator-step">
+      <span class="creator-step__number">4</span>
+      <p>Our team reviews submissions for quality, creativity, and fit.</p>
+    </article>
+    <article class="panel creator-step">
+      <span class="creator-step__number">5</span>
+      <p>Approved creations are added into the Squig Survival game pool.</p>
+    </article>
+    <article class="panel creator-step">
+      <span class="creator-step__number">6</span>
+      <p>When your image appears in a live game, it becomes part of the action.</p>
+    </article>
+  </div>
+</section>
+
+<section class="creator-section">
+  <div class="creator-section__heading">
+    <p class="eyebrow">Rewards</p>
+    <h2>Clear rates. Automatic creator rewards.</h2>
+    <p class="muted">
+      Creators are rewarded automatically when their approved creations are used in Squig Survival, as long
+      as they are properly connected in the Ugly Labs Discord ecosystem.
+    </p>
+  </div>
+  <div class="creator-rewards">
+    <article class="panel creator-reward creator-reward--featured">
+      <p class="creator-reward__label">Squigs creations</p>
+      <p class="creator-reward__amount">150 <span>$CHARM</span></p>
+      <p class="muted">Highest reward tier for creations built from the Squigs collection.</p>
+    </article>
+    <article class="panel creator-reward">
+      <p class="creator-reward__label">Other collections</p>
+      <p class="creator-reward__amount">100 <span>$CHARM</span></p>
+      <p class="muted">Open to any NFT collection, with a solid baseline reward for approved work.</p>
+    </article>
+  </div>
+</section>
+
+<section class="creator-section">
+  <div class="creator-section__heading">
+    <p class="eyebrow">Where Your Creations Appear</p>
+    <h2>Used across the live game, not parked in a gallery.</h2>
+  </div>
+  <div class="creator-grid creator-grid--showcase">
+    <article class="panel creator-card creator-card--tight"><strong>survival events</strong></article>
+    <article class="panel creator-card creator-card--tight"><strong>eliminations</strong></article>
+    <article class="panel creator-card creator-card--tight"><strong>milestones</strong></article>
+    <article class="panel creator-card creator-card--tight"><strong>lore moments</strong></article>
+    <article class="panel creator-card creator-card--tight"><strong>!revive Success</strong></article>
+    <article class="panel creator-card creator-card--tight"><strong>!revive Failed</strong></article>
+  </div>
+  <article class="panel creator-callout">
+    These are not static gallery uploads. They are active parts of the game.
+  </article>
+</section>
+
+<section class="creator-section">
+  <div class="creator-section__heading">
+    <p class="eyebrow">Why It Matters</p>
+    <h2>Community creativity actively expands the game world.</h2>
+  </div>
+  <div class="creator-grid creator-grid--two">
+    <article class="panel creator-card">
+      <p>Squig Survival is not just a game people play.</p>
+      <p>It is something the community helps build.</p>
+    </article>
+    <article class="panel creator-card">
+      <p>
+        Every approved creation expands the world, adds more variety to the experience, and gives creators a real
+        way to contribute to the game while being rewarded for it.
+      </p>
+      <p>
+        The result is a system where creativity, gameplay, and community all feed into each other.
+      </p>
+    </article>
+  </div>
+</section>
+
+<section class="creator-cta panel">
+  <div class="creator-section__heading">
+    <p class="eyebrow">Final CTA</p>
+    <h2>Ready to create something weird, cinematic, chaotic, or unforgettable?</h2>
+  </div>
+  <p class="lead">
+    Submit your creation, get it approved, watch it appear in-game, and earn rewards when it gets used.
+  </p>
+  <p class="lead creator-cta__closing">
+    The portal is open.<br />
+    The game is live.<br />
+    And the Squigs are watching.
+  </p>
+  <div class="actions">
+    <% if (!user) { %>
+      <a class="button" href="/auth/discord">Login with Discord</a>
+    <% } else if (user.isGuildMember) { %>
+      <a class="button" href="/submit">Submit Your Creation</a>
+    <% } else { %>
+      <a class="button" href="https://squigs.io/discord" target="_blank" rel="noreferrer">Join Ugly Labs Discord</a>
     <% } %>
+    <a class="button secondary" href="https://squigs.io/discord" target="_blank" rel="noreferrer">Open Discord</a>
   </div>
 </section>
 

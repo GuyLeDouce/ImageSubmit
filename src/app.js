@@ -25,6 +25,8 @@ const { storeFile } = require("./storage");
 const {
   upload,
   validateEraKey,
+  parseNftUsedType,
+  resolveDefaultRewardPoints,
   parseRewardPoints,
   parseOptionalDiscordUserId,
   parseOptionalText,
@@ -104,7 +106,7 @@ function createApp() {
   }
 
   app.get("/", (req, res) => {
-    res.render("home", { title: "Squig Survival Image Submissions" });
+    res.render("home", { title: "Squig Creator Portal" });
   });
 
   app.get("/auth/discord", (req, res) => {
@@ -168,6 +170,11 @@ function createApp() {
     try {
       const eraKey = String(req.body.era_key || "").trim();
       const promptText = parseOptionalText(req.body.prompt_text, "Prompt", 4000);
+      const nftUsedType = parseNftUsedType(req.body.nft_used_type);
+      const nftUsedText = parseOptionalText(req.body.nft_used_text, "NFT used", 200);
+      if (nftUsedType === "other" && !nftUsedText) {
+        throw new Error("Please tell us which NFT was used when selecting Other.");
+      }
       if (!validateEraKey(eraKey)) throw new Error("Please choose a valid era.");
       if (!req.file) throw new Error("Please attach an image before submitting.");
 
@@ -178,6 +185,9 @@ function createApp() {
         discordDisplayName: req.session.user.displayName,
         eraKey,
         promptText,
+        nftUsedType,
+        nftUsedText: nftUsedType === "other" ? nftUsedText : null,
+        rewardPoints: resolveDefaultRewardPoints(nftUsedType),
         imageUrl: stored.publicUrl,
         storageKey: stored.storageKey,
         mimeType: req.file.mimetype,
@@ -216,6 +226,11 @@ function createApp() {
       const discordUsername = parseOptionalText(req.body.override_discord_username, "Discord username", 64);
       const discordDisplayName = parseOptionalText(req.body.override_discord_display_name, "Display name", 64);
       const overrideEraKey = String(req.body.override_era_key || "").trim();
+      const overrideNftUsedType = parseNftUsedType(req.body.override_nft_used_type);
+      const overrideNftUsedText = parseOptionalText(req.body.override_nft_used_text, "NFT used", 200);
+      if (overrideNftUsedType === "other" && !overrideNftUsedText) {
+        throw new Error("Please add the NFT used when selecting Other.");
+      }
       if (!validateEraKey(overrideEraKey)) throw new Error("Please choose a valid era for approval.");
       const reviewedBy = `${req.session.user.username} (${req.session.user.id})`;
       await approveSubmission({
@@ -226,6 +241,8 @@ function createApp() {
         overrideDiscordUsername: discordUsername,
         overrideDiscordDisplayName: discordDisplayName,
         overrideEraKey,
+        overrideNftUsedType,
+        overrideNftUsedText: overrideNftUsedType === "other" ? overrideNftUsedText : null,
       });
       setFlash(req, "success", "Submission approved and inserted into the live Squig Survival image table.");
       res.redirect("/admin");
@@ -256,6 +273,11 @@ function createApp() {
       const discordUsername = parseOptionalText(req.body.override_discord_username, "Discord username", 64);
       const discordDisplayName = parseOptionalText(req.body.override_discord_display_name, "Display name", 64);
       const overrideEraKey = String(req.body.override_era_key || "").trim();
+      const overrideNftUsedType = parseNftUsedType(req.body.override_nft_used_type);
+      const overrideNftUsedText = parseOptionalText(req.body.override_nft_used_text, "NFT used", 200);
+      if (overrideNftUsedType === "other" && !overrideNftUsedText) {
+        throw new Error("Please add the NFT used when selecting Other.");
+      }
       if (!validateEraKey(overrideEraKey)) throw new Error("Please choose a valid era.");
       const reviewedBy = `${req.session.user.username} (${req.session.user.id})`;
       await updateApprovedSubmission({
@@ -266,6 +288,8 @@ function createApp() {
         overrideDiscordUsername: discordUsername,
         overrideDiscordDisplayName: discordDisplayName,
         overrideEraKey,
+        overrideNftUsedType,
+        overrideNftUsedText: overrideNftUsedType === "other" ? overrideNftUsedText : null,
       });
       setFlash(req, "success", "Approved image updated.");
       res.redirect("/admin");

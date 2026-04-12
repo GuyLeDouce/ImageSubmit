@@ -19,6 +19,18 @@ function validateEraKey(eraKey) {
   return SURVIVAL_ERA_KEYS.has(eraKey);
 }
 
+function parseNftUsedType(rawValue) {
+  const value = String(rawValue || "").trim().toLowerCase();
+  if (value === "squigs" || value === "other") {
+    return value;
+  }
+  throw new Error("Please choose whether the image used Squigs or another NFT.");
+}
+
+function resolveDefaultRewardPoints(nftUsedType) {
+  return nftUsedType === "other" ? 100 : 150;
+}
+
 function parseRewardPoints(rawValue) {
   const parsed = Number(rawValue);
   if (!Number.isInteger(parsed) || parsed < 0 || parsed > 100000) {
@@ -48,6 +60,8 @@ function parseOptionalText(rawValue, fieldName, maxLength = 100) {
 module.exports = {
   upload,
   validateEraKey,
+  parseNftUsedType,
+  resolveDefaultRewardPoints,
   parseRewardPoints,
   parseOptionalDiscordUserId,
   parseOptionalText,

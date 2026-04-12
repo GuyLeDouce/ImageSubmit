@@ -28,6 +28,25 @@
     </label>
 
     <label class="field">
+      <span>NFT used</span>
+      <select name="nft_used_type" data-nft-type-select required>
+        <option value="squigs" selected>Squigs</option>
+        <option value="other">Other</option>
+      </select>
+    </label>
+
+    <label class="field is-hidden" data-nft-other-field>
+      <span>Which NFT?</span>
+      <input
+        type="text"
+        name="nft_used_text"
+        maxlength="200"
+        placeholder="Add the NFT used"
+        data-nft-other-input
+      />
+    </label>
+
+    <label class="field">
       <span>Prompt used (optional)</span>
       <textarea
         name="prompt_text"
@@ -40,5 +59,24 @@
     <button type="submit" class="button">Submit</button>
   </form>
 </section>
+
+<script>
+  (() => {
+    const typeSelect = document.querySelector("[data-nft-type-select]");
+    const otherField = document.querySelector("[data-nft-other-field]");
+    const otherInput = document.querySelector("[data-nft-other-input]");
+    if (!typeSelect || !otherField || !otherInput) return;
+
+    const syncOtherField = () => {
+      const isOther = typeSelect.value === "other";
+      otherField.classList.toggle("is-hidden", !isOther);
+      otherInput.required = isOther;
+      if (!isOther) otherInput.value = "";
+    };
+
+    typeSelect.addEventListener("change", syncOtherField);
+    syncOtherField();
+  })();
+</script>
 
 <%- include("partials/footer") %>

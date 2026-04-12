@@ -25,6 +25,7 @@
           <div><dt>Discord user ID</dt><dd><%= submission.discord_user_id %></dd></div>
           <div><dt>Display name</dt><dd><%= submission.discord_display_name || "Not set" %></dd></div>
           <div><dt>Era</dt><dd><%= submission.era_key %></dd></div>
+          <div><dt>NFT Used</dt><dd><%= submission.nft_used_type === "other" ? (submission.nft_used_text || "Other") : "Squigs" %></dd></div>
           <div><dt>Prompt</dt><dd><%= submission.prompt_text || "Not provided" %></dd></div>
           <div><dt>Submitted</dt><dd><%= new Date(submission.submitted_at).toLocaleString() %></dd></div>
           <div><dt>Image URL</dt><dd><a href="<%= submission.image_url %>" target="_blank" rel="noreferrer">Open image</a></dd></div>
@@ -65,9 +66,39 @@
                 <% }) %>
               </select>
             </label>
+            <label class="field">
+              <span>NFT used</span>
+              <select
+                name="override_nft_used_type"
+                required
+                data-nft-type-select
+              >
+                <option value="squigs" <%= submission.nft_used_type === "squigs" ? "selected" : "" %>>Squigs</option>
+                <option value="other" <%= submission.nft_used_type === "other" ? "selected" : "" %>>Other</option>
+              </select>
+            </label>
+            <label class="field <%= submission.nft_used_type === 'other' ? '' : 'is-hidden' %>" data-nft-other-field>
+              <span>Which NFT?</span>
+              <input
+                type="text"
+                name="override_nft_used_text"
+                value="<%= submission.nft_used_text || '' %>"
+                maxlength="200"
+                placeholder="Add the NFT used"
+                data-nft-other-input
+              />
+            </label>
             <label class="field small-field">
               <span>Reward points</span>
-              <input type="number" min="0" max="100000" name="reward_points" value="100" required />
+              <input
+                type="number"
+                min="0"
+                max="100000"
+                name="reward_points"
+                value="<%= submission.reward_points %>"
+                required
+                data-reward-input
+              />
             </label>
             <button type="submit" class="button">Accept</button>
           </form>
@@ -106,6 +137,7 @@
           <div><dt>Discord user ID</dt><dd><%= submission.discord_user_id %></dd></div>
           <div><dt>Display name</dt><dd><%= submission.discord_display_name || "Not set" %></dd></div>
           <div><dt>Era</dt><dd><%= submission.era_key %></dd></div>
+          <div><dt>NFT Used</dt><dd><%= submission.nft_used_type === "other" ? (submission.nft_used_text || "Other") : "Squigs" %></dd></div>
           <div><dt>Prompt</dt><dd><%= submission.prompt_text || "Not provided" %></dd></div>
           <div><dt>Reward points</dt><dd><%= submission.reward_points %></dd></div>
           <div><dt>Approved</dt><dd><%= submission.reviewed_at ? new Date(submission.reviewed_at).toLocaleString() : "Unknown" %></dd></div>
@@ -149,9 +181,39 @@
                 <% }) %>
               </select>
             </label>
+            <label class="field">
+              <span>NFT used</span>
+              <select
+                name="override_nft_used_type"
+                required
+                data-nft-type-select
+              >
+                <option value="squigs" <%= submission.nft_used_type === "squigs" ? "selected" : "" %>>Squigs</option>
+                <option value="other" <%= submission.nft_used_type === "other" ? "selected" : "" %>>Other</option>
+              </select>
+            </label>
+            <label class="field <%= submission.nft_used_type === 'other' ? '' : 'is-hidden' %>" data-nft-other-field>
+              <span>Which NFT?</span>
+              <input
+                type="text"
+                name="override_nft_used_text"
+                value="<%= submission.nft_used_text || '' %>"
+                maxlength="200"
+                placeholder="Add the NFT used"
+                data-nft-other-input
+              />
+            </label>
             <label class="field small-field">
               <span>Reward points</span>
-              <input type="number" min="0" max="100000" name="reward_points" value="<%= submission.reward_points %>" required />
+              <input
+                type="number"
+                min="0"
+                max="100000"
+                name="reward_points"
+                value="<%= submission.reward_points %>"
+                required
+                data-reward-input
+              />
             </label>
             <button type="submit" class="button secondary">Save changes</button>
           </form>
@@ -160,5 +222,36 @@
     </article>
   <% }) %>
 </section>
+
+<script>
+  (() => {
+    const DEFAULT_REWARDS = { squigs: 150, other: 100 };
+    document.querySelectorAll("form.approve-form").forEach((form) => {
+      const typeSelect = form.querySelector("[data-nft-type-select]");
+      const otherField = form.querySelector("[data-nft-other-field]");
+      const otherInput = form.querySelector("[data-nft-other-input]");
+      const rewardInput = form.querySelector("[data-reward-input]");
+      if (!typeSelect || !otherField || !otherInput || !rewardInput) return;
+
+      let lastSuggestedReward = String(DEFAULT_REWARDS[typeSelect.value] || 150);
+
+      const syncForm = () => {
+        const isOther = typeSelect.value === "other";
+        otherField.classList.toggle("is-hidden", !isOther);
+        otherInput.required = isOther;
+        if (!isOther) otherInput.value = "";
+
+        const suggestedReward = String(DEFAULT_REWARDS[typeSelect.value] || 150);
+        if (!rewardInput.value || rewardInput.value === lastSuggestedReward) {
+          rewardInput.value = suggestedReward;
+        }
+        lastSuggestedReward = suggestedReward;
+      };
+
+      typeSelect.addEventListener("change", syncForm);
+      syncForm();
+    });
+  })();
+</script>
 
 <%- include("partials/footer") %>

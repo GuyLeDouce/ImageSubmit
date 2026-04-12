@@ -45,6 +45,8 @@ async function initDb() {
       discord_display_name TEXT,
       era_key TEXT NOT NULL,
       prompt_text TEXT,
+      nft_used_type TEXT NOT NULL DEFAULT 'squigs',
+      nft_used_text TEXT,
       image_url TEXT NOT NULL,
       storage_key TEXT,
       mime_type TEXT,
@@ -71,6 +73,14 @@ async function initDb() {
   await pool.query(`
     ALTER TABLE squig_survival_image_submissions
     ADD COLUMN IF NOT EXISTS prompt_text TEXT;
+  `);
+  await pool.query(`
+    ALTER TABLE squig_survival_image_submissions
+    ADD COLUMN IF NOT EXISTS nft_used_type TEXT NOT NULL DEFAULT 'squigs';
+  `);
+  await pool.query(`
+    ALTER TABLE squig_survival_image_submissions
+    ADD COLUMN IF NOT EXISTS nft_used_text TEXT;
   `);
   await pool.query(`
     CREATE TABLE IF NOT EXISTS squig_survival_image_approval_notifications (
@@ -115,13 +125,15 @@ async function createPendingSubmission(input) {
         discord_display_name,
         era_key,
         prompt_text,
+        nft_used_type,
+        nft_used_text,
         image_url,
         storage_key,
         mime_type,
         size_bytes,
         reward_points
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 100)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       RETURNING id, submitted_at
     `,
     [
@@ -130,10 +142,13 @@ async function createPendingSubmission(input) {
       input.discordDisplayName,
       input.eraKey,
       input.promptText,
+      input.nftUsedType,
+      input.nftUsedText,
       input.imageUrl,
       input.storageKey,
       input.mimeType,
       input.sizeBytes,
+      input.rewardPoints,
     ]
   );
 
@@ -149,6 +164,8 @@ async function listPendingSubmissions() {
       discord_display_name,
       era_key,
       prompt_text,
+      nft_used_type,
+      nft_used_text,
       image_url,
       storage_key,
       mime_type,
@@ -175,6 +192,8 @@ async function listApprovedSubmissions() {
       discord_display_name,
       era_key,
       prompt_text,
+      nft_used_type,
+      nft_used_text,
       image_url,
       storage_key,
       mime_type,
@@ -200,6 +219,8 @@ async function approveSubmission({
   overrideDiscordUsername,
   overrideDiscordDisplayName,
   overrideEraKey,
+  overrideNftUsedType,
+  overrideNftUsedText,
 }) {
   const client = await pool.connect();
   try {
@@ -225,6 +246,9 @@ async function approveSubmission({
     const resolvedDiscordDisplayName =
       overrideDiscordDisplayName || submission.discord_display_name;
     const resolvedEraKey = overrideEraKey || submission.era_key;
+    const resolvedNftUsedType = overrideNftUsedType || submission.nft_used_type;
+    const resolvedNftUsedText =
+      resolvedNftUsedType === "other" ? overrideNftUsedText || submission.nft_used_text : null;
 
     await client.query(
       `
@@ -232,10 +256,20 @@ async function approveSubmission({
         SET discord_user_id = $2,
             discord_username = $3,
             discord_display_name = $4,
-            era_key = $5
+            era_key = $5,
+            nft_used_type = $6,
+            nft_used_text = $7
         WHERE id = $1
       `,
-      [submissionId, resolvedDiscordUserId, resolvedDiscordUsername, resolvedDiscordDisplayName, resolvedEraKey]
+      [
+        submissionId,
+        resolvedDiscordUserId,
+        resolvedDiscordUsername,
+        resolvedDiscordDisplayName,
+        resolvedEraKey,
+        resolvedNftUsedType,
+        resolvedNftUsedText,
+      ]
     );
 
     await client.query(
@@ -290,11 +324,16 @@ async function approveSubmission({
     const updated = await client.query(
       `
         UPDATE squig_survival_image_submissions
-        SET status = 'approved', reward_points = $2, reviewed_at = now(), reviewed_by = $3
+        SET status = 'approved',
+            reward_points = $2,
+            nft_used_type = $4,
+            nft_used_text = $5,
+            reviewed_at = now(),
+            reviewed_by = $3
         WHERE id = $1
         RETURNING id, reviewed_at, discord_user_id
       `,
-      [submissionId, rewardPoints, reviewedBy]
+      [submissionId, rewardPoints, reviewedBy, resolvedNftUsedType, resolvedNftUsedText]
     );
 
     await client.query("COMMIT");
@@ -333,6 +372,8 @@ async function updateApprovedSubmission({
   overrideDiscordUsername,
   overrideDiscordDisplayName,
   overrideEraKey,
+  overrideNftUsedType,
+  overrideNftUsedText,
 }) {
   const client = await pool.connect();
   try {
@@ -358,6 +399,9 @@ async function updateApprovedSubmission({
     const resolvedDiscordDisplayName =
       overrideDiscordDisplayName || submission.discord_display_name;
     const resolvedEraKey = overrideEraKey || submission.era_key;
+    const resolvedNftUsedType = overrideNftUsedType || submission.nft_used_type;
+    const resolvedNftUsedText =
+      resolvedNftUsedType === "other" ? overrideNftUsedText || submission.nft_used_text : null;
 
     const liveUpdate = await client.query(
       `
@@ -397,8 +441,10 @@ async function updateApprovedSubmission({
             discord_display_name = $4,
             era_key = $5,
             reward_points = $6,
+            nft_used_type = $7,
+            nft_used_text = $8,
             reviewed_at = now(),
-            reviewed_by = $7
+            reviewed_by = $9
         WHERE id = $1
         RETURNING id, reviewed_at
       `,
@@ -409,6 +455,8 @@ async function updateApprovedSubmission({
         resolvedDiscordDisplayName,
         resolvedEraKey,
         rewardPoints,
+        resolvedNftUsedType,
+        resolvedNftUsedText,
         reviewedBy,
       ]
     );
