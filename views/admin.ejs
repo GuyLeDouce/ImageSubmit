@@ -25,6 +25,7 @@
           <div><dt>Discord user ID</dt><dd><%= submission.discord_user_id %></dd></div>
           <div><dt>Display name</dt><dd><%= submission.discord_display_name || "Not set" %></dd></div>
           <div><dt>Era</dt><dd><%= submission.era_key %></dd></div>
+          <div><dt>Prompt</dt><dd><%= submission.prompt_text || "Not provided" %></dd></div>
           <div><dt>Submitted</dt><dd><%= new Date(submission.submitted_at).toLocaleString() %></dd></div>
           <div><dt>Image URL</dt><dd><a href="<%= submission.image_url %>" target="_blank" rel="noreferrer">Open image</a></dd></div>
         </dl>
@@ -105,6 +106,7 @@
           <div><dt>Discord user ID</dt><dd><%= submission.discord_user_id %></dd></div>
           <div><dt>Display name</dt><dd><%= submission.discord_display_name || "Not set" %></dd></div>
           <div><dt>Era</dt><dd><%= submission.era_key %></dd></div>
+          <div><dt>Prompt</dt><dd><%= submission.prompt_text || "Not provided" %></dd></div>
           <div><dt>Reward points</dt><dd><%= submission.reward_points %></dd></div>
           <div><dt>Approved</dt><dd><%= submission.reviewed_at ? new Date(submission.reviewed_at).toLocaleString() : "Unknown" %></dd></div>
           <div><dt>Approved by</dt><dd><%= submission.reviewed_by || "Unknown" %></dd></div>

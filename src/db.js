@@ -40,6 +40,7 @@ async function initDb() {
       discord_username TEXT NOT NULL,
       discord_display_name TEXT,
       era_key TEXT NOT NULL,
+      prompt_text TEXT,
       image_url TEXT NOT NULL,
       storage_key TEXT,
       mime_type TEXT,
@@ -62,6 +63,10 @@ async function initDb() {
   await pool.query(`
     CREATE INDEX IF NOT EXISTS idx_squig_survival_image_submissions_user
       ON squig_survival_image_submissions (discord_user_id, submitted_at DESC);
+  `);
+  await pool.query(`
+    ALTER TABLE squig_survival_image_submissions
+    ADD COLUMN IF NOT EXISTS prompt_text TEXT;
   `);
   await pool.query(`
     CREATE TABLE IF NOT EXISTS squig_survival_image_approval_notifications (
@@ -100,13 +105,14 @@ async function createPendingSubmission(input) {
         discord_username,
         discord_display_name,
         era_key,
+        prompt_text,
         image_url,
         storage_key,
         mime_type,
         size_bytes,
         reward_points
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 100)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 100)
       RETURNING id, submitted_at
     `,
     [
@@ -114,6 +120,7 @@ async function createPendingSubmission(input) {
       input.discordUsername,
       input.discordDisplayName,
       input.eraKey,
+      input.promptText,
       input.imageUrl,
       input.storageKey,
       input.mimeType,
@@ -132,6 +139,7 @@ async function listPendingSubmissions() {
       discord_username,
       discord_display_name,
       era_key,
+      prompt_text,
       image_url,
       storage_key,
       mime_type,
@@ -157,6 +165,7 @@ async function listApprovedSubmissions() {
       discord_username,
       discord_display_name,
       era_key,
+      prompt_text,
       image_url,
       storage_key,
       mime_type,

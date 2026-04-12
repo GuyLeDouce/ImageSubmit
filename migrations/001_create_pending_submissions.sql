@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS squig_survival_image_submissions (
   discord_username TEXT NOT NULL,
   discord_display_name TEXT,
   era_key TEXT NOT NULL,
+  prompt_text TEXT,
   image_url TEXT NOT NULL,
   storage_key TEXT,
   mime_type TEXT,
@@ -25,6 +26,9 @@ CREATE INDEX IF NOT EXISTS idx_squig_survival_image_submissions_status
 
 CREATE INDEX IF NOT EXISTS idx_squig_survival_image_submissions_user
   ON squig_survival_image_submissions (discord_user_id, submitted_at DESC);
+
+ALTER TABLE squig_survival_image_submissions
+  ADD COLUMN IF NOT EXISTS prompt_text TEXT;
 
 CREATE TABLE IF NOT EXISTS squig_survival_image_approval_notifications (
   id BIGSERIAL PRIMARY KEY,

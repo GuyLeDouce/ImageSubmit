@@ -5,6 +5,8 @@ const SURVIVAL_ERAS = [
   { key: "movie_theater", label: "Movie Theater" },
   { key: "airport", label: "Airport" },
   { key: "zombie_apocalypse", label: "Zombie Apocalypse" },
+  { key: "!revive Success", label: "!revive Success" },
+  { key: "!revive Failed", label: "!revive Failed" },
 ];
 
 const SURVIVAL_ERA_KEYS = new Set(SURVIVAL_ERAS.map((era) => era.key));

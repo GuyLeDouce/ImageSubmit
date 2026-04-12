@@ -167,6 +167,7 @@ function createApp() {
   app.post("/submit", requireVerifiedMember, upload.single("image"), async (req, res, next) => {
     try {
       const eraKey = String(req.body.era_key || "").trim();
+      const promptText = parseOptionalText(req.body.prompt_text, "Prompt", 4000);
       if (!validateEraKey(eraKey)) throw new Error("Please choose a valid era.");
       if (!req.file) throw new Error("Please attach an image before submitting.");
 
@@ -176,6 +177,7 @@ function createApp() {
         discordUsername: req.session.user.username,
         discordDisplayName: req.session.user.displayName,
         eraKey,
+        promptText,
         imageUrl: stored.publicUrl,
         storageKey: stored.storageKey,
         mimeType: req.file.mimetype,
