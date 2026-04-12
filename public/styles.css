@@ -313,6 +313,27 @@ dd { margin: 0; overflow-wrap: anywhere; }
     url("https://i.imgur.com/qJdq3ad.png") center center / cover no-repeat;
   box-shadow: 0 22px 46px rgba(64, 93, 118, 0.14);
 }
+.creator-mascot {
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+  user-select: none;
+  filter: drop-shadow(0 14px 24px rgba(64, 93, 118, 0.16));
+}
+.creator-mascot--hero-left {
+  left: -34px;
+  bottom: -24px;
+  width: clamp(140px, 18vw, 240px);
+  transform: rotate(-8deg);
+  opacity: 0.96;
+}
+.creator-mascot--hero-right {
+  right: -10px;
+  top: 28px;
+  width: clamp(132px, 17vw, 220px);
+  transform: rotate(7deg);
+  opacity: 0.9;
+}
 .creator-hero__backdrop {
   position: absolute;
   inset: 0;
@@ -387,6 +408,23 @@ dd { margin: 0; overflow-wrap: anywhere; }
   gap: 14px;
   margin-top: 30px;
   padding: 0;
+}
+.creator-section--rewards-wrap {
+  position: relative;
+}
+.creator-mascot--reward-left {
+  left: -18px;
+  top: 96px;
+  width: clamp(112px, 13vw, 170px);
+  transform: rotate(-10deg);
+  opacity: 0.88;
+}
+.creator-mascot--reward-right {
+  right: -12px;
+  top: 74px;
+  width: clamp(108px, 12vw, 164px);
+  transform: rotate(10deg) rotateY(180deg);
+  opacity: 0.88;
 }
 .creator-section__heading {
   display: grid;
@@ -482,6 +520,24 @@ dd { margin: 0; overflow-wrap: anywhere; }
 .creator-cta__closing {
   color: #25272c;
 }
+.creator-cast {
+  display: flex;
+  gap: 18px;
+  align-items: end;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+.creator-cast__item {
+  width: clamp(110px, 12vw, 160px);
+  filter: drop-shadow(0 14px 24px rgba(64, 93, 118, 0.16));
+}
+.creator-cast__item--tilt-left {
+  transform: rotate(-8deg);
+}
+.creator-cast__item--tilt-right {
+  transform: rotate(8deg);
+}
 @media (max-width: 800px) {
   .topbar, .topbar-brand, .nav { align-items: stretch; }
   .topbar, .nav { flex-direction: column; }
@@ -504,4 +560,26 @@ dd { margin: 0; overflow-wrap: anywhere; }
     grid-template-columns: 1fr;
   }
   .creator-hero__meta { flex-direction: column; align-items: flex-start; }
+  .creator-mascot--hero-left,
+  .creator-mascot--hero-right,
+  .creator-mascot--reward-left,
+  .creator-mascot--reward-right {
+    position: static;
+    width: 120px;
+    transform: none;
+    opacity: 0.92;
+  }
+  .creator-hero {
+    display: grid;
+    gap: 14px;
+  }
+  .creator-section--rewards-wrap {
+    display: grid;
+  }
+  .creator-cast {
+    gap: 12px;
+  }
+  .creator-cast__item {
+    width: 108px;
+  }
 }
