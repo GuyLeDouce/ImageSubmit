@@ -415,11 +415,11 @@ dd { margin: 0; overflow-wrap: anywhere; }
   padding-right: 104px;
 }
 .creator-mascot--reward-left {
-  left: 8px;
-  top: 120px;
-  width: clamp(112px, 13vw, 170px);
+  left: -18px;
+  top: 188px;
+  width: clamp(96px, 11vw, 146px);
   transform: rotate(-10deg);
-  opacity: 0.88;
+  opacity: 0.82;
   z-index: 2;
 }
 .creator-mascot--reward-right {
