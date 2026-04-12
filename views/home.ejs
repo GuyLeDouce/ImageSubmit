@@ -29,37 +29,28 @@
       <div class="creator-hero__microcopy">
         Discord access is available from the link icon above.
       </div>
+      <div class="creator-hero__meta">
+        <span>Automatic rewards for connected creators</span>
+        <span>Any NFT collection accepted</span>
+        <span>Higher rewards for Squigs</span>
+      </div>
     </div>
 
-    <aside class="creator-sidecard panel stack-gap">
+    <aside class="creator-sidecard">
       <% if (!user) { %>
-        <p class="eyebrow">Start Here</p>
         <h2>Submit into the live game pool</h2>
         <p class="muted">
-          Sign in with Discord, submit your image, and let the review team decide whether it enters
-          Squig Survival.
+          Sign in with Discord, submit your image, and the team will review it for quality, creativity, and fit.
         </p>
-        <div class="creator-sidecard__stats">
-          <div>
-            <strong>Automatic rewards</strong>
-            <span>For connected creators in the Ugly Labs Discord ecosystem.</span>
-          </div>
-          <div>
-            <strong>Collection-friendly</strong>
-            <span>Any NFT collection can be used, with higher rewards for Squigs.</span>
-          </div>
-        </div>
         <div class="actions">
           <a class="button" href="/auth/discord">Login with Discord</a>
           <a class="button secondary" href="https://squigs.io/discord" target="_blank" rel="noreferrer">Join Discord</a>
         </div>
       <% } else { %>
-        <p class="eyebrow">Account Status</p>
-        <h2><%= user.isGuildMember ? "You are ready to create." : "One step left." %></h2>
-        <div class="status-list">
-          <p><strong>Logged in as:</strong> <%= user.username %> (<%= user.id %>)</p>
-          <p><strong>Display name:</strong> <%= user.displayName || "Not set" %></p>
-          <p><strong>Ugly Labs membership:</strong> <%= user.isGuildMember ? "Verified" : "Not verified" %></p>
+        <h2><%= user.isGuildMember ? "You are ready to create." : "Join the ecosystem to submit." %></h2>
+        <div class="creator-status">
+          <p><strong>Account:</strong> <%= user.username %></p>
+          <p><strong>Membership:</strong> <%= user.isGuildMember ? "Verified" : "Not verified" %></p>
         </div>
         <div class="actions">
           <% if (user.isGuildMember) { %>
@@ -71,9 +62,6 @@
             <a class="button secondary" href="/admin">Open admin review</a>
           <% } %>
         </div>
-        <p class="muted creator-sidecard__note">
-          Rewards are automatic for creators who are connected properly inside the Ugly Labs Discord ecosystem.
-        </p>
       <% } %>
     </aside>
   </div>
@@ -84,23 +72,19 @@
     <p class="eyebrow">What Is This?</p>
     <h2>The submission system behind live Squig Survival moments.</h2>
   </div>
-  <div class="creator-grid creator-grid--two">
-    <article class="panel creator-card">
-      <p>
-        The Squig Creator Portal is a community-powered submission system built for Squig Survival.
-      </p>
-      <p>
-        Creators can submit images based on specific eras, outcomes, and game moments. Once approved,
-        those creations are added directly into the live game pool, where they can appear during gameplay
-        inside the Ugly Labs Discord.
-      </p>
-    </article>
-    <article class="panel creator-card">
-      <p>
-        This means your art becomes part of the game experience itself &mdash; not just something people
-        look at, but something players encounter live while playing.
-      </p>
-    </article>
+  <div class="creator-copy">
+    <p>
+      The Squig Creator Portal is a community-powered submission system built for Squig Survival.
+    </p>
+    <p>
+      Creators can submit images based on specific eras, outcomes, and game moments. Once approved, those
+      creations are added directly into the live game pool, where they can appear during gameplay inside
+      the Ugly Labs Discord.
+    </p>
+    <p>
+      This means your art becomes part of the game experience itself &mdash; not just something people look
+      at, but something players encounter live while playing.
+    </p>
   </div>
 </section>
 
@@ -109,32 +93,14 @@
     <p class="eyebrow">How It Works</p>
     <h2>Simple submission flow, direct in-game impact.</h2>
   </div>
-  <div class="creator-steps">
-    <article class="panel creator-step">
-      <span class="creator-step__number">1</span>
-      <p>Connect with Discord and submit your creation.</p>
-    </article>
-    <article class="panel creator-step">
-      <span class="creator-step__number">2</span>
-      <p>Choose the era or game moment your image is meant for.</p>
-    </article>
-    <article class="panel creator-step">
-      <span class="creator-step__number">3</span>
-      <p>Optionally include your prompt to help inspire other creators.</p>
-    </article>
-    <article class="panel creator-step">
-      <span class="creator-step__number">4</span>
-      <p>Our team reviews submissions for quality, creativity, and fit.</p>
-    </article>
-    <article class="panel creator-step">
-      <span class="creator-step__number">5</span>
-      <p>Approved creations are added into the Squig Survival game pool.</p>
-    </article>
-    <article class="panel creator-step">
-      <span class="creator-step__number">6</span>
-      <p>When your image appears in a live game, it becomes part of the action.</p>
-    </article>
-  </div>
+  <ol class="creator-steps">
+    <li>Connect with Discord and submit your creation.</li>
+    <li>Choose the era or game moment your image is meant for.</li>
+    <li>Optionally include your prompt to help inspire other creators.</li>
+    <li>Our team reviews submissions for quality, creativity, and fit.</li>
+    <li>Approved creations are added into the Squig Survival game pool.</li>
+    <li>When your image appears in a live game, it becomes part of the action.</li>
+  </ol>
 </section>
 
 <section class="creator-section">
@@ -165,15 +131,15 @@
     <p class="eyebrow">Where Your Creations Appear</p>
     <h2>Used across the live game, not parked in a gallery.</h2>
   </div>
-  <div class="creator-grid creator-grid--showcase">
-    <article class="panel creator-card creator-card--tight"><strong>survival events</strong></article>
-    <article class="panel creator-card creator-card--tight"><strong>eliminations</strong></article>
-    <article class="panel creator-card creator-card--tight"><strong>milestones</strong></article>
-    <article class="panel creator-card creator-card--tight"><strong>lore moments</strong></article>
-    <article class="panel creator-card creator-card--tight"><strong>!revive Success</strong></article>
-    <article class="panel creator-card creator-card--tight"><strong>!revive Failed</strong></article>
-  </div>
-  <article class="panel creator-callout">
+  <ul class="creator-tags">
+    <li>survival events</li>
+    <li>eliminations</li>
+    <li>milestones</li>
+    <li>lore moments</li>
+    <li>!revive Success</li>
+    <li>!revive Failed</li>
+  </ul>
+  <article class="creator-callout">
     These are not static gallery uploads. They are active parts of the game.
   </article>
 </section>
@@ -183,24 +149,19 @@
     <p class="eyebrow">Why It Matters</p>
     <h2>Community creativity actively expands the game world.</h2>
   </div>
-  <div class="creator-grid creator-grid--two">
-    <article class="panel creator-card">
-      <p>Squig Survival is not just a game people play.</p>
-      <p>It is something the community helps build.</p>
-    </article>
-    <article class="panel creator-card">
-      <p>
-        Every approved creation expands the world, adds more variety to the experience, and gives creators a real
-        way to contribute to the game while being rewarded for it.
-      </p>
-      <p>
-        The result is a system where creativity, gameplay, and community all feed into each other.
-      </p>
-    </article>
+  <div class="creator-copy">
+    <p>Squig Survival is not just a game people play. It is something the community helps build.</p>
+    <p>
+      Every approved creation expands the world, adds more variety to the experience, and gives creators a real
+      way to contribute to the game while being rewarded for it.
+    </p>
+    <p>
+      The result is a system where creativity, gameplay, and community all feed into each other.
+    </p>
   </div>
 </section>
 
-<section class="creator-cta panel">
+<section class="creator-cta">
   <div class="creator-section__heading">
     <p class="eyebrow">Final CTA</p>
     <h2>Ready to create something weird, cinematic, chaotic, or unforgettable?</h2>
