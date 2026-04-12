@@ -32,6 +32,10 @@ async function initDb() {
       `Live image table '${config.liveImageTable}' was not found. Point this app at the same Postgres database used by The Gauntlet.`
     );
   }
+  await pool.query(`
+    ALTER TABLE ${config.liveImageTable}
+    ADD COLUMN IF NOT EXISTS prompt_text TEXT;
+  `);
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS squig_survival_image_submissions (
@@ -238,7 +242,7 @@ async function approveSubmission({
           created_at,
           era_keys,
           reward_points,
-          image_prompt
+          prompt_text
         )
         VALUES ($1, $2, $3, now(), $4, $5, $6)
       `,
@@ -355,7 +359,7 @@ async function updateApprovedSubmission({
             era_keys = $2,
             reward_points = $3,
             added_by = $4,
-            image_prompt = $5
+            prompt_text = $5
         WHERE image_url = $6
           AND user_id = $7
           AND era_keys = $8
