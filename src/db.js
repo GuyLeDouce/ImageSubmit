@@ -237,11 +237,19 @@ async function approveSubmission({
           added_by,
           created_at,
           era_keys,
-          reward_points
+          reward_points,
+          image_prompt
         )
-        VALUES ($1, $2, $3, now(), $4, $5)
+        VALUES ($1, $2, $3, now(), $4, $5, $6)
       `,
-      [submission.image_url, resolvedDiscordUserId, reviewedBy, resolvedEraKey, rewardPoints]
+      [
+        submission.image_url,
+        resolvedDiscordUserId,
+        reviewedBy,
+        resolvedEraKey,
+        rewardPoints,
+        submission.prompt_text,
+      ]
     );
 
     await client.query(
@@ -346,17 +354,19 @@ async function updateApprovedSubmission({
         SET user_id = $1,
             era_keys = $2,
             reward_points = $3,
-            added_by = $4
-        WHERE image_url = $5
-          AND user_id = $6
-          AND era_keys = $7
-          AND reward_points = $8
+            added_by = $4,
+            image_prompt = $5
+        WHERE image_url = $6
+          AND user_id = $7
+          AND era_keys = $8
+          AND reward_points = $9
       `,
       [
         resolvedDiscordUserId,
         resolvedEraKey,
         rewardPoints,
         reviewedBy,
+        submission.prompt_text,
         submission.image_url,
         submission.discord_user_id,
         submission.era_key,
