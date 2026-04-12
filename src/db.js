@@ -80,6 +80,7 @@ async function initDb() {
       discord_username TEXT NOT NULL,
       era_key TEXT NOT NULL,
       image_url TEXT NOT NULL,
+      prompt_text TEXT,
       reward_points INTEGER NOT NULL DEFAULT 100,
       approved_by TEXT,
       approved_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -96,6 +97,10 @@ async function initDb() {
   await pool.query(`
     CREATE INDEX IF NOT EXISTS idx_squig_survival_image_approval_notifications_status
       ON squig_survival_image_approval_notifications (post_status, approved_at ASC);
+  `);
+  await pool.query(`
+    ALTER TABLE squig_survival_image_approval_notifications
+    ADD COLUMN IF NOT EXISTS prompt_text TEXT;
   `);
 
   log("Database ready.");
@@ -264,10 +269,11 @@ async function approveSubmission({
           discord_username,
           era_key,
           image_url,
+          prompt_text,
           reward_points,
           approved_by
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       `,
       [
         submission.id,
@@ -275,6 +281,7 @@ async function approveSubmission({
         resolvedDiscordUsername,
         resolvedEraKey,
         submission.image_url,
+        submission.prompt_text,
         rewardPoints,
         reviewedBy,
       ]
