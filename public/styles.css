@@ -411,20 +411,24 @@ dd { margin: 0; overflow-wrap: anywhere; }
 }
 .creator-section--rewards-wrap {
   position: relative;
+  padding-left: 104px;
+  padding-right: 104px;
 }
 .creator-mascot--reward-left {
-  left: -18px;
-  top: 96px;
+  left: 8px;
+  top: 120px;
   width: clamp(112px, 13vw, 170px);
   transform: rotate(-10deg);
   opacity: 0.88;
+  z-index: 2;
 }
 .creator-mascot--reward-right {
-  right: -12px;
-  top: 74px;
+  right: 10px;
+  top: 112px;
   width: clamp(108px, 12vw, 164px);
   transform: rotate(10deg) rotateY(180deg);
   opacity: 0.88;
+  z-index: 2;
 }
 .creator-section__heading {
   display: grid;
@@ -575,6 +579,8 @@ dd { margin: 0; overflow-wrap: anywhere; }
   }
   .creator-section--rewards-wrap {
     display: grid;
+    padding-left: 0;
+    padding-right: 0;
   }
   .creator-cast {
     gap: 12px;
