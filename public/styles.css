@@ -171,6 +171,11 @@ h2 {
   font-size: 1.35rem;
   line-height: 1.1;
 }
+h3 {
+  margin: 0;
+  font-size: 1.15rem;
+  line-height: 1.15;
+}
 .hero-copy {
   padding: 10px 8px 10px 2px;
   align-content: end;
@@ -567,6 +572,67 @@ dd { margin: 0; overflow-wrap: anywhere; }
   letter-spacing: 0.08em;
   color: #567289;
 }
+.era-guide {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+.era-card {
+  display: grid;
+  gap: 16px;
+  align-content: start;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(245, 249, 253, 0.7)),
+    rgba(255, 255, 255, 0.72);
+}
+.era-card__top,
+.era-card__section,
+.era-card__vibe {
+  display: grid;
+  gap: 8px;
+}
+.era-card__label {
+  color: #567289;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.76rem;
+}
+.era-card__summary {
+  color: #253746;
+  line-height: 1.6;
+}
+.era-card__heading {
+  color: #355167;
+  font-weight: 700;
+}
+.era-card__list {
+  margin: 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 9px;
+}
+.era-card__list li {
+  color: var(--muted);
+  line-height: 1.55;
+}
+.era-card__vibe {
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(255, 225, 105, 0.16);
+  border: 1px solid rgba(255, 210, 74, 0.3);
+}
+.era-card__vibe span {
+  color: #567289;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+.era-card__vibe strong {
+  color: #25272c;
+  font-size: 1rem;
+}
 .creator-copy {
   display: grid;
   gap: 14px;
@@ -626,7 +692,8 @@ dd { margin: 0; overflow-wrap: anywhere; }
     background-position: 62% center;
   }
   .creator-hero__content,
-  .creator-rewards {
+  .creator-rewards,
+  .era-guide {
     grid-template-columns: 1fr;
   }
   .creator-hero__meta { flex-direction: column; align-items: flex-start; }

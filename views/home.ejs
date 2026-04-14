@@ -1,5 +1,98 @@
 <%- include("partials/header") %>
 
+<%
+  const eraGuides = [
+    {
+      title: "Day One",
+      summary: "The moment Squigs arrive and immediately start misunderstanding everything.",
+      coreVibe: "New to Earth. Confident. Completely wrong.",
+      whatToShow: [
+        "Attempting normal human tasks incorrectly like walking, eating, working, or interacting",
+        "Clumsy mistakes leading to accidents, harm, or death",
+        "Misusing everyday objects such as tools, doors, chairs, or vehicles",
+        "Confusion, poor judgment, and preventable failures",
+      ],
+    },
+    {
+      title: "Office Squigs",
+      summary: "Squigs trying to survive corporate life with zero understanding of how it works.",
+      coreVibe: "They got hired. That was the first mistake.",
+      whatToShow: [
+        "Desk chaos, broken computers, spilled coffee, and ruined meetings",
+        "Misusing office tools and making obviously bad workplace decisions",
+        "Awkward coworker interactions, burnout, and corporate satire",
+        "\"I have no idea what my job is\" energy",
+      ],
+    },
+    {
+      title: "Jobsite Squigs",
+      summary: "Squigs on a construction site making avoidable, dangerous mistakes.",
+      coreVibe: "This could have been avoided.",
+      whatToShow: [
+        "Slipping, tripping, dropping tools, and unsafe behavior",
+        "Chain-reaction accidents with ladders, materials, or equipment",
+        "Mid-accident scenes where the fault is obvious",
+        "Preventable, chaotic failures instead of controlled action",
+      ],
+    },
+    {
+      title: "Movie Theater",
+      summary: "Squigs in public completely misunderstanding social norms.",
+      coreVibe: "Why is everyone mad at me?",
+      whatToShow: [
+        "Causing disruptions, getting kicked out, or reacting like the screen is real",
+        "Yelling, throwing things, popcorn chaos, and crowd reactions",
+        "Social awkwardness pushed into full chaos",
+        "Public embarrassment that escalates fast",
+      ],
+    },
+    {
+      title: "Airport",
+      summary: "Travel chaos caused by Squigs not understanding how anything works.",
+      coreVibe: "This was definitely their fault.",
+      whatToShow: [
+        "Security line disasters, luggage problems, and terminal confusion",
+        "Missing flights, running late, and avoidable urgency",
+        "\"My flight got delayed because...\" scenarios",
+        "Misusing airport systems or ignoring obvious rules",
+      ],
+    },
+    {
+      title: "Zombie Apocalypse",
+      summary: "End-of-the-world survival or a total failure to survive.",
+      coreVibe: "Survive... if they can figure it out.",
+      whatToShow: [
+        "Fighting, running from, or hiding from zombies",
+        "Improvised weapons and chaotic survival tactics",
+        "Overwhelming danger, destruction, and unstable decisions",
+        "Heroic attempts mixed with instant bad judgment",
+      ],
+    },
+    {
+      title: "!revive Success",
+      summary: "A successful revival where the character comes back, but not always perfectly.",
+      coreVibe: "Back... but something's off.",
+      whatToShow: [
+        "Sudden revival, popping back up, and strong energy effects",
+        "Glow, power surges, and unstable recovery moments",
+        "\"I shouldn't be alive but I am\" energy",
+        "Triumphant, weird, or unexpected returns",
+      ],
+    },
+    {
+      title: "!revive Failed",
+      summary: "A failed attempt to bring someone back.",
+      coreVibe: "This was never going to work.",
+      whatToShow: [
+        "Incorrect methods, bad tools, and the wrong approach",
+        "Subtle realization that the revival did not work",
+        "Malfunctioning equipment, weak energy, and broken setups",
+        "Serious tone or dark humor driven by poor planning and human error",
+      ],
+    },
+  ];
+%>
+
 <section class="creator-hero">
   <div class="creator-hero__backdrop"></div>
   <div class="creator-hero__content">
@@ -103,6 +196,40 @@
     <li>Approved creations are added into the Squig Survival game pool.</li>
     <li>When your image appears in a live game, it becomes part of the action.</li>
   </ol>
+</section>
+
+<section class="creator-section" id="era-guide">
+  <div class="creator-section__heading">
+    <p class="eyebrow">Era Guide</p>
+    <h2>What the team is looking for in each era.</h2>
+    <p class="muted">
+      Stay inside the era theme, lean into the failure or survival beat, and make the image feel like a real
+      moment from Squig Survival rather than a generic character portrait.
+    </p>
+  </div>
+  <div class="era-guide">
+    <% eraGuides.forEach((era) => { %>
+      <article class="panel era-card">
+        <div class="era-card__top">
+          <p class="era-card__label">Era</p>
+          <h3><%= era.title %></h3>
+        </div>
+        <p class="era-card__summary"><%= era.summary %></p>
+        <div class="era-card__section">
+          <p class="era-card__heading">What to aim for</p>
+          <ul class="era-card__list">
+            <% era.whatToShow.forEach((item) => { %>
+              <li><%= item %></li>
+            <% }) %>
+          </ul>
+        </div>
+        <div class="era-card__vibe">
+          <span>Core vibe</span>
+          <strong><%= era.coreVibe %></strong>
+        </div>
+      </article>
+    <% }) %>
+  </div>
 </section>
 
 <section class="creator-section">
