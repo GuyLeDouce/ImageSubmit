@@ -211,6 +211,45 @@ async function listApprovedSubmissions() {
   return result.rows;
 }
 
+async function listSubmissionsForUser(discordUserId) {
+  const result = await pool.query(
+    `
+      SELECT
+        id,
+        discord_user_id,
+        discord_username,
+        discord_display_name,
+        era_key,
+        prompt_text,
+        nft_used_type,
+        nft_used_text,
+        image_url,
+        storage_key,
+        mime_type,
+        size_bytes,
+        status,
+        reward_points,
+        submitted_at,
+        reviewed_at,
+        reviewed_by
+      FROM squig_survival_image_submissions
+      WHERE discord_user_id = $1
+      ORDER BY
+        CASE status
+          WHEN 'pending' THEN 0
+          WHEN 'approved' THEN 1
+          WHEN 'declined' THEN 2
+          ELSE 3
+        END,
+        COALESCE(reviewed_at, submitted_at) DESC,
+        submitted_at DESC
+    `,
+    [discordUserId]
+  );
+
+  return result.rows;
+}
+
 async function approveSubmission({
   submissionId,
   rewardPoints,
@@ -477,6 +516,7 @@ module.exports = {
   createPendingSubmission,
   listPendingSubmissions,
   listApprovedSubmissions,
+  listSubmissionsForUser,
   approveSubmission,
   declineSubmission,
   updateApprovedSubmission,

@@ -1,63 +1,145 @@
 <%- include("partials/header") %>
 
-<section class="stack-gap narrow form-shell">
-  <p class="eyebrow">Submission form</p>
-  <h1>Submit your image</h1>
-  <p class="muted">Logged in as <strong><%= user.username %></strong> (<%= user.id %>)</p>
+<%
+  const eraLabelMap = eras.reduce((map, era) => {
+    map[era.key] = era.label;
+    return map;
+  }, {});
+  const submissionGroups = [
+    { key: "pending", title: "Awaiting Approval", emptyText: "No images waiting for review yet." },
+    { key: "approved", title: "Approved", emptyText: "No approved images yet." },
+    { key: "declined", title: "Declined", emptyText: "No declined images." },
+  ].map((group) => ({
+    ...group,
+    items: (submissions || []).filter((submission) => submission.status === group.key),
+  }));
+%>
 
-  <% if (submitted) { %>
-    <div class="success-box">
-      Your image has been submitted for review. Watch for approval in <a href="https://discord.gg/UJgqevGaGV" target="_blank" rel="noreferrer">squigs.io/discord</a>.
+<section class="stack-gap submit-page">
+  <div class="stack-gap narrow form-shell">
+    <p class="eyebrow">Submission form</p>
+    <h1>Submit your image</h1>
+    <p class="muted">Logged in as <strong><%= user.username %></strong> (<%= user.id %>)</p>
+
+    <% if (submitted) { %>
+      <div class="success-box">
+        Your image submission has been received for review. Watch for approval in <a href="https://discord.gg/UJgqevGaGV" target="_blank" rel="noreferrer">squigs.io/discord</a>.
+      </div>
+    <% } %>
+
+    <form action="/submit" method="post" enctype="multipart/form-data" class="stack-gap panel form-panel">
+      <label class="field">
+        <span>Era</span>
+        <select name="era_key" required>
+          <option value="">Choose an era</option>
+          <% eras.forEach((era) => { %>
+            <option value="<%= era.key %>"><%= era.label %></option>
+          <% }) %>
+        </select>
+      </label>
+
+      <label class="field">
+        <span>Image uploads</span>
+        <input type="file" name="images" accept="image/png,image/jpeg,image/webp,image/gif" multiple required />
+        <small class="field-note">You can submit up to 10 images at once. Each image will be reviewed separately.</small>
+      </label>
+
+      <label class="field">
+        <span>NFT used</span>
+        <select name="nft_used_type" data-nft-type-select required>
+          <option value="squigs" selected>Squigs</option>
+          <option value="other">Other</option>
+        </select>
+      </label>
+
+      <label class="field is-hidden" data-nft-other-field>
+        <span>Which NFT?</span>
+        <input
+          type="text"
+          name="nft_used_text"
+          maxlength="200"
+          placeholder="Add the NFT used"
+          data-nft-other-input
+        />
+      </label>
+
+      <label class="field">
+        <span>Prompt used (optional)</span>
+        <textarea
+          name="prompt_text"
+          rows="5"
+          maxlength="4000"
+          placeholder="Paste the prompt you used to create this image"
+        ></textarea>
+      </label>
+
+      <button type="submit" class="button">Submit</button>
+    </form>
+  </div>
+
+  <section class="stack-gap submission-history">
+    <div class="submission-history__header">
+      <p class="eyebrow">Your submissions</p>
+      <h2>All images linked to your Discord account</h2>
+      <p class="muted">These are only the images submitted by <strong><%= user.username %></strong>.</p>
     </div>
-  <% } %>
 
-  <form action="/submit" method="post" enctype="multipart/form-data" class="stack-gap panel form-panel">
-    <label class="field">
-      <span>Era</span>
-      <select name="era_key" required>
-        <option value="">Choose an era</option>
-        <% eras.forEach((era) => { %>
-          <option value="<%= era.key %>"><%= era.label %></option>
-        <% }) %>
-      </select>
-    </label>
+    <% submissionGroups.forEach((group) => { %>
+      <div class="panel submission-group">
+        <div class="submission-group__heading">
+          <h3><%= group.title %></h3>
+          <span class="submission-count"><%= group.items.length %></span>
+        </div>
 
-    <label class="field">
-      <span>Image upload</span>
-      <input type="file" name="image" accept="image/png,image/jpeg,image/webp,image/gif" required />
-    </label>
+        <% if (!group.items.length) { %>
+          <p class="muted"><%= group.emptyText %></p>
+        <% } else { %>
+          <div class="submission-grid">
+            <% group.items.forEach((submission) => { %>
+              <article class="submission-tile submission-tile--<%= submission.status %>">
+                <a href="<%= submission.image_url %>" target="_blank" rel="noreferrer" class="submission-tile__media">
+                  <img src="<%= submission.image_url %>" alt="Submitted image <%= submission.id %>" loading="lazy" />
+                </a>
+                <div class="submission-tile__body">
+                  <div class="submission-tile__topline">
+                    <span class="submission-status submission-status--<%= submission.status %>">
+                      <%= group.title %>
+                    </span>
+                    <span class="submission-tile__date">
+                      <%= new Date(submission.submitted_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) %>
+                    </span>
+                  </div>
 
-    <label class="field">
-      <span>NFT used</span>
-      <select name="nft_used_type" data-nft-type-select required>
-        <option value="squigs" selected>Squigs</option>
-        <option value="other">Other</option>
-      </select>
-    </label>
+                  <dl class="submission-tile__meta">
+                    <div>
+                      <dt>Era</dt>
+                      <dd><%= eraLabelMap[submission.era_key] || submission.era_key %></dd>
+                    </div>
+                    <div>
+                      <dt>NFT</dt>
+                      <dd><%= submission.nft_used_type === "other" ? submission.nft_used_text : "Squigs" %></dd>
+                    </div>
+                    <% if (submission.status !== "pending") { %>
+                      <div>
+                        <dt>Reviewed</dt>
+                        <dd>
+                          <%= submission.reviewed_at ? new Date(submission.reviewed_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "Not available" %>
+                        </dd>
+                      </div>
+                    <% } %>
+                  </dl>
 
-    <label class="field is-hidden" data-nft-other-field>
-      <span>Which NFT?</span>
-      <input
-        type="text"
-        name="nft_used_text"
-        maxlength="200"
-        placeholder="Add the NFT used"
-        data-nft-other-input
-      />
-    </label>
-
-    <label class="field">
-      <span>Prompt used (optional)</span>
-      <textarea
-        name="prompt_text"
-        rows="5"
-        maxlength="4000"
-        placeholder="Paste the prompt you used to create this image"
-      ></textarea>
-    </label>
-
-    <button type="submit" class="button">Submit</button>
-  </form>
+                  <% if (submission.prompt_text) { %>
+                    <p class="submission-tile__prompt"><%= submission.prompt_text %></p>
+                  <% } %>
+                </div>
+              </article>
+            <% }) %>
+          </div>
+        <% } %>
+      </div>
+    <% }) %>
+  </section>
 </section>
 
 <script>

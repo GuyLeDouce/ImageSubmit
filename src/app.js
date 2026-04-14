@@ -8,6 +8,7 @@ const {
   createPendingSubmission,
   listPendingSubmissions,
   listApprovedSubmissions,
+  listSubmissionsForUser,
   approveSubmission,
   declineSubmission,
   updateApprovedSubmission,
@@ -24,6 +25,7 @@ const {
 const { storeFile } = require("./storage");
 const {
   upload,
+  maxFilesPerSubmission,
   validateEraKey,
   parseNftUsedType,
   resolveDefaultRewardPoints,
@@ -155,18 +157,25 @@ function createApp() {
     });
   });
 
-  app.get("/submit", requireAuth, (req, res) => {
-    if (!req.session.user.isGuildMember) {
-      return res.status(403).render("blocked", { title: "Join Ugly Labs Discord" });
+  app.get("/submit", requireAuth, async (req, res, next) => {
+    try {
+      if (!req.session.user.isGuildMember) {
+        return res.status(403).render("blocked", { title: "Join Ugly Labs Discord" });
+      }
+
+      const submissions = await listSubmissionsForUser(req.session.user.id);
+      res.render("submit", {
+        title: "Submit Your Image",
+        eras: SURVIVAL_ERAS,
+        submitted: req.query.submitted === "1",
+        submissions,
+      });
+    } catch (error) {
+      next(error);
     }
-    res.render("submit", {
-      title: "Submit Your Image",
-      eras: SURVIVAL_ERAS,
-      submitted: req.query.submitted === "1",
-    });
   });
 
-  app.post("/submit", requireVerifiedMember, upload.single("image"), async (req, res, next) => {
+  app.post("/submit", requireVerifiedMember, upload.array("images", maxFilesPerSubmission), async (req, res, next) => {
     try {
       const eraKey = String(req.body.era_key || "").trim();
       const promptText = parseOptionalText(req.body.prompt_text, "Prompt", 4000);
@@ -176,23 +185,25 @@ function createApp() {
         throw new Error("Please tell us which NFT was used when selecting Other.");
       }
       if (!validateEraKey(eraKey)) throw new Error("Please choose a valid era.");
-      if (!req.file) throw new Error("Please attach an image before submitting.");
+      if (!req.files?.length) throw new Error("Please attach at least one image before submitting.");
 
-      const stored = await storeFile(req.file);
-      await createPendingSubmission({
-        discordUserId: req.session.user.id,
-        discordUsername: req.session.user.username,
-        discordDisplayName: req.session.user.displayName,
-        eraKey,
-        promptText,
-        nftUsedType,
-        nftUsedText: nftUsedType === "other" ? nftUsedText : null,
-        rewardPoints: resolveDefaultRewardPoints(nftUsedType),
-        imageUrl: stored.publicUrl,
-        storageKey: stored.storageKey,
-        mimeType: req.file.mimetype,
-        sizeBytes: req.file.size,
-      });
+      for (const file of req.files) {
+        const stored = await storeFile(file);
+        await createPendingSubmission({
+          discordUserId: req.session.user.id,
+          discordUsername: req.session.user.username,
+          discordDisplayName: req.session.user.displayName,
+          eraKey,
+          promptText,
+          nftUsedType,
+          nftUsedText: nftUsedType === "other" ? nftUsedText : null,
+          rewardPoints: resolveDefaultRewardPoints(nftUsedType),
+          imageUrl: stored.publicUrl,
+          storageKey: stored.storageKey,
+          mimeType: file.mimetype,
+          sizeBytes: file.size,
+        });
+      }
 
       res.redirect("/submit?submitted=1");
     } catch (error) {
@@ -301,6 +312,9 @@ function createApp() {
   app.use((err, req, res, next) => {
     if (err?.code === "LIMIT_FILE_SIZE") {
       err.message = `File is too large. Max size is ${config.maxUploadMb} MB.`;
+    }
+    if (err?.code === "LIMIT_FILE_COUNT") {
+      err.message = `You can upload up to ${maxFilesPerSubmission} images at once.`;
     }
 
     console.error(err);

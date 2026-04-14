@@ -3,10 +3,11 @@ const { config } = require("./config");
 const { SURVIVAL_ERA_KEYS } = require("./eras");
 
 const allowedMimeTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+const maxFilesPerSubmission = 10;
 
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: config.maxUploadMb * 1024 * 1024 },
+  limits: { fileSize: config.maxUploadMb * 1024 * 1024, files: maxFilesPerSubmission },
   fileFilter: (req, file, callback) => {
     if (!allowedMimeTypes.has(file.mimetype)) {
       return callback(new Error("Only JPG, PNG, WEBP, and GIF uploads are allowed."));
@@ -59,6 +60,7 @@ function parseOptionalText(rawValue, fieldName, maxLength = 100) {
 
 module.exports = {
   upload,
+  maxFilesPerSubmission,
   validateEraKey,
   parseNftUsedType,
   resolveDefaultRewardPoints,
