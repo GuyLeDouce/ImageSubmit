@@ -6,6 +6,7 @@
       title: "Day One",
       summary: "The moment Squigs arrive and immediately start misunderstanding everything.",
       coreVibe: "New to Earth. Confident. Completely wrong.",
+      collectionRule: "Squigs only. Other collections submitted for this era will not be approved.",
       whatToShow: [
         "Attempting normal human tasks incorrectly like walking, eating, working, or interacting",
         "Clumsy mistakes leading to accidents, harm, or death",
@@ -17,6 +18,7 @@
       title: "Office Squigs",
       summary: "Squigs trying to survive corporate life with zero understanding of how it works.",
       coreVibe: "They got hired. That was the first mistake.",
+      collectionRule: "Squigs only. Other collections submitted for this era will not be approved.",
       whatToShow: [
         "Desk chaos, broken computers, spilled coffee, and ruined meetings",
         "Misusing office tools and making obviously bad workplace decisions",
@@ -28,6 +30,7 @@
       title: "Jobsite Squigs",
       summary: "Squigs on a construction site making avoidable, dangerous mistakes.",
       coreVibe: "This could have been avoided.",
+      collectionRule: "Squigs only. Other collections submitted for this era will not be approved.",
       whatToShow: [
         "Slipping, tripping, dropping tools, and unsafe behavior",
         "Chain-reaction accidents with ladders, materials, or equipment",
@@ -39,6 +42,7 @@
       title: "Movie Theater",
       summary: "Squigs in public completely misunderstanding social norms.",
       coreVibe: "Why is everyone mad at me?",
+      collectionRule: "Squigs and other collections are both allowed here.",
       whatToShow: [
         "Causing disruptions, getting kicked out, or reacting like the screen is real",
         "Yelling, throwing things, popcorn chaos, and crowd reactions",
@@ -50,6 +54,7 @@
       title: "Airport",
       summary: "Travel chaos caused by Squigs not understanding how anything works.",
       coreVibe: "This was definitely their fault.",
+      collectionRule: "Squigs and other collections are both allowed here.",
       whatToShow: [
         "Security line disasters, luggage problems, and terminal confusion",
         "Missing flights, running late, and avoidable urgency",
@@ -61,6 +66,7 @@
       title: "Zombie Apocalypse",
       summary: "End-of-the-world survival or a total failure to survive.",
       coreVibe: "Survive... if they can figure it out.",
+      collectionRule: "Squigs and other collections are both allowed here.",
       whatToShow: [
         "Fighting, running from, or hiding from zombies",
         "Improvised weapons and chaotic survival tactics",
@@ -72,6 +78,7 @@
       title: "!revive Success",
       summary: "A successful revival where the character comes back, but not always perfectly.",
       coreVibe: "Back... but something's off.",
+      collectionRule: "Squigs and other collections are both allowed here.",
       whatToShow: [
         "Sudden revival, popping back up, and strong energy effects",
         "Glow, power surges, and unstable recovery moments",
@@ -83,6 +90,7 @@
       title: "!revive Failed",
       summary: "A failed attempt to bring someone back.",
       coreVibe: "This was never going to work.",
+      collectionRule: "Squigs and other collections are both allowed here.",
       whatToShow: [
         "Incorrect methods, bad tools, and the wrong approach",
         "Subtle realization that the revival did not work",
@@ -206,6 +214,11 @@
       Stay inside the era theme, lean into the failure or survival beat, and make the image feel like a real
       moment from Squig Survival rather than a generic character portrait.
     </p>
+    <p class="muted">
+      <strong>Important:</strong> <strong>Day One</strong>, <strong>Office Squigs</strong>, and
+      <strong>Jobsite Squigs</strong> are <strong>Squigs-only</strong> eras. Other collections submitted for those
+      eras will not be approved.
+    </p>
   </div>
   <div class="era-guide">
     <% eraGuides.forEach((era) => { %>
@@ -215,6 +228,7 @@
           <h3><%= era.title %></h3>
         </div>
         <p class="era-card__summary"><%= era.summary %></p>
+        <p class="era-card__rule"><%= era.collectionRule %></p>
         <div class="era-card__section">
           <p class="era-card__heading">What to aim for</p>
           <ul class="era-card__list">

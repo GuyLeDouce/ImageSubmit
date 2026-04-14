@@ -602,6 +602,15 @@ dd { margin: 0; overflow-wrap: anywhere; }
   color: #253746;
   line-height: 1.6;
 }
+.era-card__rule {
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(53, 81, 103, 0.08);
+  border: 1px solid rgba(53, 81, 103, 0.12);
+  color: #355167;
+  font-weight: 600;
+  line-height: 1.5;
+}
 .era-card__heading {
   color: #355167;
   font-weight: 700;
