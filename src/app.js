@@ -197,7 +197,7 @@ function createApp() {
           promptText,
           nftUsedType,
           nftUsedText: nftUsedType === "other" ? nftUsedText : null,
-          rewardPoints: resolveDefaultRewardPoints(nftUsedType),
+          rewardPoints: resolveDefaultRewardPoints(nftUsedType, eraKey),
           imageUrl: stored.publicUrl,
           storageKey: stored.storageKey,
           mimeType: file.mimetype,

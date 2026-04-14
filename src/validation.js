@@ -28,7 +28,14 @@ function parseNftUsedType(rawValue) {
   throw new Error("Please choose whether the image used Squigs or another NFT.");
 }
 
-function resolveDefaultRewardPoints(nftUsedType) {
+function isReviveEra(eraKey) {
+  return eraKey === "!revive Success" || eraKey === "!revive Failed";
+}
+
+function resolveDefaultRewardPoints(nftUsedType, eraKey) {
+  if (isReviveEra(eraKey)) {
+    return nftUsedType === "other" ? 10 : 20;
+  }
   return nftUsedType === "other" ? 100 : 150;
 }
 
@@ -63,6 +70,7 @@ module.exports = {
   maxFilesPerSubmission,
   validateEraKey,
   parseNftUsedType,
+  isReviveEra,
   resolveDefaultRewardPoints,
   parseRewardPoints,
   parseOptionalDiscordUserId,

@@ -225,15 +225,24 @@
 
 <script>
   (() => {
-    const DEFAULT_REWARDS = { squigs: 150, other: 100 };
+    const REVIVE_ERAS = new Set(["!revive Success", "!revive Failed"]);
+
+    const getSuggestedReward = (nftUsedType, eraKey) => {
+      if (REVIVE_ERAS.has(eraKey)) {
+        return nftUsedType === "other" ? 10 : 20;
+      }
+      return nftUsedType === "other" ? 100 : 150;
+    };
+
     document.querySelectorAll("form.approve-form").forEach((form) => {
       const typeSelect = form.querySelector("[data-nft-type-select]");
+      const eraSelect = form.querySelector('select[name="override_era_key"]');
       const otherField = form.querySelector("[data-nft-other-field]");
       const otherInput = form.querySelector("[data-nft-other-input]");
       const rewardInput = form.querySelector("[data-reward-input]");
-      if (!typeSelect || !otherField || !otherInput || !rewardInput) return;
+      if (!typeSelect || !eraSelect || !otherField || !otherInput || !rewardInput) return;
 
-      let lastSuggestedReward = String(DEFAULT_REWARDS[typeSelect.value] || 150);
+      let lastSuggestedReward = String(getSuggestedReward(typeSelect.value, eraSelect.value));
 
       const syncForm = () => {
         const isOther = typeSelect.value === "other";
@@ -241,7 +250,7 @@
         otherInput.required = isOther;
         if (!isOther) otherInput.value = "";
 
-        const suggestedReward = String(DEFAULT_REWARDS[typeSelect.value] || 150);
+        const suggestedReward = String(getSuggestedReward(typeSelect.value, eraSelect.value));
         if (!rewardInput.value || rewardInput.value === lastSuggestedReward) {
           rewardInput.value = suggestedReward;
         }
@@ -249,6 +258,7 @@
       };
 
       typeSelect.addEventListener("change", syncForm);
+      eraSelect.addEventListener("change", syncForm);
       syncForm();
     });
   })();
