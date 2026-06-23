@@ -32,88 +32,18 @@ async function initDb() {
       `Live image table '${config.liveImageTable}' was not found. Point this app at the same Postgres database used by The Gauntlet.`
     );
   }
-  await pool.query(`
-    ALTER TABLE ${config.liveImageTable}
-    ADD COLUMN IF NOT EXISTS prompt_text TEXT;
-  `);
+  for (const tableName of [
+    "squig_survival_image_submissions",
+    "squig_survival_image_approval_notifications",
+    config.sessionTable,
+  ]) {
+    const tableCheck = await pool.query("SELECT to_regclass($1) AS table_name", [tableName]);
+    if (!tableCheck.rows[0]?.table_name) {
+      throw new Error(`Required table '${tableName}' was not found. Run reviewed migrations before starting the app.`);
+    }
+  }
 
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS squig_survival_image_submissions (
-      id BIGSERIAL PRIMARY KEY,
-      discord_user_id TEXT NOT NULL,
-      discord_username TEXT NOT NULL,
-      discord_display_name TEXT,
-      era_key TEXT NOT NULL,
-      prompt_text TEXT,
-      nft_used_type TEXT NOT NULL DEFAULT 'squigs',
-      nft_used_text TEXT,
-      image_url TEXT NOT NULL,
-      storage_key TEXT,
-      mime_type TEXT,
-      size_bytes INTEGER,
-      status TEXT NOT NULL DEFAULT 'pending',
-      reward_points INTEGER NOT NULL DEFAULT 100,
-      submitted_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-      reviewed_at TIMESTAMPTZ,
-      reviewed_by TEXT,
-      CONSTRAINT squig_survival_image_submissions_status_check
-        CHECK (status IN ('pending', 'approved', 'declined'))
-    );
-  `);
-
-  await pool.query(`
-    CREATE INDEX IF NOT EXISTS idx_squig_survival_image_submissions_status
-      ON squig_survival_image_submissions (status, submitted_at DESC);
-  `);
-
-  await pool.query(`
-    CREATE INDEX IF NOT EXISTS idx_squig_survival_image_submissions_user
-      ON squig_survival_image_submissions (discord_user_id, submitted_at DESC);
-  `);
-  await pool.query(`
-    ALTER TABLE squig_survival_image_submissions
-    ADD COLUMN IF NOT EXISTS prompt_text TEXT;
-  `);
-  await pool.query(`
-    ALTER TABLE squig_survival_image_submissions
-    ADD COLUMN IF NOT EXISTS nft_used_type TEXT NOT NULL DEFAULT 'squigs';
-  `);
-  await pool.query(`
-    ALTER TABLE squig_survival_image_submissions
-    ADD COLUMN IF NOT EXISTS nft_used_text TEXT;
-  `);
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS squig_survival_image_approval_notifications (
-      id BIGSERIAL PRIMARY KEY,
-      submission_id BIGINT,
-      discord_user_id TEXT NOT NULL,
-      discord_username TEXT NOT NULL,
-      era_key TEXT NOT NULL,
-      image_url TEXT NOT NULL,
-      prompt_text TEXT,
-      reward_points INTEGER NOT NULL DEFAULT 100,
-      approved_by TEXT,
-      approved_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-      post_status TEXT NOT NULL DEFAULT 'pending',
-      post_attempts INTEGER NOT NULL DEFAULT 0,
-      posted_at TIMESTAMPTZ,
-      posted_message_id TEXT,
-      post_error TEXT,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-      CONSTRAINT squig_survival_image_approval_notifications_status_check
-        CHECK (post_status IN ('pending', 'processing', 'posted', 'failed'))
-    );
-  `);
-  await pool.query(`
-    CREATE INDEX IF NOT EXISTS idx_squig_survival_image_approval_notifications_status
-      ON squig_survival_image_approval_notifications (post_status, approved_at ASC);
-  `);
-  await pool.query(`
-    ALTER TABLE squig_survival_image_approval_notifications
-    ADD COLUMN IF NOT EXISTS prompt_text TEXT;
-  `);
-
-  log("Database ready.");
+  log("Database reachable and required tables present.");
 }
 
 async function createPendingSubmission(input) {
@@ -174,7 +104,9 @@ async function listPendingSubmissions() {
       reward_points,
       submitted_at,
       reviewed_at,
-      reviewed_by
+      reviewed_by,
+      decline_reason,
+      row_version
     FROM squig_survival_image_submissions
     WHERE status = 'pending'
     ORDER BY submitted_at ASC
@@ -202,7 +134,9 @@ async function listApprovedSubmissions() {
       reward_points,
       submitted_at,
       reviewed_at,
-      reviewed_by
+      reviewed_by,
+      decline_reason,
+      row_version
     FROM squig_survival_image_submissions
     WHERE status = 'approved'
     ORDER BY reviewed_at DESC NULLS LAST, submitted_at DESC
@@ -231,7 +165,9 @@ async function listSubmissionsForUser(discordUserId) {
         reward_points,
         submitted_at,
         reviewed_at,
-        reviewed_by
+        reviewed_by,
+        decline_reason,
+        row_version
       FROM squig_survival_image_submissions
       WHERE discord_user_id = $1
       ORDER BY
@@ -368,11 +304,34 @@ async function approveSubmission({
             nft_used_type = $4,
             nft_used_text = $5,
             reviewed_at = now(),
-            reviewed_by = $3
+            reviewed_by = $3,
+            row_version = row_version + 1
         WHERE id = $1
         RETURNING id, reviewed_at, discord_user_id
       `,
       [submissionId, rewardPoints, reviewedBy, resolvedNftUsedType, resolvedNftUsedText]
+    );
+
+    await client.query(
+      `
+        INSERT INTO squig_survival_image_moderation_audit (
+          submission_id,
+          action,
+          actor_display_snapshot,
+          after_json,
+          outcome
+        )
+        VALUES ($1, 'approve', $2, to_jsonb($3::json), 'success')
+      `,
+      [
+        submissionId,
+        reviewedBy,
+        JSON.stringify({
+          discordUserId: resolvedDiscordUserId,
+          eraKey: resolvedEraKey,
+          rewardPoints,
+        }),
+      ]
     );
 
     await client.query("COMMIT");
@@ -385,15 +344,33 @@ async function approveSubmission({
   }
 }
 
-async function declineSubmission({ submissionId, reviewedBy }) {
+async function declineSubmission({ submissionId, reviewedBy, reason }) {
   const result = await pool.query(
     `
-      UPDATE squig_survival_image_submissions
-      SET status = 'declined', reviewed_at = now(), reviewed_by = $2
-      WHERE id = $1 AND status = 'pending'
-      RETURNING id, reviewed_at
+      WITH updated AS (
+        UPDATE squig_survival_image_submissions
+        SET status = 'declined',
+            reviewed_at = now(),
+            reviewed_by = $2,
+            decline_reason = $3,
+            row_version = row_version + 1
+        WHERE id = $1 AND status = 'pending'
+        RETURNING id, reviewed_at
+      ),
+      audit AS (
+        INSERT INTO squig_survival_image_moderation_audit (
+          submission_id,
+          action,
+          actor_display_snapshot,
+          reason,
+          outcome
+        )
+        SELECT id, 'decline', $2, $3, 'success'
+        FROM updated
+      )
+      SELECT * FROM updated
     `,
-    [submissionId, reviewedBy]
+    [submissionId, reviewedBy, reason]
   );
 
   if (!result.rows[0]) {
@@ -483,7 +460,8 @@ async function updateApprovedSubmission({
             nft_used_type = $7,
             nft_used_text = $8,
             reviewed_at = now(),
-            reviewed_by = $9
+            reviewed_by = $9,
+            row_version = row_version + 1
         WHERE id = $1
         RETURNING id, reviewed_at
       `,
@@ -497,6 +475,28 @@ async function updateApprovedSubmission({
         resolvedNftUsedType,
         resolvedNftUsedText,
         reviewedBy,
+      ]
+    );
+
+    await client.query(
+      `
+        INSERT INTO squig_survival_image_moderation_audit (
+          submission_id,
+          action,
+          actor_display_snapshot,
+          after_json,
+          outcome
+        )
+        VALUES ($1, 'update-approved', $2, to_jsonb($3::json), 'success')
+      `,
+      [
+        submissionId,
+        reviewedBy,
+        JSON.stringify({
+          discordUserId: resolvedDiscordUserId,
+          eraKey: resolvedEraKey,
+          rewardPoints,
+        }),
       ]
     );
 

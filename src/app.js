@@ -32,13 +32,16 @@ const {
   parseRewardPoints,
   parseOptionalDiscordUserId,
   parseOptionalText,
+  assertCollectionAllowedForEra,
 } = require("./validation");
+const { PROJECT_LINKS } = require("./links");
+const crypto = require("crypto");
 
 function createApp() {
   validateConfig();
 
   const app = express();
-  app.set("trust proxy", 1);
+  app.set("trust proxy", config.trustedProxy);
   app.set("view engine", "ejs");
   app.set("views", path.join(__dirname, "..", "views"));
 
@@ -46,7 +49,7 @@ function createApp() {
   app.use(express.static(path.join(__dirname, "..", "public")));
   app.use(
     session({
-      store: new pgSession({ pool, tableName: "session", createTableIfMissing: true }),
+      store: new pgSession({ pool, tableName: config.sessionTable, createTableIfMissing: false }),
       name: "squig.submit.sid",
       secret: config.sessionSecret,
       resave: false,
@@ -62,12 +65,62 @@ function createApp() {
   );
 
   app.use((req, res, next) => {
+    req.id = req.headers["x-request-id"] || crypto.randomUUID();
+    res.setHeader("X-Request-Id", req.id);
+    next();
+  });
+
+  app.use((req, res, next) => {
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+    res.setHeader("X-Frame-Options", "DENY");
+    res.setHeader(
+      "Content-Security-Policy",
+      "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+    );
+    next();
+  });
+
+  app.use((req, res, next) => {
+    res.locals.links = PROJECT_LINKS;
     res.locals.currentPath = req.path;
     res.locals.user = req.session.user || null;
     res.locals.isAdmin = Boolean(req.session.user && config.adminDiscordIds.has(req.session.user.id));
     res.locals.flash = req.session.flash || null;
     delete req.session.flash;
     next();
+  });
+
+  app.use((req, res, next) => {
+    if (!req.session.csrfToken) req.session.csrfToken = crypto.randomBytes(32).toString("hex");
+    res.locals.csrfToken = req.session.csrfToken;
+    next();
+  });
+
+  function requireVerifiedFormRequest(req, res, next) {
+    if (["GET", "HEAD", "OPTIONS"].includes(req.method)) return next();
+    const expectedOrigin = new URL(config.publicBaseUrl).origin;
+    const actualOrigin = req.get("origin");
+    if (actualOrigin && actualOrigin !== expectedOrigin) {
+      return res.status(403).render("error", {
+        title: "Request blocked",
+        message: "This form request could not be verified.",
+        requestId: req.id,
+      });
+    }
+    if (req.body?._csrf !== req.session.csrfToken) {
+      return res.status(403).render("error", {
+        title: "Request blocked",
+        message: "This form request expired. Please refresh and try again.",
+        requestId: req.id,
+      });
+    }
+    next();
+  }
+
+  app.use((req, res, next) => {
+    if (req.is("multipart/form-data")) return next();
+    return requireVerifiedFormRequest(req, res, next);
   });
 
   function setFlash(req, type, message) {
@@ -108,7 +161,21 @@ function createApp() {
   }
 
   app.get("/", (req, res) => {
-    res.render("home", { title: "Squig Creator Portal" });
+    res.render("home", { title: "Squigs Reloaded Creator Portal", eras: SURVIVAL_ERAS });
+  });
+
+  app.get("/health/live", (req, res) => {
+    res.json({ status: "ok", requestId: req.id });
+  });
+
+  app.get("/health/ready", async (req, res, next) => {
+    try {
+      await pool.query("SELECT 1");
+      res.json({ status: "ready", requestId: req.id });
+    } catch (error) {
+      error.statusCode = 503;
+      next(error);
+    }
   });
 
   app.get("/auth/discord", (req, res) => {
@@ -139,6 +206,7 @@ function createApp() {
         displayName: discordUser.global_name || discordUser.username,
         avatar: discordUser.avatar,
         isGuildMember,
+        membershipCheckedAt: new Date().toISOString(),
       };
 
       if (!isGuildMember) return res.redirect("/submit");
@@ -175,7 +243,7 @@ function createApp() {
     }
   });
 
-  app.post("/submit", requireVerifiedMember, upload.array("images", maxFilesPerSubmission), async (req, res, next) => {
+  app.post("/submit", requireVerifiedMember, upload.array("images", maxFilesPerSubmission), requireVerifiedFormRequest, async (req, res, next) => {
     try {
       const eraKey = String(req.body.era_key || "").trim();
       const promptText = parseOptionalText(req.body.prompt_text, "Prompt", 4000);
@@ -185,6 +253,7 @@ function createApp() {
         throw new Error("Please tell us which NFT was used when selecting Other.");
       }
       if (!validateEraKey(eraKey)) throw new Error("Please choose a valid era.");
+      assertCollectionAllowedForEra(nftUsedType, eraKey);
       if (!req.files?.length) throw new Error("Please attach at least one image before submitting.");
 
       for (const file of req.files) {
@@ -243,6 +312,7 @@ function createApp() {
         throw new Error("Please add the NFT used when selecting Other.");
       }
       if (!validateEraKey(overrideEraKey)) throw new Error("Please choose a valid era for approval.");
+      assertCollectionAllowedForEra(overrideNftUsedType, overrideEraKey);
       const reviewedBy = `${req.session.user.username} (${req.session.user.id})`;
       await approveSubmission({
         submissionId,
@@ -266,8 +336,10 @@ function createApp() {
     try {
       const submissionId = Number(req.params.id);
       if (!Number.isInteger(submissionId) || submissionId <= 0) throw new Error("Invalid submission id.");
+      const reason = parseOptionalText(req.body.reason, "Decline reason", 500);
+      if (!reason) throw new Error("Decline reason is required.");
       const reviewedBy = `${req.session.user.username} (${req.session.user.id})`;
-      await declineSubmission({ submissionId, reviewedBy });
+      await declineSubmission({ submissionId, reviewedBy, reason });
       setFlash(req, "success", "Submission declined.");
       res.redirect("/admin");
     } catch (error) {
@@ -290,6 +362,7 @@ function createApp() {
         throw new Error("Please add the NFT used when selecting Other.");
       }
       if (!validateEraKey(overrideEraKey)) throw new Error("Please choose a valid era.");
+      assertCollectionAllowedForEra(overrideNftUsedType, overrideEraKey);
       const reviewedBy = `${req.session.user.username} (${req.session.user.id})`;
       await updateApprovedSubmission({
         submissionId,
@@ -309,6 +382,14 @@ function createApp() {
     }
   });
 
+  app.use((req, res) => {
+    res.status(404).render("error", {
+      title: "Page not found",
+      message: "That page does not exist.",
+      requestId: req.id,
+    });
+  });
+
   app.use((err, req, res, next) => {
     if (err?.code === "LIMIT_FILE_SIZE") {
       err.message = `File is too large. Max size is ${config.maxUploadMb} MB.`;
@@ -317,11 +398,12 @@ function createApp() {
       err.message = `You can upload up to ${maxFilesPerSubmission} images at once.`;
     }
 
-    console.error(err);
+    console.error(JSON.stringify({ level: "error", requestId: req.id, message: err?.message, stack: config.isProduction ? undefined : err?.stack }));
     const status = err.statusCode || 500;
     res.status(status).render("error", {
       title: "Something went wrong",
-      message: err.message || "Unexpected error.",
+      message: config.isProduction && status >= 500 ? "Unexpected error. Please share the request ID with support." : err.message || "Unexpected error.",
+      requestId: req.id,
     });
   });
 

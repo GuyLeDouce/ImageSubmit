@@ -4,42 +4,36 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title><%= title %> | Squig Survival</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Playpen+Sans:wght@400;500;600;700;800&display=swap"
-      rel="stylesheet"
-    />
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body class="<%= currentPath === '/' ? 'home-page' : '' %>">
+    <a class="skip-link" href="#main-content">Skip to content</a>
     <div class="page-shell">
       <header class="topbar">
         <div class="topbar-brand">
           <a
             class="logo-button"
-            href="https://squigs.io"
-            target="_blank"
-            rel="noreferrer"
-            aria-label="Open Squigs website"
+            href="/"
+            aria-label="Squigs Reloaded Creator Portal home"
           >
             <img src="/squigs-logo-full.png" alt="Squigs logo" />
           </a>
           <div class="brand-copy">
-            <a class="brand-kicker" href="/">Squig Survival</a>
-            <a class="brand" href="/">Image Submission Portal</a>
+            <a class="brand-kicker" href="/">Squigs Reloaded</a>
+            <a class="brand" href="/">Creator Portal</a>
           </div>
         </div>
 
         <nav class="nav">
           <div class="nav-links">
-            <a href="https://bueno.art/squigs/mint" target="_blank" rel="noreferrer">Mint a Squig</a>
+            <a href="<%= links.openSea %>" target="_blank" rel="noreferrer">Explore Reloaded</a>
             <% if (user) { %>
               <a href="/submit">Submit</a>
               <% if (isAdmin) { %>
                 <a href="/admin">Admin</a>
               <% } %>
               <form action="/logout" method="post" class="inline-form">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
                 <button type="submit" class="link-button">Log out</button>
               </form>
             <% } else { %>
@@ -50,21 +44,21 @@
           <div class="social-links" aria-label="Squigs links">
             <a
               class="social-button"
-              href="https://squigs.io/discord"
+              href="<%= links.discord %>"
               target="_blank"
               rel="noreferrer"
               aria-label="Open Squigs Discord"
             >
-              <img src="https://i.imgur.com/1gXY4wm.png" alt="Discord logo" />
+              <span aria-hidden="true">D</span>
             </a>
             <a
               class="social-button"
-              href="https://x.com/SquigsNFT"
+              href="<%= links.x %>"
               target="_blank"
               rel="noreferrer"
               aria-label="Open Squigs on X"
             >
-              <img src="https://i.imgur.com/miO8HjA.png" alt="X logo" />
+              <span aria-hidden="true">X</span>
             </a>
           </div>
         </nav>
@@ -74,4 +68,4 @@
         <div class="flash flash-<%= flash.type %>"><%= flash.message %></div>
       <% } %>
 
-      <main class="main-card">
+      <main class="main-card" id="main-content">

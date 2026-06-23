@@ -1,168 +1,55 @@
 <%- include("partials/header") %>
 
-<%
-  const eraGuides = [
-    {
-      title: "Day One",
-      summary: "The moment Squigs arrive and immediately start misunderstanding everything.",
-      coreVibe: "New to Earth. Confident. Completely wrong.",
-      collectionRule: "Squigs only. Other collections submitted for this era will not be approved.",
-      whatToShow: [
-        "Attempting normal human tasks incorrectly like walking, eating, working, or interacting",
-        "Clumsy mistakes leading to accidents, harm, or death",
-        "Misusing everyday objects such as tools, doors, chairs, or vehicles",
-        "Confusion, poor judgment, and preventable failures",
-      ],
-    },
-    {
-      title: "Office Squigs",
-      summary: "Squigs trying to survive corporate life with zero understanding of how it works.",
-      coreVibe: "They got hired. That was the first mistake.",
-      collectionRule: "Squigs only. Other collections submitted for this era will not be approved.",
-      whatToShow: [
-        "Desk chaos, broken computers, spilled coffee, and ruined meetings",
-        "Misusing office tools and making obviously bad workplace decisions",
-        "Awkward coworker interactions, burnout, and corporate satire",
-        "\"I have no idea what my job is\" energy",
-      ],
-    },
-    {
-      title: "Jobsite Squigs",
-      summary: "Squigs on a construction site making avoidable, dangerous mistakes.",
-      coreVibe: "This could have been avoided.",
-      collectionRule: "Squigs only. Other collections submitted for this era will not be approved.",
-      whatToShow: [
-        "Slipping, tripping, dropping tools, and unsafe behavior",
-        "Chain-reaction accidents with ladders, materials, or equipment",
-        "Mid-accident scenes where the fault is obvious",
-        "Preventable, chaotic failures instead of controlled action",
-      ],
-    },
-    {
-      title: "Movie Theater",
-      summary: "Squigs in public completely misunderstanding social norms.",
-      coreVibe: "Why is everyone mad at me?",
-      collectionRule: "Squigs and other collections are both allowed here.",
-      whatToShow: [
-        "Causing disruptions, getting kicked out, or reacting like the screen is real",
-        "Yelling, throwing things, popcorn chaos, and crowd reactions",
-        "Social awkwardness pushed into full chaos",
-        "Public embarrassment that escalates fast",
-      ],
-    },
-    {
-      title: "Airport",
-      summary: "Travel chaos caused by Squigs not understanding how anything works.",
-      coreVibe: "This was definitely their fault.",
-      collectionRule: "Squigs and other collections are both allowed here.",
-      whatToShow: [
-        "Security line disasters, luggage problems, and terminal confusion",
-        "Missing flights, running late, and avoidable urgency",
-        "\"My flight got delayed because...\" scenarios",
-        "Misusing airport systems or ignoring obvious rules",
-      ],
-    },
-    {
-      title: "Zombie Apocalypse",
-      summary: "End-of-the-world survival or a total failure to survive.",
-      coreVibe: "Survive... if they can figure it out.",
-      collectionRule: "Squigs and other collections are both allowed here.",
-      whatToShow: [
-        "Fighting, running from, or hiding from zombies",
-        "Improvised weapons and chaotic survival tactics",
-        "Overwhelming danger, destruction, and unstable decisions",
-        "Heroic attempts mixed with instant bad judgment",
-      ],
-    },
-    {
-      title: "!revive Success",
-      summary: "A successful revival where the character comes back, but not always perfectly.",
-      coreVibe: "Back... but something's off.",
-      collectionRule: "Squigs and other collections are both allowed here.",
-      whatToShow: [
-        "Sudden revival, popping back up, and strong energy effects",
-        "Glow, power surges, and unstable recovery moments",
-        "\"I shouldn't be alive but I am\" energy",
-        "Triumphant, weird, or unexpected returns",
-      ],
-    },
-    {
-      title: "!revive Failed",
-      summary: "A failed attempt to bring someone back.",
-      coreVibe: "This was never going to work.",
-      collectionRule: "Squigs and other collections are both allowed here.",
-      whatToShow: [
-        "Incorrect methods, bad tools, and the wrong approach",
-        "Subtle realization that the revival did not work",
-        "Malfunctioning equipment, weak energy, and broken setups",
-        "Serious tone or dark humor driven by poor planning and human error",
-      ],
-    },
-  ];
-%>
-
 <section class="creator-hero">
   <div class="creator-hero__backdrop"></div>
   <div class="creator-hero__content">
     <div class="creator-hero__copy">
-      <h1>Squig Creator portal</h1>
-      <p class="creator-hero__tagline">Where chaos becomes canon.</p>
+      <h1>Squigs Reloaded Creator Portal</h1>
+      <p class="creator-hero__tagline">Create chaos. Submit with Discord. Earn $CHARM when approved artwork is used.</p>
       <p class="lead">
-        The Squig Creator Portal is where community creations become part of Squig Survival
-        &mdash; the live Discord game where player-submitted art can appear as real moments,
-        outcomes, revives, failures, and event scenes inside the game itself.
-      </p>
-      <p class="lead creator-hero__support">
-        Your creations do not just sit in a gallery.<br />
-        They get used.
+        Build Squig Survival moments for the live Ugly Labs game pool. The team reviews every image for era fit,
+        collection eligibility, quality, and safety before it reaches The Gauntlet.
       </p>
       <div class="actions creator-hero__actions">
         <% if (!user) { %>
-          <a class="button" href="/auth/discord">Login with Discord</a>
+          <a class="button" href="/auth/discord">Log in with Discord</a>
         <% } else if (user.isGuildMember) { %>
-          <a class="button" href="/submit">Open Submission Form</a>
+          <a class="button" href="/submit">Submit an image</a>
         <% } else { %>
-          <a class="button" href="https://squigs.io/discord" target="_blank" rel="noreferrer">Join Ugly Labs Discord</a>
+          <a class="button" href="<%= links.discord %>" target="_blank" rel="noreferrer">Join the Discord</a>
         <% } %>
-        <a class="button secondary" href="https://bueno.art/squigs/mint" target="_blank" rel="noreferrer">Mint a Squig</a>
-        <a class="button secondary" href="#how-it-works">See How It Works</a>
-      </div>
-      <div class="creator-hero__microcopy">
-        Discord access is available from the link icon above.
+        <a class="button secondary" href="<%= links.openSea %>" target="_blank" rel="noreferrer">Explore Squigs Reloaded</a>
+        <a class="button secondary" href="#era-guide">View era guide</a>
       </div>
       <div class="creator-hero__meta">
-        <span>Automatic rewards for connected creators</span>
-        <span>Any NFT collection accepted</span>
-        <span>Higher rewards for Squigs</span>
+        <span>Discord-gated submissions</span>
+        <span>Era-specific eligibility</span>
+        <span>Approval queue preserved</span>
       </div>
     </div>
 
     <aside class="creator-sidecard">
       <% if (!user) { %>
         <h2>Submit into the live game pool</h2>
-        <p class="muted">
-          Sign in with Discord, submit your image, and the team will review it for quality, creativity, and fit.
-        </p>
+        <p class="muted">Sign in with Discord, upload your image, and track review status from your creator history.</p>
         <div class="actions">
-          <a class="button" href="/auth/discord">Login with Discord</a>
-          <a class="button secondary" href="https://bueno.art/squigs/mint" target="_blank" rel="noreferrer">Mint a Squig</a>
-          <a class="button secondary" href="https://squigs.io/discord" target="_blank" rel="noreferrer">Join Discord</a>
+          <a class="button" href="/auth/discord">Log in</a>
+          <a class="button secondary" href="<%= links.discord %>" target="_blank" rel="noreferrer">Join Discord</a>
         </div>
       <% } else { %>
-        <h2><%= user.isGuildMember ? "You are ready to create." : "Join the ecosystem to submit." %></h2>
+        <h2><%= user.isGuildMember ? "You are ready to create." : "Discord membership required." %></h2>
         <div class="creator-status">
           <p><strong>Account:</strong> <%= user.username %></p>
           <p><strong>Membership:</strong> <%= user.isGuildMember ? "Verified" : "Not verified" %></p>
         </div>
         <div class="actions">
           <% if (user.isGuildMember) { %>
-            <a class="button" href="/submit">Go to submission form</a>
+            <a class="button" href="/submit">Open submissions</a>
           <% } else { %>
-            <a class="button" href="https://squigs.io/discord" target="_blank" rel="noreferrer">Join the Discord server</a>
+            <a class="button" href="<%= links.discord %>" target="_blank" rel="noreferrer">Join Discord</a>
           <% } %>
-          <a class="button secondary" href="https://bueno.art/squigs/mint" target="_blank" rel="noreferrer">Mint a Squig</a>
           <% if (isAdmin) { %>
-            <a class="button secondary" href="/admin">Open admin review</a>
+            <a class="button secondary" href="/admin">Open admin</a>
           <% } %>
         </div>
       <% } %>
@@ -170,77 +57,38 @@
   </div>
 </section>
 
-<section class="creator-section creator-section--intro">
-  <div class="creator-section__heading">
-    <p class="eyebrow">What Is This?</p>
-    <h2>The submission system behind live Squig Survival moments.</h2>
-  </div>
-  <div class="creator-copy">
-    <p>
-      The Squig Creator Portal is a community-powered submission system built for Squig Survival.
-    </p>
-    <p>
-      Creators can submit images based on specific eras, outcomes, and game moments. Once approved, those
-      creations are added directly into the live game pool, where they can appear during gameplay inside
-      the Ugly Labs Discord.
-    </p>
-    <p>
-      This means your art becomes part of the game experience itself &mdash; not just something people look
-      at, but something players encounter live while playing.
-    </p>
-  </div>
-</section>
-
 <section class="creator-section" id="how-it-works">
   <div class="creator-section__heading">
     <p class="eyebrow">How It Works</p>
-    <h2>Simple submission flow, direct in-game impact.</h2>
+    <h2>Create, submit, review, reward.</h2>
   </div>
   <ol class="creator-steps">
-    <li>Connect with Discord and submit your creation.</li>
-    <li>Choose the era or game moment your image is meant for.</li>
-    <li>Optionally include your prompt to help inspire other creators.</li>
-    <li>Our team reviews submissions for quality, creativity, and fit.</li>
-    <li>Approved creations are added into the Squig Survival game pool.</li>
-    <li>When your image appears in a live game, it becomes part of the action.</li>
+    <li>Connect with Discord and confirm Ugly Labs membership.</li>
+    <li>Choose the exact Squig Survival era your image belongs to.</li>
+    <li>Upload JPG, PNG, WebP, or GIF artwork with optional prompt context.</li>
+    <li>Admins approve, decline, or reconcile the submission.</li>
+    <li>Approved rows are inserted into The Gauntlet-compatible live table and notification queue.</li>
   </ol>
 </section>
 
 <section class="creator-section" id="era-guide">
   <div class="creator-section__heading">
     <p class="eyebrow">Era Guide</p>
-    <h2>What the team is looking for in each era.</h2>
-    <p class="muted">
-      Stay inside the era theme, lean into the failure or survival beat, and make the image feel like a real
-      moment from Squig Survival rather than a generic character portrait.
-    </p>
-    <p class="muted">
-      <strong>Important:</strong> <strong>Day One</strong>, <strong>Office Squigs</strong>, and
-      <strong>Jobsite Squigs</strong> are <strong>Squigs-only</strong> eras. Other collections submitted for those
-      eras will not be approved.
-    </p>
+    <h2>Rules generated from the same domain model used by validation.</h2>
+    <p class="muted">Day One, Office Squigs, and Jobsite Squigs are Squigs Reloaded only. The other active eras currently allow Squigs Reloaded plus other collections.</p>
   </div>
   <div class="era-guide">
-    <% eraGuides.forEach((era) => { %>
+    <% eras.forEach((era) => { %>
       <article class="panel era-card">
         <div class="era-card__top">
           <p class="era-card__label">Era</p>
-          <h3><%= era.title %></h3>
+          <h3><%= era.label %></h3>
         </div>
         <p class="era-card__summary"><%= era.summary %></p>
-        <p class="era-card__rule"><%= era.collectionRule %></p>
-        <div class="era-card__section">
-          <p class="era-card__heading">What to aim for</p>
-          <ul class="era-card__list">
-            <% era.whatToShow.forEach((item) => { %>
-              <li><%= item %></li>
-            <% }) %>
-          </ul>
-        </div>
-        <div class="era-card__vibe">
-          <span>Core vibe</span>
-          <strong><%= era.coreVibe %></strong>
-        </div>
+        <p class="era-card__rule">
+          <%= era.allowedCollectionTypes.includes("other") ? "Squigs Reloaded + other collections" : "Squigs Reloaded only" %>
+        </p>
+        <p class="muted"><%= era.guidance %></p>
       </article>
     <% }) %>
   </div>
@@ -248,89 +96,53 @@
 
 <section class="creator-section">
   <div class="creator-section__heading">
-    <p class="eyebrow">Rewards</p>
-    <h2>Clear rates. Automatic creator rewards.</h2>
-    <p class="muted">
-      Creators are rewarded automatically when their approved creations are used in Squig Survival, as long
-      as they are properly connected in the Ugly Labs Discord ecosystem.
-    </p>
+    <p class="eyebrow">Reward Guide</p>
+    <h2>Defaults stay tied to era and collection eligibility.</h2>
   </div>
   <div class="creator-rewards">
     <article class="panel creator-reward creator-reward--featured">
-      <p class="creator-reward__label">Squigs creations</p>
+      <p class="creator-reward__label">Standard Squigs Reloaded</p>
       <p class="creator-reward__amount">150 <span>$CHARM</span></p>
-      <p class="muted">Highest reward tier for creations built from the Squigs collection.</p>
+      <p class="muted">Applies to non-revive eras that accept Squigs Reloaded.</p>
     </article>
     <article class="panel creator-reward">
-      <p class="creator-reward__label">Other collections</p>
+      <p class="creator-reward__label">Standard other collection</p>
       <p class="creator-reward__amount">100 <span>$CHARM</span></p>
-      <p class="muted">Open to any NFT collection, with a solid baseline reward for approved work.</p>
+      <p class="muted">Only available in eras that explicitly allow other collections.</p>
     </article>
   </div>
-  <p class="muted">
-    Special case for <strong>!revive Success</strong> and <strong>!revive Failed</strong>:
-    Squigs defaults to <strong>20 $CHARM</strong> and other collections default to <strong>10 $CHARM</strong>.
-  </p>
+  <p class="muted">Revive eras default to 20 $CHARM for Squigs Reloaded and 10 $CHARM for other allowed collections.</p>
 </section>
 
 <section class="creator-section">
   <div class="creator-section__heading">
-    <p class="eyebrow">Where Your Creations Appear</p>
-    <h2>Used across the live game, not parked in a gallery.</h2>
+    <p class="eyebrow">Submission Checklist</p>
+    <h2>What helps an image survive review.</h2>
   </div>
   <ul class="creator-tags">
-    <li>survival events</li>
-    <li>eliminations</li>
-    <li>milestones</li>
-    <li>lore moments</li>
-    <li>!revive Success</li>
-    <li>!revive Failed</li>
+    <li>matches the chosen era</li>
+    <li>uses an allowed collection type</li>
+    <li>reads clearly at game size</li>
+    <li>avoids generic portraits</li>
+    <li>includes prompt context when useful</li>
   </ul>
-  <article class="creator-callout">
-    These are not static gallery uploads. They are active parts of the game.
-  </article>
-</section>
-
-<section class="creator-section">
-  <div class="creator-section__heading">
-    <p class="eyebrow">Why It Matters</p>
-    <h2>Community creativity actively expands the game world.</h2>
-  </div>
-  <div class="creator-copy">
-    <p>Squig Survival is not just a game people play. It is something the community helps build.</p>
-    <p>
-      Every approved creation expands the world, adds more variety to the experience, and gives creators a real
-      way to contribute to the game while being rewarded for it.
-    </p>
-    <p>
-      The result is a system where creativity, gameplay, and community all feed into each other.
-    </p>
-  </div>
 </section>
 
 <section class="creator-cta">
   <div class="creator-section__heading">
-    <p class="eyebrow">Final CTA</p>
-    <h2>Ready to create something weird, cinematic, chaotic, or unforgettable?</h2>
+    <p class="eyebrow">Community</p>
+    <h2>Browse Reloaded, join Discord, and keep the chaos moving.</h2>
   </div>
-  <p class="lead">
-    Submit your creation, get it approved, watch it appear in-game, and earn rewards when it gets used.
-  </p>
-  <p class="lead creator-cta__closing">
-    The portal is open.<br />
-    The game is live.<br />
-    And the Squigs are watching.
-  </p>
   <div class="actions">
     <% if (!user) { %>
-      <a class="button" href="/auth/discord">Login with Discord</a>
+      <a class="button" href="/auth/discord">Log in with Discord</a>
     <% } else if (user.isGuildMember) { %>
-      <a class="button" href="/submit">Submit Your Creation</a>
+      <a class="button" href="/submit">Submit an image</a>
     <% } else { %>
-      <a class="button" href="https://squigs.io/discord" target="_blank" rel="noreferrer">Join Ugly Labs Discord</a>
+      <a class="button" href="<%= links.discord %>" target="_blank" rel="noreferrer">Join Discord</a>
     <% } %>
-    <a class="button secondary" href="https://bueno.art/squigs/mint" target="_blank" rel="noreferrer">Mint a Squig</a>
-    <a class="button secondary" href="https://squigs.io/discord" target="_blank" rel="noreferrer">Open Discord</a>
+    <a class="button secondary" href="<%= links.openSea %>" target="_blank" rel="noreferrer">View the collection on OpenSea</a>
+    <a class="button secondary" href="<%= links.discord %>" target="_blank" rel="noreferrer">Join the Discord</a>
   </div>
 </section>
 

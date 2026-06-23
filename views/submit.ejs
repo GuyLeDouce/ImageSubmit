@@ -28,12 +28,13 @@
     <% } %>
 
     <form action="/submit" method="post" enctype="multipart/form-data" class="stack-gap panel form-panel">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
       <label class="field">
         <span>Era</span>
         <select name="era_key" required>
           <option value="">Choose an era</option>
           <% eras.forEach((era) => { %>
-            <option value="<%= era.key %>"><%= era.label %></option>
+            <option value="<%= era.key %>" data-allowed-collections="<%= era.allowedCollectionTypes.join(',') %>"><%= era.label %></option>
           <% }) %>
         </select>
       </label>
@@ -47,7 +48,7 @@
       <label class="field">
         <span>NFT used</span>
         <select name="nft_used_type" data-nft-type-select required>
-          <option value="squigs" selected>Squigs</option>
+          <option value="squigs" selected>Squigs Reloaded</option>
           <option value="other">Other</option>
         </select>
       </label>
@@ -127,6 +128,12 @@
                         </dd>
                       </div>
                     <% } %>
+                    <% if (submission.status === "declined" && submission.decline_reason) { %>
+                      <div>
+                        <dt>Reason</dt>
+                        <dd><%= submission.decline_reason %></dd>
+                      </div>
+                    <% } %>
                   </dl>
 
                   <% if (submission.prompt_text) { %>
@@ -144,12 +151,18 @@
 
 <script>
   (() => {
+    const eraSelect = document.querySelector('select[name="era_key"]');
     const typeSelect = document.querySelector("[data-nft-type-select]");
     const otherField = document.querySelector("[data-nft-other-field]");
     const otherInput = document.querySelector("[data-nft-other-input]");
     if (!typeSelect || !otherField || !otherInput) return;
 
     const syncOtherField = () => {
+      const selectedEra = eraSelect?.selectedOptions?.[0];
+      const allowsOther = (selectedEra?.dataset.allowedCollections || "").split(",").includes("other");
+      const otherOption = typeSelect.querySelector('option[value="other"]');
+      if (otherOption) otherOption.disabled = Boolean(selectedEra && !allowsOther);
+      if (!allowsOther && typeSelect.value === "other") typeSelect.value = "squigs";
       const isOther = typeSelect.value === "other";
       otherField.classList.toggle("is-hidden", !isOther);
       otherInput.required = isOther;
@@ -157,6 +170,7 @@
     };
 
     typeSelect.addEventListener("change", syncOtherField);
+    eraSelect?.addEventListener("change", syncOtherField);
     syncOtherField();
   })();
 </script>

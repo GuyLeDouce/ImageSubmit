@@ -6,7 +6,10 @@
   "type": "commonjs",
   "scripts": {
     "start": "node src/app.js",
-    "dev": "node --watch src/app.js"
+    "dev": "node --watch src/app.js",
+    "test": "node --test",
+    "check:mint": "node scripts/check-mint-copy.js",
+    "db:preflight": "node scripts/db-preflight.js"
   },
   "engines": {
     "node": ">=18.0.0"

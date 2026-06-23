@@ -4,6 +4,9 @@
   <p class="eyebrow">Error</p>
   <h1><%= title %></h1>
   <p class="lead"><%= message %></p>
+  <% if (typeof requestId !== "undefined" && requestId) { %>
+    <p class="muted">Request ID: <code><%= requestId %></code></p>
+  <% } %>
   <div class="actions">
     <a class="button secondary" href="/">Back home</a>
   </div>
