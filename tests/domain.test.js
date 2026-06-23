@@ -55,3 +55,8 @@ test("centralizes canonical project links", () => {
   assert.ok(PROJECT_LINKS.x.startsWith("https://x.com/"));
   assert.ok(getEraByKey("day_one"));
 });
+
+test("only collection CTA destination resolves to Reloaded OpenSea collection", () => {
+  const collectionDestinations = Object.values(PROJECT_LINKS).filter((value) => value.includes("opensea.io"));
+  assert.deepEqual(collectionDestinations, ["https://opensea.io/collection/squigs-reloaded"]);
+});

@@ -33,7 +33,7 @@ test("approval insert preserves bot-facing live table columns", () => {
   }
   assert.match(dbSource, /INSERT INTO \$\{config\.liveImageTable\}/);
   assert.match(dbSource, /INSERT INTO squig_survival_image_approval_notifications/);
-  assert.match(dbSource, /SET status = 'approved'/);
+  assert.match(dbSource, /status = 'approved'/);
   assert.match(dbSource, /ROLLBACK/);
 });
 

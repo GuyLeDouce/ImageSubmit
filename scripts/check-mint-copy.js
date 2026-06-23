@@ -2,7 +2,11 @@ const fs = require("fs");
 const path = require("path");
 
 const root = path.join(__dirname, "..");
-const banned = [`bueno.art/${"squigs"}/mint`, `Mint a ${"Squig"}`];
+const banned = [
+  `bueno.art/${"squigs"}/mint`,
+  `Mint a ${"Squig"}`,
+  `Mint ${"now"}`,
+];
 const ignoredDirs = new Set([".git", "node_modules", "public/uploads"]);
 const ignoredExtensions = new Set([".png", ".jpg", ".jpeg", ".gif", ".webp", ".ico"]);
 
@@ -20,7 +24,7 @@ const violations = [];
 for (const filePath of walk(root)) {
   const content = fs.readFileSync(filePath, "utf8");
   for (const phrase of banned) {
-    if (content.includes(phrase)) {
+    if (content.toLowerCase().includes(phrase.toLowerCase())) {
       violations.push(`${path.relative(root, filePath)} contains banned phrase: ${phrase}`);
     }
   }

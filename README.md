@@ -88,6 +88,10 @@ Do not apply any live-table schema change without a preflight/reconciliation rep
 ## Checks
 
 ```bash
-npm test
+npm run test:all
 npm run check:mint
 ```
+
+Integration tests require a disposable PostgreSQL database in `TEST_DATABASE_URL`. The test harness refuses production-looking database names and never falls back to `DATABASE_URL`.
+
+Node.js 24 LTS is the target runtime for the rebuild. The current foundation still supports the existing Node 18+ baseline until the planned TypeScript/Express migration.

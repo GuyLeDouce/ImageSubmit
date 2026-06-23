@@ -36,14 +36,36 @@ const {
 } = require("./validation");
 const { PROJECT_LINKS } = require("./links");
 const crypto = require("crypto");
+const { ConflictError } = require("./errors");
 
 function createApp() {
   validateConfig();
 
   const app = express();
   app.set("trust proxy", config.trustedProxy);
+  app.disable("x-powered-by");
   app.set("view engine", "ejs");
   app.set("views", path.join(__dirname, "..", "views"));
+
+  app.use((req, res, next) => {
+    req.id = req.headers["x-request-id"] || crypto.randomUUID();
+    res.locals.cspNonce = crypto.randomBytes(16).toString("base64");
+    res.setHeader("X-Request-Id", req.id);
+    next();
+  });
+
+  app.get("/health/live", (req, res) => {
+    res.json({ status: "ok", requestId: req.id });
+  });
+
+  app.get("/health/ready", async (req, res) => {
+    try {
+      await pool.query("SELECT 1");
+      res.json({ status: "ready", components: { postgres: "ok" }, requestId: req.id });
+    } catch (error) {
+      res.status(503).json({ status: "not_ready", components: { postgres: "unavailable" }, requestId: req.id });
+    }
+  });
 
   app.use(express.urlencoded({ extended: false }));
   app.use(express.static(path.join(__dirname, "..", "public")));
@@ -65,18 +87,12 @@ function createApp() {
   );
 
   app.use((req, res, next) => {
-    req.id = req.headers["x-request-id"] || crypto.randomUUID();
-    res.setHeader("X-Request-Id", req.id);
-    next();
-  });
-
-  app.use((req, res, next) => {
     res.setHeader("X-Content-Type-Options", "nosniff");
     res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
     res.setHeader("X-Frame-Options", "DENY");
     res.setHeader(
       "Content-Security-Policy",
-      "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+      `default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self' 'nonce-${res.locals.cspNonce}'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'`
     );
     next();
   });
@@ -97,6 +113,23 @@ function createApp() {
     next();
   });
 
+  if (config.env === "test" && process.env.ENABLE_TEST_AUTH === "true") {
+    app.use((req, res, next) => {
+      const testUserId = req.get("x-test-user-id");
+      if (testUserId) {
+        req.session.user = {
+          id: testUserId,
+          username: req.get("x-test-username") || "test_admin",
+          displayName: req.get("x-test-display-name") || "Test Admin",
+          avatar: null,
+          isGuildMember: req.get("x-test-member") !== "false",
+          membershipCheckedAt: new Date().toISOString(),
+        };
+      }
+      next();
+    });
+  }
+
   function requireVerifiedFormRequest(req, res, next) {
     if (["GET", "HEAD", "OPTIONS"].includes(req.method)) return next();
     const expectedOrigin = new URL(config.publicBaseUrl).origin;
@@ -108,7 +141,8 @@ function createApp() {
         requestId: req.id,
       });
     }
-    if (req.body?._csrf !== req.session.csrfToken) {
+    const submittedToken = req.get("x-csrf-token") || req.body?._csrf;
+    if (submittedToken !== req.session.csrfToken) {
       return res.status(403).render("error", {
         title: "Request blocked",
         message: "This form request expired. Please refresh and try again.",
@@ -122,6 +156,18 @@ function createApp() {
     if (req.is("multipart/form-data")) return next();
     return requireVerifiedFormRequest(req, res, next);
   });
+
+  function requireMultipartHeaderCsrf(req, res, next) {
+    const submittedToken = req.get("x-csrf-token");
+    if (!submittedToken) {
+      return res.status(403).render("error", {
+        title: "Request blocked",
+        message: "This upload request expired. Please refresh and try again.",
+        requestId: req.id,
+      });
+    }
+    return requireVerifiedFormRequest(req, res, next);
+  }
 
   function setFlash(req, type, message) {
     req.session.flash = { type, message };
@@ -162,20 +208,6 @@ function createApp() {
 
   app.get("/", (req, res) => {
     res.render("home", { title: "Squigs Reloaded Creator Portal", eras: SURVIVAL_ERAS });
-  });
-
-  app.get("/health/live", (req, res) => {
-    res.json({ status: "ok", requestId: req.id });
-  });
-
-  app.get("/health/ready", async (req, res, next) => {
-    try {
-      await pool.query("SELECT 1");
-      res.json({ status: "ready", requestId: req.id });
-    } catch (error) {
-      error.statusCode = 503;
-      next(error);
-    }
   });
 
   app.get("/auth/discord", (req, res) => {
@@ -243,7 +275,7 @@ function createApp() {
     }
   });
 
-  app.post("/submit", requireVerifiedMember, upload.array("images", maxFilesPerSubmission), requireVerifiedFormRequest, async (req, res, next) => {
+  app.post("/submit", requireVerifiedMember, requireMultipartHeaderCsrf, upload.array("images", maxFilesPerSubmission), async (req, res, next) => {
     try {
       const eraKey = String(req.body.era_key || "").trim();
       const promptText = parseOptionalText(req.body.prompt_text, "Prompt", 4000);
@@ -302,6 +334,8 @@ function createApp() {
       const submissionId = Number(req.params.id);
       if (!Number.isInteger(submissionId) || submissionId <= 0) throw new Error("Invalid submission id.");
       const rewardPoints = parseRewardPoints(req.body.reward_points || "100");
+      const expectedRowVersion = Number(req.body.row_version);
+      if (!Number.isInteger(expectedRowVersion) || expectedRowVersion <= 0) throw new Error("Invalid row version.");
       const discordUserId = parseOptionalDiscordUserId(req.body.override_discord_user_id);
       const discordUsername = parseOptionalText(req.body.override_discord_username, "Discord username", 64);
       const discordDisplayName = parseOptionalText(req.body.override_discord_display_name, "Display name", 64);
@@ -324,6 +358,9 @@ function createApp() {
         overrideEraKey,
         overrideNftUsedType,
         overrideNftUsedText: overrideNftUsedType === "other" ? overrideNftUsedText : null,
+        expectedRowVersion,
+        actorDiscordId: req.session.user.id,
+        requestId: req.id,
       });
       setFlash(req, "success", "Submission approved and inserted into the live Squig Survival image table.");
       res.redirect("/admin");
@@ -337,9 +374,11 @@ function createApp() {
       const submissionId = Number(req.params.id);
       if (!Number.isInteger(submissionId) || submissionId <= 0) throw new Error("Invalid submission id.");
       const reason = parseOptionalText(req.body.reason, "Decline reason", 500);
+      const expectedRowVersion = Number(req.body.row_version);
+      if (!Number.isInteger(expectedRowVersion) || expectedRowVersion <= 0) throw new Error("Invalid row version.");
       if (!reason) throw new Error("Decline reason is required.");
       const reviewedBy = `${req.session.user.username} (${req.session.user.id})`;
-      await declineSubmission({ submissionId, reviewedBy, reason });
+      await declineSubmission({ submissionId, reviewedBy, reason, expectedRowVersion, actorDiscordId: req.session.user.id, requestId: req.id });
       setFlash(req, "success", "Submission declined.");
       res.redirect("/admin");
     } catch (error) {
@@ -352,6 +391,8 @@ function createApp() {
       const submissionId = Number(req.params.id);
       if (!Number.isInteger(submissionId) || submissionId <= 0) throw new Error("Invalid submission id.");
       const rewardPoints = parseRewardPoints(req.body.reward_points || "100");
+      const expectedRowVersion = Number(req.body.row_version);
+      if (!Number.isInteger(expectedRowVersion) || expectedRowVersion <= 0) throw new Error("Invalid row version.");
       const discordUserId = parseOptionalDiscordUserId(req.body.override_discord_user_id);
       const discordUsername = parseOptionalText(req.body.override_discord_username, "Discord username", 64);
       const discordDisplayName = parseOptionalText(req.body.override_discord_display_name, "Display name", 64);
@@ -374,6 +415,9 @@ function createApp() {
         overrideEraKey,
         overrideNftUsedType,
         overrideNftUsedText: overrideNftUsedType === "other" ? overrideNftUsedText : null,
+        expectedRowVersion,
+        actorDiscordId: req.session.user.id,
+        requestId: req.id,
       });
       setFlash(req, "success", "Approved image updated.");
       res.redirect("/admin");
@@ -401,7 +445,7 @@ function createApp() {
     console.error(JSON.stringify({ level: "error", requestId: req.id, message: err?.message, stack: config.isProduction ? undefined : err?.stack }));
     const status = err.statusCode || 500;
     res.status(status).render("error", {
-      title: "Something went wrong",
+      title: err instanceof ConflictError ? "Stale review" : "Something went wrong",
       message: config.isProduction && status >= 500 ? "Unexpected error. Please share the request ID with support." : err.message || "Unexpected error.",
       requestId: req.id,
     });
