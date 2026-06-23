@@ -18,11 +18,11 @@
 body {
   margin: 0;
   min-height: 100vh;
-  font-family: "Playpen Sans", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   color: var(--ink);
   background:
+    radial-gradient(circle at 18% 12%, rgba(255, 225, 105, 0.34), transparent 22%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(185, 217, 236, 0.78)),
-    url("https://i.imgur.com/qJdq3ad.png") center/cover fixed no-repeat,
     var(--bg);
 }
 img { max-width: 100%; display: block; }
@@ -38,6 +38,26 @@ body::before {
     linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(173, 208, 230, 0.28));
 }
 .page-shell { max-width: 1180px; margin: 0 auto; padding: 28px 24px 48px; position: relative; }
+.skip-link {
+  position: absolute;
+  left: 16px;
+  top: 12px;
+  z-index: 10;
+  transform: translateY(-150%);
+  padding: 10px 14px;
+  background: var(--ink);
+  color: #fff;
+  border-radius: 10px;
+}
+.skip-link:focus { transform: translateY(0); }
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid #1677ff;
+  outline-offset: 3px;
+}
 .topbar {
   display: flex;
   justify-content: space-between;
@@ -438,9 +458,31 @@ dd { margin: 0; overflow-wrap: anywhere; }
   overflow: hidden;
   border: 1px solid rgba(37, 39, 44, 0.08);
   background:
-    linear-gradient(110deg, rgba(255, 255, 255, 0.72) 8%, rgba(248, 251, 255, 0.54) 48%, rgba(238, 246, 252, 0.7) 100%),
-    url("https://i.imgur.com/qJdq3ad.png") center center / cover no-repeat;
+    radial-gradient(circle at 78% 18%, rgba(21, 129, 255, 0.2), transparent 22%),
+    linear-gradient(110deg, rgba(255, 255, 255, 0.72) 8%, rgba(248, 251, 255, 0.54) 48%, rgba(238, 246, 252, 0.7) 100%);
   box-shadow: 0 22px 46px rgba(64, 93, 118, 0.14);
+}
+.site-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+  padding: 18px 4px 0;
+  color: var(--muted);
+}
+.site-footer nav {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 .creator-hero__backdrop {
   position: absolute;

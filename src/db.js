@@ -1,5 +1,6 @@
 const { Pool } = require("pg");
 const { config, getSSL } = require("./config");
+const { ConflictError, SafeStartupError } = require("./errors");
 
 function log(...args) {
   console.log("[SUBMISSION-DB]", ...args);
@@ -28,92 +29,28 @@ async function initDb() {
   );
 
   if (!liveTableCheck.rows[0]?.table_name) {
-    throw new Error(
-      `Live image table '${config.liveImageTable}' was not found. Point this app at the same Postgres database used by The Gauntlet.`
+    throw new SafeStartupError(
+      `Live image table '${config.liveImageTable}' was not found. Run reviewed migrations before starting the app.`
     );
   }
-  await pool.query(`
-    ALTER TABLE ${config.liveImageTable}
-    ADD COLUMN IF NOT EXISTS prompt_text TEXT;
-  `);
+  for (const tableName of [
+    "squig_survival_image_submissions",
+    "squig_survival_image_approval_notifications",
+    config.sessionTable,
+  ]) {
+    const tableCheck = await pool.query("SELECT to_regclass($1) AS table_name", [tableName]);
+    if (!tableCheck.rows[0]?.table_name) {
+      throw new SafeStartupError(`Required table '${tableName}' was not found. Run reviewed migrations before starting the app.`);
+    }
+  }
 
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS squig_survival_image_submissions (
-      id BIGSERIAL PRIMARY KEY,
-      discord_user_id TEXT NOT NULL,
-      discord_username TEXT NOT NULL,
-      discord_display_name TEXT,
-      era_key TEXT NOT NULL,
-      prompt_text TEXT,
-      nft_used_type TEXT NOT NULL DEFAULT 'squigs',
-      nft_used_text TEXT,
-      image_url TEXT NOT NULL,
-      storage_key TEXT,
-      mime_type TEXT,
-      size_bytes INTEGER,
-      status TEXT NOT NULL DEFAULT 'pending',
-      reward_points INTEGER NOT NULL DEFAULT 100,
-      submitted_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-      reviewed_at TIMESTAMPTZ,
-      reviewed_by TEXT,
-      CONSTRAINT squig_survival_image_submissions_status_check
-        CHECK (status IN ('pending', 'approved', 'declined'))
-    );
-  `);
+  log("Database reachable and required tables present.");
+}
 
-  await pool.query(`
-    CREATE INDEX IF NOT EXISTS idx_squig_survival_image_submissions_status
-      ON squig_survival_image_submissions (status, submitted_at DESC);
-  `);
-
-  await pool.query(`
-    CREATE INDEX IF NOT EXISTS idx_squig_survival_image_submissions_user
-      ON squig_survival_image_submissions (discord_user_id, submitted_at DESC);
-  `);
-  await pool.query(`
-    ALTER TABLE squig_survival_image_submissions
-    ADD COLUMN IF NOT EXISTS prompt_text TEXT;
-  `);
-  await pool.query(`
-    ALTER TABLE squig_survival_image_submissions
-    ADD COLUMN IF NOT EXISTS nft_used_type TEXT NOT NULL DEFAULT 'squigs';
-  `);
-  await pool.query(`
-    ALTER TABLE squig_survival_image_submissions
-    ADD COLUMN IF NOT EXISTS nft_used_text TEXT;
-  `);
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS squig_survival_image_approval_notifications (
-      id BIGSERIAL PRIMARY KEY,
-      submission_id BIGINT,
-      discord_user_id TEXT NOT NULL,
-      discord_username TEXT NOT NULL,
-      era_key TEXT NOT NULL,
-      image_url TEXT NOT NULL,
-      prompt_text TEXT,
-      reward_points INTEGER NOT NULL DEFAULT 100,
-      approved_by TEXT,
-      approved_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-      post_status TEXT NOT NULL DEFAULT 'pending',
-      post_attempts INTEGER NOT NULL DEFAULT 0,
-      posted_at TIMESTAMPTZ,
-      posted_message_id TEXT,
-      post_error TEXT,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-      CONSTRAINT squig_survival_image_approval_notifications_status_check
-        CHECK (post_status IN ('pending', 'processing', 'posted', 'failed'))
-    );
-  `);
-  await pool.query(`
-    CREATE INDEX IF NOT EXISTS idx_squig_survival_image_approval_notifications_status
-      ON squig_survival_image_approval_notifications (post_status, approved_at ASC);
-  `);
-  await pool.query(`
-    ALTER TABLE squig_survival_image_approval_notifications
-    ADD COLUMN IF NOT EXISTS prompt_text TEXT;
-  `);
-
-  log("Database ready.");
+function maybeInjectFailure(input, point) {
+  if (input?.injectFailureAt === point) {
+    throw new Error(`Injected failure at ${point}`);
+  }
 }
 
 async function createPendingSubmission(input) {
@@ -174,7 +111,9 @@ async function listPendingSubmissions() {
       reward_points,
       submitted_at,
       reviewed_at,
-      reviewed_by
+      reviewed_by,
+      decline_reason,
+      row_version
     FROM squig_survival_image_submissions
     WHERE status = 'pending'
     ORDER BY submitted_at ASC
@@ -202,7 +141,9 @@ async function listApprovedSubmissions() {
       reward_points,
       submitted_at,
       reviewed_at,
-      reviewed_by
+      reviewed_by,
+      decline_reason,
+      row_version
     FROM squig_survival_image_submissions
     WHERE status = 'approved'
     ORDER BY reviewed_at DESC NULLS LAST, submitted_at DESC
@@ -231,7 +172,9 @@ async function listSubmissionsForUser(discordUserId) {
         reward_points,
         submitted_at,
         reviewed_at,
-        reviewed_by
+        reviewed_by,
+        decline_reason,
+        row_version
       FROM squig_survival_image_submissions
       WHERE discord_user_id = $1
       ORDER BY
@@ -260,6 +203,10 @@ async function approveSubmission({
   overrideEraKey,
   overrideNftUsedType,
   overrideNftUsedText,
+  expectedRowVersion,
+  actorDiscordId,
+  requestId,
+  injectFailureAt,
 }) {
   const client = await pool.connect();
   try {
@@ -279,6 +226,9 @@ async function approveSubmission({
     if (submission.status !== "pending") {
       throw new Error(`Submission is already ${submission.status}.`);
     }
+    if (Number(submission.row_version) !== Number(expectedRowVersion)) {
+      throw new ConflictError("This submission changed while you were reviewing it. Refresh and try again.");
+    }
 
     const resolvedDiscordUserId = overrideDiscordUserId || submission.discord_user_id;
     const resolvedDiscordUsername = overrideDiscordUsername || submission.discord_username;
@@ -288,28 +238,6 @@ async function approveSubmission({
     const resolvedNftUsedType = overrideNftUsedType || submission.nft_used_type;
     const resolvedNftUsedText =
       resolvedNftUsedType === "other" ? overrideNftUsedText || submission.nft_used_text : null;
-
-    await client.query(
-      `
-        UPDATE squig_survival_image_submissions
-        SET discord_user_id = $2,
-            discord_username = $3,
-            discord_display_name = $4,
-            era_key = $5,
-            nft_used_type = $6,
-            nft_used_text = $7
-        WHERE id = $1
-      `,
-      [
-        submissionId,
-        resolvedDiscordUserId,
-        resolvedDiscordUsername,
-        resolvedDiscordDisplayName,
-        resolvedEraKey,
-        resolvedNftUsedType,
-        resolvedNftUsedText,
-      ]
-    );
 
     await client.query(
       `
@@ -333,6 +261,7 @@ async function approveSubmission({
         submission.prompt_text,
       ]
     );
+    maybeInjectFailure({ injectFailureAt }, "after-live-insert");
 
     await client.query(
       `
@@ -359,21 +288,78 @@ async function approveSubmission({
         reviewedBy,
       ]
     );
+    maybeInjectFailure({ injectFailureAt }, "after-notification-insert");
 
     const updated = await client.query(
       `
         UPDATE squig_survival_image_submissions
-        SET status = 'approved',
-            reward_points = $2,
-            nft_used_type = $4,
-            nft_used_text = $5,
+        SET discord_user_id = $2,
+            discord_username = $3,
+            discord_display_name = $4,
+            era_key = $5,
+            nft_used_type = $6,
+            nft_used_text = $7,
+            status = 'approved',
+            reward_points = $8,
             reviewed_at = now(),
-            reviewed_by = $3
+            reviewed_by = $9,
+            row_version = row_version + 1
         WHERE id = $1
-        RETURNING id, reviewed_at, discord_user_id
+          AND status = 'pending'
+          AND row_version = $10
+        RETURNING id, reviewed_at, discord_user_id, row_version
       `,
-      [submissionId, rewardPoints, reviewedBy, resolvedNftUsedType, resolvedNftUsedText]
+      [
+        submissionId,
+        resolvedDiscordUserId,
+        resolvedDiscordUsername,
+        resolvedDiscordDisplayName,
+        resolvedEraKey,
+        resolvedNftUsedType,
+        resolvedNftUsedText,
+        rewardPoints,
+        reviewedBy,
+        expectedRowVersion,
+      ]
     );
+    if (updated.rowCount !== 1) {
+      throw new ConflictError("This submission changed while you were reviewing it. Refresh and try again.");
+    }
+    maybeInjectFailure({ injectFailureAt }, "after-submission-update");
+
+    await client.query(
+      `
+        INSERT INTO squig_survival_image_moderation_audit (
+          submission_id,
+          action,
+          actor_discord_id,
+          actor_display_snapshot,
+          request_id,
+          before_json,
+          after_json,
+          outcome
+        )
+        VALUES ($1, 'approve', $2, $3, $4, to_jsonb($5::json), to_jsonb($6::json), 'approved')
+      `,
+      [
+        submissionId,
+        actorDiscordId || null,
+        reviewedBy,
+        requestId || null,
+        JSON.stringify(submission),
+        JSON.stringify({
+          discordUserId: resolvedDiscordUserId,
+          discordUsername: resolvedDiscordUsername,
+          discordDisplayName: resolvedDiscordDisplayName,
+          eraKey: resolvedEraKey,
+          nftUsedType: resolvedNftUsedType,
+          nftUsedText: resolvedNftUsedText,
+          rewardPoints,
+          rowVersion: updated.rows[0].row_version,
+        }),
+      ]
+    );
+    maybeInjectFailure({ injectFailureAt }, "after-audit-insert");
 
     await client.query("COMMIT");
     return updated.rows[0];
@@ -385,22 +371,82 @@ async function approveSubmission({
   }
 }
 
-async function declineSubmission({ submissionId, reviewedBy }) {
-  const result = await pool.query(
-    `
-      UPDATE squig_survival_image_submissions
-      SET status = 'declined', reviewed_at = now(), reviewed_by = $2
-      WHERE id = $1 AND status = 'pending'
-      RETURNING id, reviewed_at
-    `,
-    [submissionId, reviewedBy]
-  );
+async function declineSubmission({ submissionId, reviewedBy, reason, expectedRowVersion, actorDiscordId, requestId, injectFailureAt }) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const currentResult = await client.query(
+      `
+        SELECT *
+        FROM squig_survival_image_submissions
+        WHERE id = $1
+        FOR UPDATE
+      `,
+      [submissionId]
+    );
 
-  if (!result.rows[0]) {
-    throw new Error("Submission not found or already reviewed.");
+    const submission = currentResult.rows[0];
+    if (!submission) throw new Error("Submission not found.");
+    if (submission.status !== "pending") throw new Error(`Submission is already ${submission.status}.`);
+    if (Number(submission.row_version) !== Number(expectedRowVersion)) {
+      throw new ConflictError("This submission changed while you were reviewing it. Refresh and try again.");
+    }
+
+    const updated = await client.query(
+      `
+        UPDATE squig_survival_image_submissions
+        SET status = 'declined',
+            reviewed_at = now(),
+            reviewed_by = $2,
+            decline_reason = $3,
+            row_version = row_version + 1
+        WHERE id = $1
+          AND status = 'pending'
+          AND row_version = $4
+        RETURNING id, reviewed_at, row_version
+      `,
+      [submissionId, reviewedBy, reason, expectedRowVersion]
+    );
+    if (updated.rowCount !== 1) {
+      throw new ConflictError("This submission changed while you were reviewing it. Refresh and try again.");
+    }
+    maybeInjectFailure({ injectFailureAt }, "after-submission-update");
+
+    await client.query(
+      `
+        INSERT INTO squig_survival_image_moderation_audit (
+          submission_id,
+          action,
+          actor_discord_id,
+          actor_display_snapshot,
+          request_id,
+          before_json,
+          after_json,
+          reason,
+          outcome
+        )
+        VALUES ($1, 'decline', $2, $3, $4, to_jsonb($5::json), to_jsonb($6::json), $7, 'declined')
+      `,
+      [
+        submissionId,
+        actorDiscordId || null,
+        reviewedBy,
+        requestId || null,
+        JSON.stringify(submission),
+        JSON.stringify({ status: "declined", reason, rowVersion: updated.rows[0].row_version }),
+        reason,
+      ]
+    );
+    maybeInjectFailure({ injectFailureAt }, "after-audit-insert");
+
+    await client.query("COMMIT");
+    return updated.rows[0];
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
   }
-
-  return result.rows[0];
 }
 
 async function updateApprovedSubmission({
@@ -413,6 +459,10 @@ async function updateApprovedSubmission({
   overrideEraKey,
   overrideNftUsedType,
   overrideNftUsedText,
+  expectedRowVersion,
+  actorDiscordId,
+  requestId,
+  injectFailureAt,
 }) {
   const client = await pool.connect();
   try {
@@ -431,6 +481,9 @@ async function updateApprovedSubmission({
     if (!submission) throw new Error("Approved submission not found.");
     if (submission.status !== "approved") {
       throw new Error("Only approved submissions can be edited here.");
+    }
+    if (Number(submission.row_version) !== Number(expectedRowVersion)) {
+      throw new ConflictError("This approved submission changed while you were editing it. Refresh and try again.");
     }
 
     const resolvedDiscordUserId = overrideDiscordUserId || submission.discord_user_id;
@@ -471,6 +524,33 @@ async function updateApprovedSubmission({
     if (liveUpdate.rowCount !== 1) {
       throw new Error("Could not safely update the live image row. No changes were saved.");
     }
+    maybeInjectFailure({ injectFailureAt }, "after-live-update");
+
+    await client.query(
+      `
+        UPDATE squig_survival_image_approval_notifications
+        SET discord_user_id = $2,
+            discord_username = $3,
+            era_key = $4,
+            image_url = $5,
+            prompt_text = $6,
+            reward_points = $7,
+            approved_by = $8
+        WHERE submission_id = $1
+          AND post_status IN ('pending', 'failed')
+      `,
+      [
+        submissionId,
+        resolvedDiscordUserId,
+        resolvedDiscordUsername,
+        resolvedEraKey,
+        submission.image_url,
+        submission.prompt_text,
+        rewardPoints,
+        reviewedBy,
+      ]
+    );
+    maybeInjectFailure({ injectFailureAt }, "after-notification-update");
 
     const updated = await client.query(
       `
@@ -483,9 +563,12 @@ async function updateApprovedSubmission({
             nft_used_type = $7,
             nft_used_text = $8,
             reviewed_at = now(),
-            reviewed_by = $9
+            reviewed_by = $9,
+            row_version = row_version + 1
         WHERE id = $1
-        RETURNING id, reviewed_at
+          AND status = 'approved'
+          AND row_version = $10
+        RETURNING id, reviewed_at, row_version
       `,
       [
         submissionId,
@@ -497,8 +580,47 @@ async function updateApprovedSubmission({
         resolvedNftUsedType,
         resolvedNftUsedText,
         reviewedBy,
+        expectedRowVersion,
       ]
     );
+    if (updated.rowCount !== 1) {
+      throw new ConflictError("This approved submission changed while you were editing it. Refresh and try again.");
+    }
+    maybeInjectFailure({ injectFailureAt }, "after-submission-update");
+
+    await client.query(
+      `
+        INSERT INTO squig_survival_image_moderation_audit (
+          submission_id,
+          action,
+          actor_discord_id,
+          actor_display_snapshot,
+          request_id,
+          before_json,
+          after_json,
+          outcome
+        )
+        VALUES ($1, 'update-approved', $2, $3, $4, to_jsonb($5::json), to_jsonb($6::json), 'updated')
+      `,
+      [
+        submissionId,
+        actorDiscordId || null,
+        reviewedBy,
+        requestId || null,
+        JSON.stringify(submission),
+        JSON.stringify({
+          discordUserId: resolvedDiscordUserId,
+          discordUsername: resolvedDiscordUsername,
+          discordDisplayName: resolvedDiscordDisplayName,
+          eraKey: resolvedEraKey,
+          nftUsedType: resolvedNftUsedType,
+          nftUsedText: resolvedNftUsedText,
+          rewardPoints,
+          rowVersion: updated.rows[0].row_version,
+        }),
+      ]
+    );
+    maybeInjectFailure({ injectFailureAt }, "after-audit-insert");
 
     await client.query("COMMIT");
     return updated.rows[0];

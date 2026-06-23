@@ -1,6 +1,11 @@
 const multer = require("multer");
 const { config } = require("./config");
-const { SURVIVAL_ERA_KEYS } = require("./eras");
+const {
+  COLLECTION_TYPES,
+  SURVIVAL_ERA_KEYS,
+  isCollectionTypeAllowedForEra,
+  resolveEraDefaultReward,
+} = require("./eras");
 
 const allowedMimeTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 const maxFilesPerSubmission = 10;
@@ -22,7 +27,7 @@ function validateEraKey(eraKey) {
 
 function parseNftUsedType(rawValue) {
   const value = String(rawValue || "").trim().toLowerCase();
-  if (value === "squigs" || value === "other") {
+  if (value === COLLECTION_TYPES.squigs || value === COLLECTION_TYPES.other) {
     return value;
   }
   throw new Error("Please choose whether the image used Squigs or another NFT.");
@@ -33,10 +38,17 @@ function isReviveEra(eraKey) {
 }
 
 function resolveDefaultRewardPoints(nftUsedType, eraKey) {
-  if (isReviveEra(eraKey)) {
-    return nftUsedType === "other" ? 10 : 20;
+  const reward = resolveEraDefaultReward(nftUsedType, eraKey);
+  if (reward === null) {
+    throw new Error("This era only accepts Squigs Reloaded submissions.");
   }
-  return nftUsedType === "other" ? 100 : 150;
+  return reward;
+}
+
+function assertCollectionAllowedForEra(nftUsedType, eraKey) {
+  if (!isCollectionTypeAllowedForEra(eraKey, nftUsedType)) {
+    throw new Error("This era only accepts Squigs Reloaded submissions.");
+  }
 }
 
 function parseRewardPoints(rawValue) {
@@ -72,6 +84,7 @@ module.exports = {
   parseNftUsedType,
   isReviveEra,
   resolveDefaultRewardPoints,
+  assertCollectionAllowedForEra,
   parseRewardPoints,
   parseOptionalDiscordUserId,
   parseOptionalText,

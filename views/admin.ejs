@@ -33,6 +33,8 @@
 
         <div class="actions review-actions">
           <form action="/admin/submissions/<%= submission.id %>/approve" method="post" class="approve-form">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <input type="hidden" name="row_version" value="<%= submission.row_version %>" />
             <label class="field">
               <span>Override Discord user ID</span>
               <input
@@ -73,7 +75,7 @@
                 required
                 data-nft-type-select
               >
-                <option value="squigs" <%= submission.nft_used_type === "squigs" ? "selected" : "" %>>Squigs</option>
+                <option value="squigs" <%= submission.nft_used_type === "squigs" ? "selected" : "" %>>Squigs Reloaded</option>
                 <option value="other" <%= submission.nft_used_type === "other" ? "selected" : "" %>>Other</option>
               </select>
             </label>
@@ -104,6 +106,12 @@
           </form>
 
           <form action="/admin/submissions/<%= submission.id %>/decline" method="post">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <input type="hidden" name="row_version" value="<%= submission.row_version %>" />
+            <label class="field">
+              <span>Decline reason</span>
+              <textarea name="reason" rows="3" maxlength="500" required placeholder="Explain what needs to change"></textarea>
+            </label>
             <button type="submit" class="button danger">Decline</button>
           </form>
         </div>
@@ -147,6 +155,8 @@
 
         <div class="actions review-actions">
           <form action="/admin/submissions/<%= submission.id %>/update-approved" method="post" class="approve-form">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <input type="hidden" name="row_version" value="<%= submission.row_version %>" />
             <label class="field">
               <span>Discord user ID</span>
               <input
@@ -188,7 +198,7 @@
                 required
                 data-nft-type-select
               >
-                <option value="squigs" <%= submission.nft_used_type === "squigs" ? "selected" : "" %>>Squigs</option>
+                <option value="squigs" <%= submission.nft_used_type === "squigs" ? "selected" : "" %>>Squigs Reloaded</option>
                 <option value="other" <%= submission.nft_used_type === "other" ? "selected" : "" %>>Other</option>
               </select>
             </label>
@@ -223,15 +233,12 @@
   <% }) %>
 </section>
 
-<script>
+<script nonce="<%= cspNonce %>">
   (() => {
-    const REVIVE_ERAS = new Set(["!revive Success", "!revive Failed"]);
+    const ERAS = <%- JSON.stringify(eras.map((era) => ({ key: era.key, allowedCollectionTypes: era.allowedCollectionTypes, defaultRewards: era.defaultRewards }))) %>;
 
     const getSuggestedReward = (nftUsedType, eraKey) => {
-      if (REVIVE_ERAS.has(eraKey)) {
-        return nftUsedType === "other" ? 10 : 20;
-      }
-      return nftUsedType === "other" ? 100 : 150;
+      return ERAS.find((era) => era.key === eraKey)?.defaultRewards?.[nftUsedType] ?? 0;
     };
 
     document.querySelectorAll("form.approve-form").forEach((form) => {
@@ -245,6 +252,11 @@
       let lastSuggestedReward = String(getSuggestedReward(typeSelect.value, eraSelect.value));
 
       const syncForm = () => {
+        const selectedEra = ERAS.find((era) => era.key === eraSelect.value);
+        const allowsOther = selectedEra?.allowedCollectionTypes?.includes("other");
+        const otherOption = typeSelect.querySelector('option[value="other"]');
+        if (otherOption) otherOption.disabled = Boolean(selectedEra && !allowsOther);
+        if (!allowsOther && typeSelect.value === "other") typeSelect.value = "squigs";
         const isOther = typeSelect.value === "other";
         otherField.classList.toggle("is-hidden", !isOther);
         otherInput.required = isOther;

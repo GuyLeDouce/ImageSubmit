@@ -23,12 +23,14 @@ const config = {
   sessionSecret: process.env.SESSION_SECRET || "",
   databaseUrl: process.env.DATABASE_URL || "",
   liveImageTable: process.env.LIVE_IMAGE_TABLE || "squig_survival_images",
+  sessionTable: process.env.SESSION_TABLE || "session",
   discordClientId: process.env.DISCORD_CLIENT_ID || "",
   discordClientSecret: process.env.DISCORD_CLIENT_SECRET || "",
   discordRedirectUri: process.env.DISCORD_REDIRECT_URI || "",
   discordGuildId: process.env.DISCORD_GUILD_ID || "",
   adminDiscordIds: new Set(parseCsv(process.env.ADMIN_DISCORD_IDS)),
   maxUploadMb: Math.max(1, Number(process.env.MAX_UPLOAD_MB || "10")),
+  trustedProxy: process.env.TRUSTED_PROXY || "1",
   storageDriver: (process.env.STORAGE_DRIVER || "local").toLowerCase(),
   s3Region: process.env.S3_REGION || "auto",
   s3Bucket: process.env.S3_BUCKET || "",
@@ -62,6 +64,10 @@ function validateConfig() {
     if (s3Missing.length) {
       throw new Error(`Missing S3 storage environment variables: ${s3Missing.join(", ")}`);
     }
+  }
+
+  if (config.isProduction && config.storageDriver === "local" && process.env.ALLOW_LOCAL_STORAGE_IN_PRODUCTION !== "true") {
+    throw new Error("STORAGE_DRIVER=local is blocked in production unless ALLOW_LOCAL_STORAGE_IN_PRODUCTION=true is set for an emergency.");
   }
 }
 
