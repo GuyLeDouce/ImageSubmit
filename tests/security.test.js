@@ -165,6 +165,14 @@ test("CSRF and Origin protection covers state-changing form routes", { skip: !pr
       },
       prepare: async () => {},
     },
+    {
+      path: "/admin/submissions/102/unapprove",
+      values: {
+        row_version: "1",
+        reason: "Remove from live pool.",
+      },
+      prepare: async () => {},
+    },
   ];
 
   for (const route of routes) {

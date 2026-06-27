@@ -18,6 +18,7 @@ test("legacy route paths remain registered", () => {
     `app.post("/admin/submissions/:id/approve",`,
     `app.post("/admin/submissions/:id/decline",`,
     `app.post("/admin/submissions/:id/update-approved",`,
+    `app.post("/admin/submissions/:id/unapprove",`,
   ]) {
     assert.match(appSource, new RegExp(route.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   }

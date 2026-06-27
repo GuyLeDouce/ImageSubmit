@@ -12,6 +12,7 @@ const {
   approveSubmission,
   declineSubmission,
   updateApprovedSubmission,
+  unapproveSubmission,
 } = require("./db");
 const { config, validateConfig } = require("./config");
 const { SURVIVAL_ERAS, ADMIN_REPAIR_ERAS, getAdminRepairEraByKey } = require("./eras");
@@ -498,6 +499,30 @@ function createApp() {
         requestId: req.id,
       });
       setFlash(req, "success", "Approved image updated.");
+      res.redirect("/admin");
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/admin/submissions/:id/unapprove", requireAdmin, async (req, res, next) => {
+    try {
+      const submissionId = Number(req.params.id);
+      if (!Number.isInteger(submissionId) || submissionId <= 0) throw new Error("Invalid submission id.");
+      const reason = parseOptionalText(req.body.reason, "Unapprove reason", 500);
+      const expectedRowVersion = Number(req.body.row_version);
+      if (!Number.isInteger(expectedRowVersion) || expectedRowVersion <= 0) throw new Error("Invalid row version.");
+      if (!reason) throw new Error("Unapprove reason is required.");
+      const reviewedBy = `${req.session.user.username} (${req.session.user.id})`;
+      await unapproveSubmission({
+        submissionId,
+        reviewedBy,
+        reason,
+        expectedRowVersion,
+        actorDiscordId: req.session.user.id,
+        requestId: req.id,
+      });
+      setFlash(req, "success", "Approved image was unapproved and removed from the live image table.");
       res.redirect("/admin");
     } catch (error) {
       next(error);

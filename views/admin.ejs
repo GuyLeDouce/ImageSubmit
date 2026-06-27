@@ -192,6 +192,16 @@
             </label>
             <button type="submit" class="button secondary">Save changes</button>
           </form>
+
+          <form action="/admin/submissions/<%= submission.id %>/unapprove" method="post">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <input type="hidden" name="row_version" value="<%= submission.row_version %>" />
+            <label class="field">
+              <span>Unapprove reason</span>
+              <textarea name="reason" rows="3" maxlength="500" required placeholder="Why should this image be removed from the live pool?"></textarea>
+            </label>
+            <button type="submit" class="button danger">Unapprove and remove from live pool</button>
+          </form>
         </div>
       </div>
     </article>

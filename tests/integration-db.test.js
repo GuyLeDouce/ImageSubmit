@@ -179,3 +179,27 @@ test("approved edit rolls back live, notification, submission, and audit writes 
     await pool.end();
   }
 });
+
+test("unapprove removes live row and marks approved submission declined", { skip: !process.env.TEST_DATABASE_URL }, async () => {
+  const pool = await prepareLegacyMigratedDb();
+  const db = loadDb();
+  await db.unapproveSubmission({
+    submissionId: 102,
+    reviewedBy: "mod (999999999999999999)",
+    reason: "Legacy image should leave this pool.",
+    expectedRowVersion: 1,
+    actorDiscordId: "999999999999999999",
+    requestId: "req-unapprove",
+  });
+  const state = await counts(pool);
+  const submission = state.submissions.find((row) => Number(row.id) === 102);
+  assert.equal(submission.status, "declined");
+  assert.equal(submission.row_version, 2);
+  assert.equal(submission.decline_reason, "Legacy image should leave this pool.");
+  assert.equal(state.live.some((row) => row.image_url === "https://cdn.example.test/approved.webp"), false);
+  const audit = state.audit.find((row) => Number(row.submission_id) === 102);
+  assert.equal(audit.action, "unapprove");
+  assert.equal(audit.reason, "Legacy image should leave this pool.");
+  await db.pool.end();
+  await pool.end();
+});

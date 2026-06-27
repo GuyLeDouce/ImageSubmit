@@ -751,6 +751,121 @@ async function updateApprovedSubmission({
   }
 }
 
+async function unapproveSubmission({ submissionId, reviewedBy, reason, expectedRowVersion, actorDiscordId, requestId, injectFailureAt }) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const currentResult = await client.query(
+      `
+        SELECT *
+        FROM squig_survival_image_submissions
+        WHERE id = $1
+        FOR UPDATE
+      `,
+      [submissionId]
+    );
+
+    const submission = currentResult.rows[0];
+    if (!submission) throw new Error("Approved submission not found.");
+    if (submission.status !== "approved") {
+      throw new Error("Only approved submissions can be unapproved.");
+    }
+    if (Number(submission.row_version) !== Number(expectedRowVersion)) {
+      throw new ConflictError("This approved submission changed while you were editing it. Refresh and try again.");
+    }
+
+    const liveDelete = await client.query(
+      `
+        DELETE FROM ${config.liveImageTable}
+        WHERE image_url = $1
+          AND user_id = $2
+          AND era_keys = $3
+      `,
+      [
+        submission.image_url,
+        submission.discord_user_id,
+        submission.era_key,
+      ]
+    );
+    if (liveDelete.rowCount > 1) {
+      throw new Error("Unapprove matched multiple live image rows. No changes were saved.");
+    }
+    maybeInjectFailure({ injectFailureAt }, "after-live-delete");
+
+    await client.query(
+      `
+        UPDATE squig_survival_image_approval_notifications
+        SET post_status = 'failed',
+            post_error = $2
+        WHERE submission_id = $1
+          AND post_status IN ('pending', 'processing', 'failed')
+      `,
+      [submissionId, `Unapproved by ${reviewedBy}: ${reason}`]
+    );
+    maybeInjectFailure({ injectFailureAt }, "after-notification-update");
+
+    const updated = await client.query(
+      `
+        UPDATE squig_survival_image_submissions
+        SET status = 'declined',
+            reviewed_at = now(),
+            reviewed_by = $2,
+            decline_reason = $3,
+            row_version = row_version + 1
+        WHERE id = $1
+          AND status = 'approved'
+          AND row_version = $4
+        RETURNING id, reviewed_at, row_version
+      `,
+      [submissionId, reviewedBy, reason, expectedRowVersion]
+    );
+    if (updated.rowCount !== 1) {
+      throw new ConflictError("This approved submission changed while you were editing it. Refresh and try again.");
+    }
+    maybeInjectFailure({ injectFailureAt }, "after-submission-update");
+
+    await client.query(
+      `
+        INSERT INTO squig_survival_image_moderation_audit (
+          submission_id,
+          action,
+          actor_discord_id,
+          actor_display_snapshot,
+          request_id,
+          before_json,
+          after_json,
+          reason,
+          outcome
+        )
+        VALUES ($1, 'unapprove', $2, $3, $4, to_jsonb($5::json), to_jsonb($6::json), $7, 'declined')
+      `,
+      [
+        submissionId,
+        actorDiscordId || null,
+        reviewedBy,
+        requestId || null,
+        JSON.stringify(submission),
+        JSON.stringify({
+          status: "declined",
+          reason,
+          liveRowsDeleted: liveDelete.rowCount,
+          rowVersion: updated.rows[0].row_version,
+        }),
+        reason,
+      ]
+    );
+    maybeInjectFailure({ injectFailureAt }, "after-audit-insert");
+
+    await client.query("COMMIT");
+    return updated.rows[0];
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
 module.exports = {
   pool,
   initDb,
@@ -761,4 +876,5 @@ module.exports = {
   approveSubmission,
   declineSubmission,
   updateApprovedSubmission,
+  unapproveSubmission,
 };
