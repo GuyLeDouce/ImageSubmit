@@ -272,6 +272,12 @@ code {
   background: var(--squig-pink);
 }
 
+.social-button img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
 .main-card {
   display: grid;
   gap: 34px;
