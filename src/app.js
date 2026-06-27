@@ -14,7 +14,7 @@ const {
   updateApprovedSubmission,
 } = require("./db");
 const { config, validateConfig } = require("./config");
-const { SURVIVAL_ERAS } = require("./eras");
+const { SURVIVAL_ERAS, ADMIN_REPAIR_ERAS, getAdminRepairEraByKey } = require("./eras");
 const {
   UGLY_CITY_ERA_KEY,
   UGLY_CITY_MILESTONES,
@@ -407,6 +407,7 @@ function createApp() {
         submissions: pendingSubmissions,
         approvedSubmissions,
         eras: SURVIVAL_ERAS,
+        adminRepairEras: ADMIN_REPAIR_ERAS,
       });
     } catch (error) {
       next(error);
@@ -477,11 +478,10 @@ function createApp() {
       const discordUserId = parseOptionalDiscordUserId(req.body.override_discord_user_id);
       const discordUsername = parseOptionalText(req.body.override_discord_username, "Discord username", 64);
       const discordDisplayName = parseOptionalText(req.body.override_discord_display_name, "Display name", 64);
-      const overrideEraKey = UGLY_CITY_ERA_KEY;
+      const overrideEraKey = String(req.body.override_era_key || "").trim();
       const overrideNftUsedType = "squigs";
       const overrideNftUsedText = null;
-      if (!validateEraKey(overrideEraKey)) throw new Error("Please choose a valid era.");
-      assertCollectionAllowedForEra(overrideNftUsedType, overrideEraKey);
+      if (!getAdminRepairEraByKey(overrideEraKey)) throw new Error("Please choose a valid admin repair era.");
       const reviewedBy = `${req.session.user.username} (${req.session.user.id})`;
       await updateApprovedSubmission({
         submissionId,

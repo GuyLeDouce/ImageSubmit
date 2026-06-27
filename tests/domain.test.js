@@ -3,8 +3,10 @@ const assert = require("node:assert/strict");
 
 const {
   SURVIVAL_ERAS,
+  ADMIN_REPAIR_ERAS,
   UGLY_CITY_ERA_KEY,
   getEraByKey,
+  getAdminRepairEraByKey,
   isCollectionTypeAllowedForEra,
   resolveEraDefaultReward,
 } = require("../src/eras");
@@ -29,6 +31,26 @@ test("Ugly City requires Squigs internally and defaults to 100 CHARM", () => {
   assert.equal(isCollectionTypeAllowedForEra("ugly_city", "other"), false);
   assert.equal(resolveEraDefaultReward("squigs", "ugly_city"), 100);
   assert.equal(resolveEraDefaultReward("other", "ugly_city"), null);
+});
+
+test("keeps legacy eras available only for admin repair", () => {
+  assert.deepEqual(SURVIVAL_ERAS.map((era) => era.key), ["ugly_city"]);
+  assert.deepEqual(
+    ADMIN_REPAIR_ERAS.map((era) => era.key),
+    [
+      "ugly_city",
+      "day_one",
+      "office_squigs",
+      "jobsite_squigs",
+      "movie_theater",
+      "airport",
+      "zombie_apocalypse",
+      "!revive Success",
+      "!revive Failed",
+    ]
+  );
+  assert.equal(getEraByKey("airport"), null);
+  assert.equal(getAdminRepairEraByKey("airport").label, "Airport");
 });
 
 test("centralizes all 100 Ugly City milestones", () => {

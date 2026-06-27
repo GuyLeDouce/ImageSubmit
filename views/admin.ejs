@@ -1,5 +1,12 @@
 <%- include("partials/header") %>
 
+<%
+  const repairEraLabelMap = (adminRepairEras || eras || []).reduce((map, era) => {
+    map[era.key] = era.label;
+    return map;
+  }, {});
+%>
+
 <section class="stack-gap">
   <div>
     <p class="eyebrow">Ugly City Admin Review</p>
@@ -123,7 +130,7 @@
           <div><dt>Discord username</dt><dd><%= submission.discord_username %></dd></div>
           <div><dt>Discord user ID</dt><dd><%= submission.discord_user_id %></dd></div>
           <div><dt>Display name</dt><dd><%= submission.discord_display_name || "Not set" %></dd></div>
-          <div><dt>Era</dt><dd>The Rise of Ugly City</dd></div>
+          <div><dt>Era</dt><dd><%= repairEraLabelMap[submission.era_key] || submission.era_key || "Not set" %></dd></div>
           <div><dt>Milestone</dt><dd><%= submission.milestone_label || submission.milestone_key || "Not set" %></dd></div>
           <div><dt>Other collections</dt><dd><%= submission.other_collections_text || submission.nft_used_text || "None provided" %></dd></div>
           <div><dt>Prompt</dt><dd><%= submission.prompt_text || "Not provided" %></dd></div>
@@ -162,6 +169,15 @@
                 value="<%= submission.discord_display_name || '' %>"
                 placeholder="Not set"
               />
+            </label>
+            <label class="field">
+              <span>Era key / game pool</span>
+              <select name="override_era_key" required>
+                <% (adminRepairEras || eras).forEach((era) => { %>
+                  <option value="<%= era.key %>" <%= era.key === submission.era_key ? "selected" : "" %>><%= era.label %></option>
+                <% }) %>
+              </select>
+              <small class="field-note">Admin repair only. New approvals still enter The Rise of Ugly City.</small>
             </label>
             <label class="field small-field">
               <span>Reward points</span>

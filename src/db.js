@@ -597,7 +597,7 @@ async function updateApprovedSubmission({
     const resolvedDiscordUsername = overrideDiscordUsername || submission.discord_username;
     const resolvedDiscordDisplayName =
       overrideDiscordDisplayName || submission.discord_display_name;
-    const resolvedEraKey = UGLY_CITY_ERA_KEY;
+    const resolvedEraKey = overrideEraKey || submission.era_key || UGLY_CITY_ERA_KEY;
     const resolvedNftUsedType = overrideNftUsedType || submission.nft_used_type;
     const resolvedNftUsedText =
       resolvedNftUsedType === "other" ? overrideNftUsedText || submission.nft_used_text : null;
@@ -616,7 +616,7 @@ async function updateApprovedSubmission({
             milestone_district = $13
         WHERE image_url = $6
           AND user_id = $7
-          AND era_keys = $8
+          AND (era_keys = $8 OR era_keys = $2)
           AND reward_points = $9
       `,
       [
