@@ -78,6 +78,7 @@ test("migrations preserve legacy rows, add Ugly City metadata, and record execut
     "002_rebuild_foundation.sql",
     "003_ugly_city_metadata.sql",
     "004_repair_submission_schema_drift.sql",
+    "005_force_resolved_schema_repair.sql",
   ]);
 
   await pool.end();
