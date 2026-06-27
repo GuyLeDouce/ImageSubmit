@@ -1,0 +1,157 @@
+<%- include("partials/header") %>
+
+<%
+  const eraLabel = eras[0]?.label || "The Rise of Ugly City";
+  const latestSubmission = submissions[0] || null;
+  const statusLabels = {
+    pending: "Awaiting Approval",
+    approved: "Approved",
+    declined: "Declined",
+  };
+%>
+
+<section class="stack-gap profile-page">
+  <header class="profile-hero">
+    <div class="profile-identity">
+      <div class="profile-avatar" aria-hidden="true">
+        <%= (user.displayName || user.username || "?").slice(0, 1).toUpperCase() %>
+      </div>
+      <div>
+        <p class="eyebrow">Creator Profile</p>
+        <h1><%= user.displayName || user.username %></h1>
+        <p class="lead">Your Ugly City creation dashboard. Track what you have submitted, what is waiting on admins, and what has made it into the approved image pool.</p>
+      </div>
+    </div>
+
+    <div class="profile-pass">
+      <span>Discord</span>
+      <strong><%= user.username %></strong>
+      <small><%= user.id %></small>
+    </div>
+  </header>
+
+  <section class="profile-stats" aria-label="Submission totals">
+    <article class="profile-stat profile-stat--total">
+      <span>Total creations</span>
+      <strong><%= stats.total %></strong>
+      <p>Images submitted through the creator portal.</p>
+    </article>
+    <article class="profile-stat profile-stat--approved">
+      <span>Approved</span>
+      <strong><%= stats.approved %></strong>
+      <p>Eligible for the Ugly City image pool.</p>
+    </article>
+    <article class="profile-stat profile-stat--pending">
+      <span>Pending</span>
+      <strong><%= stats.pending %></strong>
+      <p>Waiting for admin review.</p>
+    </article>
+    <article class="profile-stat profile-stat--declined">
+      <span>Declined</span>
+      <strong><%= stats.declined %></strong>
+      <p>Reviewed but not accepted.</p>
+    </article>
+  </section>
+
+  <section class="profile-feature-grid">
+    <article class="profile-feature-card">
+      <p class="eyebrow">Creator Status</p>
+      <h2><%= stats.total ? "Factory activity detected" : "No creations yet" %></h2>
+      <p>
+        <% if (stats.total) { %>
+          You have <strong><%= stats.total %></strong> submitted creation<%= stats.total === 1 ? "" : "s" %>, with <strong><%= stats.approved %></strong> approved and <strong><%= stats.pending %></strong> still waiting in the admin queue.
+        <% } else { %>
+          The factory has not received your first image yet. Pick a milestone, include a Squig, and start building Ugly City.
+        <% } %>
+      </p>
+      <div class="actions">
+        <a class="button" href="/submit">Submit New Image</a>
+        <a class="button secondary" href="/#milestones">Browse Milestones</a>
+      </div>
+    </article>
+
+    <article class="profile-feature-card profile-feature-card--latest">
+      <p class="eyebrow">Latest Creation</p>
+      <% if (latestSubmission) { %>
+        <a href="<%= latestSubmission.image_url %>" target="_blank" rel="noreferrer" class="profile-latest-media">
+          <img src="<%= latestSubmission.image_url %>" alt="Latest submitted image <%= latestSubmission.id %>" loading="lazy" />
+        </a>
+        <div class="profile-latest-meta">
+          <span class="submission-status submission-status--<%= latestSubmission.status %>"><%= statusLabels[latestSubmission.status] || latestSubmission.status %></span>
+          <strong><%= latestSubmission.milestone_label || latestSubmission.milestone_key || eraLabel %></strong>
+          <small><%= new Date(latestSubmission.submitted_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) %></small>
+        </div>
+      <% } else { %>
+        <div class="profile-empty-art">
+          <span>NO IMAGE YET</span>
+        </div>
+        <p>No latest creation to show.</p>
+      <% } %>
+    </article>
+  </section>
+
+  <section class="stack-gap profile-gallery">
+    <div class="submission-history__header">
+      <p class="eyebrow">Creation Archive</p>
+      <h2>Everything you have submitted</h2>
+      <p class="muted">Approved images become eligible for the Ugly City image pool. Pending images are still waiting for admin review.</p>
+    </div>
+
+    <% if (!submissions.length) { %>
+      <div class="panel empty-state">
+        No creations yet. The city remains dangerously underbuilt.
+      </div>
+    <% } else { %>
+      <div class="submission-grid profile-submission-grid">
+        <% submissions.forEach((submission) => { %>
+          <article class="submission-tile submission-tile--<%= submission.status %>">
+            <a href="<%= submission.image_url %>" target="_blank" rel="noreferrer" class="submission-tile__media">
+              <img src="<%= submission.image_url %>" alt="Submitted image <%= submission.id %>" loading="lazy" />
+            </a>
+            <div class="submission-tile__body">
+              <div class="submission-tile__topline">
+                <span class="submission-status submission-status--<%= submission.status %>">
+                  <%= statusLabels[submission.status] || submission.status %>
+                </span>
+                <span class="submission-tile__date">
+                  <%= new Date(submission.submitted_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) %>
+                </span>
+              </div>
+
+              <dl class="submission-tile__meta">
+                <div>
+                  <dt>Era</dt>
+                  <dd><%= eraLabel %></dd>
+                </div>
+                <div>
+                  <dt>Milestone</dt>
+                  <dd><%= submission.milestone_label || submission.milestone_key || "Not set" %></dd>
+                </div>
+                <div>
+                  <dt>Reward</dt>
+                  <dd><%= submission.reward_points || 100 %> $CHARM</dd>
+                </div>
+                <% if (submission.status !== "pending") { %>
+                  <div>
+                    <dt>Reviewed</dt>
+                    <dd>
+                      <%= submission.reviewed_at ? new Date(submission.reviewed_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "Not available" %>
+                    </dd>
+                  </div>
+                <% } %>
+                <% if (submission.status === "declined" && submission.decline_reason) { %>
+                  <div class="decline-reason">
+                    <dt>Reason</dt>
+                    <dd><%= submission.decline_reason %></dd>
+                  </div>
+                <% } %>
+              </dl>
+            </div>
+          </article>
+        <% }) %>
+      </div>
+    <% } %>
+  </section>
+</section>
+
+<%- include("partials/footer") %>

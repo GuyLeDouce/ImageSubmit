@@ -14,6 +14,7 @@ test("legacy route paths remain registered", () => {
     `app.post("/logout",`,
     `app.get("/submit",`,
     `app.post("/submit",`,
+    `app.get("/profile",`,
     `app.get("/admin",`,
     `app.post("/admin/submissions/:id/approve",`,
     `app.post("/admin/submissions/:id/decline",`,

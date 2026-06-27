@@ -202,14 +202,14 @@ function createApp() {
 
   function rememberPostLoginRedirect(req) {
     if (req.method !== "GET") return;
-    if (!req.originalUrl.startsWith("/submit")) return;
+    if (!req.originalUrl.startsWith("/submit") && !req.originalUrl.startsWith("/profile")) return;
     req.session.postLoginRedirect = req.originalUrl;
   }
 
   function consumePostLoginRedirect(req) {
     const redirectTo = req.session.postLoginRedirect;
     delete req.session.postLoginRedirect;
-    if (typeof redirectTo === "string" && redirectTo.startsWith("/submit")) {
+    if (typeof redirectTo === "string" && (redirectTo.startsWith("/submit") || redirectTo.startsWith("/profile"))) {
       return redirectTo;
     }
     return null;
@@ -346,6 +346,35 @@ function createApp() {
         selectedMilestone,
         submitted: req.query.submitted === "1",
         submissions,
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/profile", requireAuth, async (req, res, next) => {
+    try {
+      if (!req.session.user.isGuildMember) {
+        return res.status(403).render("blocked", { title: "Join Ugly Labs Discord" });
+      }
+
+      const submissions = await listSubmissionsForUser(req.session.user.id);
+      const stats = submissions.reduce(
+        (totals, submission) => {
+          totals.total += 1;
+          if (submission.status === "approved") totals.approved += 1;
+          if (submission.status === "pending") totals.pending += 1;
+          if (submission.status === "declined") totals.declined += 1;
+          return totals;
+        },
+        { total: 0, approved: 0, pending: 0, declined: 0 }
+      );
+
+      res.render("profile", {
+        title: "Creator Profile",
+        eras: SURVIVAL_ERAS,
+        submissions,
+        stats,
       });
     } catch (error) {
       next(error);
