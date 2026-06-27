@@ -37,7 +37,7 @@ Create a Discord OAuth2 application and configure a redirect URI like `https://y
 
 ## Database notes
 
-This app is intentionally separate from The Gauntlet bot runtime, but it must point at the same Postgres database. On startup it connects to `DATABASE_URL` and verifies required tables exist. It does not create or alter tables on boot.
+This app is intentionally separate from The Gauntlet bot runtime, but it must point at the same Postgres database. The production `start` script runs the reviewed, ledgered migrations before booting Express, then startup verifies required tables exist.
 
 Run the read-only preflight before migrations or cutover:
 
@@ -82,7 +82,7 @@ Open `http://localhost:3000`.
 
 ## Migration
 
-Run reviewed SQL migrations against the same Postgres database before deploying:
+Run reviewed SQL migrations against the same Postgres database before deploying, or let the production `start` script apply any pending migrations automatically:
 
 1. `migrations/001_create_pending_submissions.sql`
 2. `migrations/002_rebuild_foundation.sql`
