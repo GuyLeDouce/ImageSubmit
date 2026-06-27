@@ -89,8 +89,10 @@ Run reviewed SQL migrations against the same Postgres database before deploying,
 1. `migrations/001_create_pending_submissions.sql`
 2. `migrations/002_rebuild_foundation.sql`
 3. `migrations/003_ugly_city_metadata.sql`
+4. `migrations/004_repair_submission_schema_drift.sql`
 
 Migration 003 adds nullable milestone metadata to pending submissions and the live image table. The app still preserves the core live insert contract: `image_url`, `user_id`, `added_by`, `created_at`, `era_keys`, `reward_points`, and `prompt_text`.
+Migration 004 repeats the additive column/table guarantees from 002 and 003 for databases whose migration ledger was marked applied but whose schema drifted.
 
 ## Checks
 
