@@ -15,6 +15,14 @@ function getSSL(connectionString) {
     : { rejectUnauthorized: false };
 }
 
+function parseTrustedProxy(value) {
+  const raw = String(value || "1").trim();
+  if (raw === "true") return true;
+  if (raw === "false") return false;
+  if (/^\d+$/.test(raw)) return Number(raw);
+  return raw;
+}
+
 const config = {
   env: process.env.NODE_ENV || "development",
   isProduction: (process.env.NODE_ENV || "development") === "production",
@@ -30,7 +38,7 @@ const config = {
   discordGuildId: process.env.DISCORD_GUILD_ID || "",
   adminDiscordIds: new Set(parseCsv(process.env.ADMIN_DISCORD_IDS)),
   maxUploadMb: Math.max(1, Number(process.env.MAX_UPLOAD_MB || "10")),
-  trustedProxy: process.env.TRUSTED_PROXY || "1",
+  trustedProxy: parseTrustedProxy(process.env.TRUSTED_PROXY),
   storageDriver: (process.env.STORAGE_DRIVER || "local").toLowerCase(),
   s3Region: process.env.S3_REGION || "auto",
   s3Bucket: process.env.S3_BUCKET || "",
@@ -74,5 +82,6 @@ function validateConfig() {
 module.exports = {
   config,
   getSSL,
+  parseTrustedProxy,
   validateConfig,
 };

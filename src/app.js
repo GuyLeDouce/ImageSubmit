@@ -42,6 +42,28 @@ const { PROJECT_LINKS } = require("./links");
 const crypto = require("crypto");
 const { ConflictError } = require("./errors");
 
+const OAUTH_STATE_COOKIE = "squig.oauth.state";
+const OAUTH_STATE_MAX_AGE_MS = 1000 * 60 * 10;
+
+function parseCookieHeader(header) {
+  return String(header || "")
+    .split(";")
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .reduce((cookies, part) => {
+      const separatorIndex = part.indexOf("=");
+      if (separatorIndex === -1) return cookies;
+      const name = part.slice(0, separatorIndex);
+      const value = part.slice(separatorIndex + 1);
+      try {
+        cookies[name] = decodeURIComponent(value);
+      } catch (error) {
+        cookies[name] = value;
+      }
+      return cookies;
+    }, {});
+}
+
 function createApp() {
   validateConfig();
 
@@ -238,18 +260,38 @@ function createApp() {
   app.get("/auth/discord", (req, res) => {
     const state = createStateToken();
     req.session.oauthState = state;
-    res.redirect(getDiscordAuthUrl(state));
+    res.cookie(OAUTH_STATE_COOKIE, state, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: config.isProduction,
+      maxAge: OAUTH_STATE_MAX_AGE_MS,
+      path: "/auth/discord/callback",
+    });
+    req.session.save((error) => {
+      if (error) return res.status(500).render("error", {
+        title: "Login failed",
+        message: "Could not start Discord login. Please try again.",
+        requestId: req.id,
+      });
+      res.redirect(getDiscordAuthUrl(state));
+    });
   });
 
   app.get("/auth/discord/callback", async (req, res, next) => {
     try {
       const { code, state, error } = req.query;
       if (error) throw new Error(`Discord login failed: ${error}`);
-      if (!code || !state || state !== req.session.oauthState) {
-        throw new Error("Invalid OAuth state. Please try logging in again.");
+      const oauthStateCookie = parseCookieHeader(req.headers.cookie)[OAUTH_STATE_COOKIE];
+      const expectedStates = new Set([req.session.oauthState, oauthStateCookie].filter(Boolean));
+      if (!code || !state || !expectedStates.has(String(state))) {
+        delete req.session.oauthState;
+        res.clearCookie(OAUTH_STATE_COOKIE, { path: "/auth/discord/callback" });
+        setFlash(req, "error", "Discord login expired. Please try logging in again.");
+        return res.redirect("/");
       }
 
       delete req.session.oauthState;
+      res.clearCookie(OAUTH_STATE_COOKIE, { path: "/auth/discord/callback" });
       const token = await exchangeCodeForToken(String(code));
       const [discordUser, guilds] = await Promise.all([
         getDiscordUser(token.access_token),
