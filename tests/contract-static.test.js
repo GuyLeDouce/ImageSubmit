@@ -37,7 +37,12 @@ test("approval insert preserves bot-facing live table columns", () => {
   assert.match(dbSource, /ROLLBACK/);
 });
 
-test("startup database initialization does not run DDL", () => {
+test("startup database initialization runs only additive schema repair", () => {
   const initDbBody = dbSource.match(/async function initDb\(\) \{([\s\S]*?)\n\}/)?.[1] || "";
-  assert.doesNotMatch(initDbBody, /\bCREATE\b|\bALTER\b|\bDROP\b|\bTRUNCATE\b/i);
+  assert.match(initDbBody, /ensureRuntimeSchema\(\)/);
+  const repairBody = dbSource.match(/async function ensureRuntimeSchema\(\) \{([\s\S]*?)\n\}/)?.[1] || "";
+  assert.match(repairBody, /ADD COLUMN IF NOT EXISTS decline_reason/);
+  assert.match(repairBody, /ADD COLUMN IF NOT EXISTS row_version/);
+  assert.match(repairBody, /CREATE TABLE IF NOT EXISTS squig_survival_image_moderation_audit/);
+  assert.doesNotMatch(repairBody, /\bDROP\b|\bTRUNCATE\b|\bDELETE\b/i);
 });
