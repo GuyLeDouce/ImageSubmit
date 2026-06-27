@@ -2,9 +2,11 @@
 
 <section class="stack-gap">
   <div>
-    <p class="eyebrow">Admin review</p>
+    <p class="eyebrow">Ugly City Admin Review</p>
     <h1>Pending submissions</h1>
-    <p class="muted">Only allowlisted Discord admins can access this page.</p>
+    <p class="muted">
+      Approve only images that clearly include at least 1 Squig, fit the selected milestone, are appropriate for the project, and are not gore, explicit content, hateful content, or unrelated spam.
+    </p>
   </div>
 
   <% if (!submissions.length) { %>
@@ -24,12 +26,20 @@
           <div><dt>Discord username</dt><dd><%= submission.discord_username %></dd></div>
           <div><dt>Discord user ID</dt><dd><%= submission.discord_user_id %></dd></div>
           <div><dt>Display name</dt><dd><%= submission.discord_display_name || "Not set" %></dd></div>
-          <div><dt>Era</dt><dd><%= submission.era_key %></dd></div>
-          <div><dt>NFT Used</dt><dd><%= submission.nft_used_type === "other" ? (submission.nft_used_text || "Other") : "Squigs" %></dd></div>
-          <div><dt>Prompt</dt><dd><%= submission.prompt_text || "Not provided" %></dd></div>
+          <div><dt>Era</dt><dd>The Rise of Ugly City</dd></div>
+          <div><dt>Selected milestone</dt><dd><%= submission.milestone_label || submission.milestone_key || "Not selected" %></dd></div>
+          <div><dt>District</dt><dd><%= submission.milestone_district || "Not selected" %></dd></div>
+          <div><dt>Squig confirmed by user</dt><dd><%= submission.contains_squig_confirmed ? "Yes" : "No" %></dd></div>
+          <div><dt>Other collections included</dt><dd><%= submission.other_collections_text || submission.nft_used_text || "None provided" %></dd></div>
+          <div><dt>Prompt used</dt><dd><%= submission.prompt_text || "Not provided" %></dd></div>
+          <div><dt>Reward default</dt><dd><%= submission.reward_points || 100 %> $CHARM</dd></div>
           <div><dt>Submitted</dt><dd><%= new Date(submission.submitted_at).toLocaleString() %></dd></div>
           <div><dt>Image URL</dt><dd><a href="<%= submission.image_url %>" target="_blank" rel="noreferrer">Open image</a></dd></div>
         </dl>
+
+        <div class="review-note">
+          Decline if the image does not clearly contain a Squig.
+        </div>
 
         <div class="actions review-actions">
           <form action="/admin/submissions/<%= submission.id %>/approve" method="post" class="approve-form">
@@ -60,36 +70,6 @@
                 placeholder="<%= submission.discord_display_name || 'Not set' %>"
               />
             </label>
-            <label class="field">
-              <span>Era</span>
-              <select name="override_era_key" required>
-                <% eras.forEach((era) => { %>
-                  <option value="<%= era.key %>" <%= era.key === submission.era_key ? "selected" : "" %>><%= era.label %></option>
-                <% }) %>
-              </select>
-            </label>
-            <label class="field">
-              <span>NFT used</span>
-              <select
-                name="override_nft_used_type"
-                required
-                data-nft-type-select
-              >
-                <option value="squigs" <%= submission.nft_used_type === "squigs" ? "selected" : "" %>>Squigs Reloaded</option>
-                <option value="other" <%= submission.nft_used_type === "other" ? "selected" : "" %>>Other</option>
-              </select>
-            </label>
-            <label class="field <%= submission.nft_used_type === 'other' ? '' : 'is-hidden' %>" data-nft-other-field>
-              <span>Which NFT?</span>
-              <input
-                type="text"
-                name="override_nft_used_text"
-                value="<%= submission.nft_used_text || '' %>"
-                maxlength="200"
-                placeholder="Add the NFT used"
-                data-nft-other-input
-              />
-            </label>
             <label class="field small-field">
               <span>Reward points</span>
               <input
@@ -97,12 +77,11 @@
                 min="0"
                 max="100000"
                 name="reward_points"
-                value="<%= submission.reward_points %>"
+                value="<%= submission.reward_points || 100 %>"
                 required
-                data-reward-input
               />
             </label>
-            <button type="submit" class="button">Accept</button>
+            <button type="submit" class="button">Approve</button>
           </form>
 
           <form action="/admin/submissions/<%= submission.id %>/decline" method="post">
@@ -110,7 +89,7 @@
             <input type="hidden" name="row_version" value="<%= submission.row_version %>" />
             <label class="field">
               <span>Decline reason</span>
-              <textarea name="reason" rows="3" maxlength="500" required placeholder="Explain what needs to change"></textarea>
+              <textarea name="reason" rows="3" maxlength="500" required placeholder="No clear Squig, milestone mismatch, unsafe content, or spam"></textarea>
             </label>
             <button type="submit" class="button danger">Decline</button>
           </form>
@@ -123,8 +102,8 @@
 <section class="stack-gap">
   <div>
     <p class="eyebrow">Approved library</p>
-    <h1>Approved images</h1>
-    <p class="muted">Approved entries remain visible here so admins can review and edit them later.</p>
+    <h1>Approved Ugly City images</h1>
+    <p class="muted">Approved entries remain visible here so admins can review and edit reward/account details later.</p>
   </div>
 
   <% if (!approvedSubmissions.length) { %>
@@ -144,10 +123,11 @@
           <div><dt>Discord username</dt><dd><%= submission.discord_username %></dd></div>
           <div><dt>Discord user ID</dt><dd><%= submission.discord_user_id %></dd></div>
           <div><dt>Display name</dt><dd><%= submission.discord_display_name || "Not set" %></dd></div>
-          <div><dt>Era</dt><dd><%= submission.era_key %></dd></div>
-          <div><dt>NFT Used</dt><dd><%= submission.nft_used_type === "other" ? (submission.nft_used_text || "Other") : "Squigs" %></dd></div>
+          <div><dt>Era</dt><dd>The Rise of Ugly City</dd></div>
+          <div><dt>Milestone</dt><dd><%= submission.milestone_label || submission.milestone_key || "Not set" %></dd></div>
+          <div><dt>Other collections</dt><dd><%= submission.other_collections_text || submission.nft_used_text || "None provided" %></dd></div>
           <div><dt>Prompt</dt><dd><%= submission.prompt_text || "Not provided" %></dd></div>
-          <div><dt>Reward points</dt><dd><%= submission.reward_points %></dd></div>
+          <div><dt>Reward</dt><dd><%= submission.reward_points || 100 %> $CHARM</dd></div>
           <div><dt>Approved</dt><dd><%= submission.reviewed_at ? new Date(submission.reviewed_at).toLocaleString() : "Unknown" %></dd></div>
           <div><dt>Approved by</dt><dd><%= submission.reviewed_by || "Unknown" %></dd></div>
           <div><dt>Image URL</dt><dd><a href="<%= submission.image_url %>" target="_blank" rel="noreferrer">Open image</a></dd></div>
@@ -183,36 +163,6 @@
                 placeholder="Not set"
               />
             </label>
-            <label class="field">
-              <span>Era</span>
-              <select name="override_era_key" required>
-                <% eras.forEach((era) => { %>
-                  <option value="<%= era.key %>" <%= era.key === submission.era_key ? "selected" : "" %>><%= era.label %></option>
-                <% }) %>
-              </select>
-            </label>
-            <label class="field">
-              <span>NFT used</span>
-              <select
-                name="override_nft_used_type"
-                required
-                data-nft-type-select
-              >
-                <option value="squigs" <%= submission.nft_used_type === "squigs" ? "selected" : "" %>>Squigs Reloaded</option>
-                <option value="other" <%= submission.nft_used_type === "other" ? "selected" : "" %>>Other</option>
-              </select>
-            </label>
-            <label class="field <%= submission.nft_used_type === 'other' ? '' : 'is-hidden' %>" data-nft-other-field>
-              <span>Which NFT?</span>
-              <input
-                type="text"
-                name="override_nft_used_text"
-                value="<%= submission.nft_used_text || '' %>"
-                maxlength="200"
-                placeholder="Add the NFT used"
-                data-nft-other-input
-              />
-            </label>
             <label class="field small-field">
               <span>Reward points</span>
               <input
@@ -220,9 +170,8 @@
                 min="0"
                 max="100000"
                 name="reward_points"
-                value="<%= submission.reward_points %>"
+                value="<%= submission.reward_points || 100 %>"
                 required
-                data-reward-input
               />
             </label>
             <button type="submit" class="button secondary">Save changes</button>
@@ -232,48 +181,5 @@
     </article>
   <% }) %>
 </section>
-
-<script nonce="<%= cspNonce %>">
-  (() => {
-    const ERAS = <%- JSON.stringify(eras.map((era) => ({ key: era.key, allowedCollectionTypes: era.allowedCollectionTypes, defaultRewards: era.defaultRewards }))) %>;
-
-    const getSuggestedReward = (nftUsedType, eraKey) => {
-      return ERAS.find((era) => era.key === eraKey)?.defaultRewards?.[nftUsedType] ?? 0;
-    };
-
-    document.querySelectorAll("form.approve-form").forEach((form) => {
-      const typeSelect = form.querySelector("[data-nft-type-select]");
-      const eraSelect = form.querySelector('select[name="override_era_key"]');
-      const otherField = form.querySelector("[data-nft-other-field]");
-      const otherInput = form.querySelector("[data-nft-other-input]");
-      const rewardInput = form.querySelector("[data-reward-input]");
-      if (!typeSelect || !eraSelect || !otherField || !otherInput || !rewardInput) return;
-
-      let lastSuggestedReward = String(getSuggestedReward(typeSelect.value, eraSelect.value));
-
-      const syncForm = () => {
-        const selectedEra = ERAS.find((era) => era.key === eraSelect.value);
-        const allowsOther = selectedEra?.allowedCollectionTypes?.includes("other");
-        const otherOption = typeSelect.querySelector('option[value="other"]');
-        if (otherOption) otherOption.disabled = Boolean(selectedEra && !allowsOther);
-        if (!allowsOther && typeSelect.value === "other") typeSelect.value = "squigs";
-        const isOther = typeSelect.value === "other";
-        otherField.classList.toggle("is-hidden", !isOther);
-        otherInput.required = isOther;
-        if (!isOther) otherInput.value = "";
-
-        const suggestedReward = String(getSuggestedReward(typeSelect.value, eraSelect.value));
-        if (!rewardInput.value || rewardInput.value === lastSuggestedReward) {
-          rewardInput.value = suggestedReward;
-        }
-        lastSuggestedReward = suggestedReward;
-      };
-
-      typeSelect.addEventListener("change", syncForm);
-      eraSelect.addEventListener("change", syncForm);
-      syncForm();
-    });
-  })();
-</script>
 
 <%- include("partials/footer") %>

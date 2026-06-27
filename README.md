@@ -1,18 +1,21 @@
-# Squigs Reloaded Creator Portal
+# Ugly City Image Factory
 
-A separate Node.js web app for Discord-authenticated Squig Survival image submissions. It verifies Ugly Labs Discord membership, stores images by URL, queues submissions for moderation, and only writes to The Gauntlet's live `squig_survival_images` table after admin approval.
+A separate Node.js web app for Discord-authenticated Squig Survival image submissions for **The Rise of Ugly City**. It verifies Ugly Labs Discord membership, stores uploads by URL, queues submissions for admin moderation, and only writes approved images to The Gauntlet's live `squig_survival_images` table.
 
 ## What it does
 
 - Uses Discord OAuth login to collect the submitter's Discord ID, username, and display name.
 - Confirms the user is in the configured Ugly Labs Discord server.
 - Blocks submissions for non-members and sends them to `squigs.io/discord`.
-- Accepts image uploads and stores a URL in Postgres.
-- Writes pending submissions to `squig_survival_image_submissions`.
+- Requires every submission to select one of the 100 Ugly City milestones.
+- Requires the user to confirm the image includes at least one Squig.
+- Allows optional notes for other NFTs, collections, images, characters, backgrounds, or memes included in the image.
+- Writes pending submissions to `squig_survival_image_submissions` with `era_key = "ugly_city"`, milestone metadata, Squig confirmation, prompt text, and a 100 $CHARM reward default.
 - Restricts admin review to Discord-authenticated users listed in `ADMIN_DISCORD_IDS`.
-- On approval, inserts into the existing live table expected by The Gauntlet bot: `image_url`, `user_id`, `added_by`, `created_at`, `era_keys`, `reward_points`.
-- Preserves the existing route and cookie contract while using Squigs Reloaded links and copy.
-- Blocks obsolete mint CTA copy with `npm run check:mint`.
+- Lets admins approve or decline each image. Images without a clearly visible Squig should be declined.
+- On approval, inserts into the existing live table expected by The Gauntlet with `era_keys = "ugly_city"` and `reward_points = 100` by default.
+- Approved images become eligible for the Ugly City image pool; approval does not guarantee in-game appearance.
+- Supports local uploads for development and S3-compatible uploads for production.
 
 ## Environment variables
 
@@ -25,7 +28,7 @@ Useful: `ADMIN_DISCORD_IDS=123,456`, `LIVE_IMAGE_TABLE=squig_survival_images`, `
 Storage:
 
 - `STORAGE_DRIVER=local` for local development.
-- `STORAGE_DRIVER=s3` for production on Railway.
+- `STORAGE_DRIVER=s3` for production on Railway or any production host.
 - With `s3`, also set `S3_BUCKET`, `S3_ENDPOINT`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_PUBLIC_BASE_URL`.
 
 ## Discord OAuth setup
@@ -47,7 +50,8 @@ Approval flow:
 1. Insert pending uploads into `squig_survival_image_submissions`.
 2. Admin approves.
 3. App inserts a live row into `squig_survival_images`.
-4. App marks the pending row as `approved`.
+4. The live row keeps `era_keys = "ugly_city"` so The Gauntlet can find Ugly City images.
+5. App marks the pending row as `approved`.
 
 Decline flow:
 
@@ -82,8 +86,9 @@ Run reviewed SQL migrations against the same Postgres database before deploying:
 
 1. `migrations/001_create_pending_submissions.sql`
 2. `migrations/002_rebuild_foundation.sql`
+3. `migrations/003_ugly_city_metadata.sql`
 
-Do not apply any live-table schema change without a preflight/reconciliation report and explicit owner approval.
+Migration 003 adds nullable milestone metadata to pending submissions and the live image table. The app still preserves the core live insert contract: `image_url`, `user_id`, `added_by`, `created_at`, `era_keys`, `reward_points`, and `prompt_text`.
 
 ## Checks
 

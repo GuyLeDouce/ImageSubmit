@@ -12,7 +12,7 @@ const ignoredExtensions = new Set([".png", ".jpg", ".jpeg", ".gif", ".webp", ".i
 
 function walk(dir, files = []) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    if (ignoredDirs.has(entry.name)) continue;
+    if (ignoredDirs.has(entry.name) || entry.name.startsWith("node_modules")) continue;
     const fullPath = path.join(dir, entry.name);
     if (entry.isDirectory()) walk(fullPath, files);
     else if (!ignoredExtensions.has(path.extname(entry.name).toLowerCase())) files.push(fullPath);

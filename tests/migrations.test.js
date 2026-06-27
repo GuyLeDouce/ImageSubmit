@@ -24,7 +24,7 @@ function runMigrate(extraEnv = {}) {
   });
 }
 
-test("migration 002 preserves legacy rows and records execution", { skip: !process.env.TEST_DATABASE_URL }, async () => {
+test("migrations preserve legacy rows, add Ugly City metadata, and record execution", { skip: !process.env.TEST_DATABASE_URL }, async () => {
   const pool = createTestPool();
   await resetDatabase(pool);
   await pool.query(fs.readFileSync(path.join(__dirname, "fixtures", "legacy-schema.sql"), "utf8"));
@@ -43,13 +43,15 @@ test("migration 002 preserves legacy rows and records execution", { skip: !proce
   assert.equal(second.status, 0, second.stderr || second.stdout);
   assert.match(second.stdout, /"skipped"/);
 
-  const afterSubmissions = await pool.query("SELECT id, era_key, image_url, storage_key, decline_reason, row_version FROM squig_survival_image_submissions ORDER BY id");
+  const afterSubmissions = await pool.query("SELECT id, era_key, image_url, storage_key, decline_reason, row_version, contains_squig_confirmed, milestone_key FROM squig_survival_image_submissions ORDER BY id");
   assert.deepEqual(
     afterSubmissions.rows.map(({ id, era_key, image_url, storage_key }) => ({ id, era_key, image_url, storage_key })),
     beforeSubmissions.rows
   );
   assert.equal(afterSubmissions.rows.find((row) => row.id === "103" || row.id === 103).decline_reason, null);
   assert.deepEqual(afterSubmissions.rows.map((row) => row.row_version), [1, 1, 1]);
+  assert.deepEqual(afterSubmissions.rows.map((row) => row.contains_squig_confirmed), [false, false, false]);
+  assert.deepEqual(afterSubmissions.rows.map((row) => row.milestone_key), [null, null, null]);
 
   const notification = await pool.query("SELECT id, submission_id, image_url, era_key FROM squig_survival_image_approval_notifications WHERE id = 601");
   assert.equal(String(notification.rows[0].submission_id), "102");
@@ -62,12 +64,20 @@ test("migration 002 preserves legacy rows and records execution", { skip: !proce
     WHERE table_name = 'squig_survival_images'
     ORDER BY ordinal_position
   `);
-  assert.deepEqual(afterLiveColumns.rows, beforeLiveColumns.rows);
+  const beforeLiveColumnNames = new Set(beforeLiveColumns.rows.map((row) => row.column_name));
+  for (const columnName of ["milestone_key", "milestone_number", "milestone_label", "milestone_district"]) {
+    assert.equal(beforeLiveColumnNames.has(columnName), false);
+    assert.ok(afterLiveColumns.rows.some((row) => row.column_name === columnName), columnName);
+  }
 
   const auditTable = await pool.query("SELECT to_regclass('squig_survival_image_moderation_audit') AS regclass");
   assert.equal(auditTable.rows[0].regclass, "squig_survival_image_moderation_audit");
   const ledger = await pool.query("SELECT filename FROM squig_survival_schema_migrations ORDER BY filename");
-  assert.deepEqual(ledger.rows.map((row) => row.filename), ["001_create_pending_submissions.sql", "002_rebuild_foundation.sql"]);
+  assert.deepEqual(ledger.rows.map((row) => row.filename), [
+    "001_create_pending_submissions.sql",
+    "002_rebuild_foundation.sql",
+    "003_ugly_city_metadata.sql",
+  ]);
 
   await pool.end();
 });

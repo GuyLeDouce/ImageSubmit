@@ -16,6 +16,11 @@ const {
 const { config, validateConfig } = require("./config");
 const { SURVIVAL_ERAS } = require("./eras");
 const {
+  UGLY_CITY_ERA_KEY,
+  UGLY_CITY_MILESTONES,
+  getUglyCityMilestoneByKey,
+} = require("./uglyCityMilestones");
+const {
   createStateToken,
   getDiscordAuthUrl,
   exchangeCodeForToken,
@@ -27,7 +32,6 @@ const {
   upload,
   maxFilesPerSubmission,
   validateEraKey,
-  parseNftUsedType,
   resolveDefaultRewardPoints,
   parseRewardPoints,
   parseOptionalDiscordUserId,
@@ -173,18 +177,35 @@ function createApp() {
     req.session.flash = { type, message };
   }
 
+  function rememberPostLoginRedirect(req) {
+    if (req.method !== "GET") return;
+    if (!req.originalUrl.startsWith("/submit")) return;
+    req.session.postLoginRedirect = req.originalUrl;
+  }
+
+  function consumePostLoginRedirect(req) {
+    const redirectTo = req.session.postLoginRedirect;
+    delete req.session.postLoginRedirect;
+    if (typeof redirectTo === "string" && redirectTo.startsWith("/submit")) {
+      return redirectTo;
+    }
+    return null;
+  }
+
   function requireAuth(req, res, next) {
     if (!req.session.user) {
+      rememberPostLoginRedirect(req);
       setFlash(req, "error", "Please log in with Discord first.");
-      return res.redirect("/");
+      return res.redirect("/auth/discord");
     }
     next();
   }
 
   function requireVerifiedMember(req, res, next) {
     if (!req.session.user) {
+      rememberPostLoginRedirect(req);
       setFlash(req, "error", "Please log in with Discord first.");
-      return res.redirect("/");
+      return res.redirect("/auth/discord");
     }
     if (!req.session.user.isGuildMember) {
       return res.status(403).render("blocked", { title: "Join Ugly Labs Discord" });
@@ -207,7 +228,11 @@ function createApp() {
   }
 
   app.get("/", (req, res) => {
-    res.render("home", { title: "Squigs Reloaded Creator Portal", eras: SURVIVAL_ERAS });
+    res.render("home", {
+      title: "The Ugly City Image Factory",
+      eras: SURVIVAL_ERAS,
+      milestones: UGLY_CITY_MILESTONES,
+    });
   });
 
   app.get("/auth/discord", (req, res) => {
@@ -241,7 +266,9 @@ function createApp() {
         membershipCheckedAt: new Date().toISOString(),
       };
 
-      if (!isGuildMember) return res.redirect("/submit");
+      const postLoginRedirect = consumePostLoginRedirect(req);
+      if (!isGuildMember) return res.redirect(postLoginRedirect || "/submit");
+      if (postLoginRedirect) return res.redirect(postLoginRedirect);
       if (config.adminDiscordIds.has(discordUser.id)) return res.redirect("/admin");
       res.redirect("/submit");
     } catch (error) {
@@ -257,16 +284,23 @@ function createApp() {
     });
   });
 
+  app.get("/submit/:milestoneKey", requireAuth, (req, res) => {
+    res.redirect(`/submit?milestone=${encodeURIComponent(req.params.milestoneKey)}`);
+  });
+
   app.get("/submit", requireAuth, async (req, res, next) => {
     try {
       if (!req.session.user.isGuildMember) {
         return res.status(403).render("blocked", { title: "Join Ugly Labs Discord" });
       }
 
+      const selectedMilestone = getUglyCityMilestoneByKey(String(req.query.milestone || "").trim());
       const submissions = await listSubmissionsForUser(req.session.user.id);
       res.render("submit", {
-        title: "Submit Your Image",
+        title: "Submit to Ugly City",
         eras: SURVIVAL_ERAS,
+        milestones: UGLY_CITY_MILESTONES,
+        selectedMilestone,
         submitted: req.query.submitted === "1",
         submissions,
       });
@@ -275,16 +309,18 @@ function createApp() {
     }
   });
 
-  app.post("/submit", requireVerifiedMember, requireMultipartHeaderCsrf, upload.array("images", maxFilesPerSubmission), async (req, res, next) => {
+  app.post("/submit", requireVerifiedMember, upload.array("images", maxFilesPerSubmission), requireVerifiedFormRequest, async (req, res, next) => {
     try {
-      const eraKey = String(req.body.era_key || "").trim();
+      const eraKey = UGLY_CITY_ERA_KEY;
+      const milestoneKey = String(req.body.milestone_key || "").trim();
+      const milestone = getUglyCityMilestoneByKey(milestoneKey);
       const promptText = parseOptionalText(req.body.prompt_text, "Prompt", 4000);
-      const nftUsedType = parseNftUsedType(req.body.nft_used_type);
-      const nftUsedText = parseOptionalText(req.body.nft_used_text, "NFT used", 200);
-      if (nftUsedType === "other" && !nftUsedText) {
-        throw new Error("Please tell us which NFT was used when selecting Other.");
+      const otherCollectionsText = parseOptionalText(req.body.other_collections_text, "Other NFTs / collections included", 500);
+      const nftUsedType = "squigs";
+      if (!milestone) throw new Error("Please choose a valid Ugly City milestone.");
+      if (req.body.contains_squig_confirmed !== "on") {
+        throw new Error("Please confirm that your image includes at least one Squig.");
       }
-      if (!validateEraKey(eraKey)) throw new Error("Please choose a valid era.");
       assertCollectionAllowedForEra(nftUsedType, eraKey);
       if (!req.files?.length) throw new Error("Please attach at least one image before submitting.");
 
@@ -297,8 +333,14 @@ function createApp() {
           eraKey,
           promptText,
           nftUsedType,
-          nftUsedText: nftUsedType === "other" ? nftUsedText : null,
-          rewardPoints: resolveDefaultRewardPoints(nftUsedType, eraKey),
+          nftUsedText: otherCollectionsText,
+          otherCollectionsText,
+          containsSquigConfirmed: true,
+          milestoneKey: milestone.key,
+          milestoneNumber: milestone.number,
+          milestoneLabel: milestone.label,
+          milestoneDistrict: milestone.district,
+          rewardPoints: resolveDefaultRewardPoints(),
           imageUrl: stored.publicUrl,
           storageKey: stored.storageKey,
           mimeType: file.mimetype,
@@ -306,7 +348,7 @@ function createApp() {
         });
       }
 
-      res.redirect("/submit?submitted=1");
+      res.redirect(`/submit?submitted=1&milestone=${encodeURIComponent(milestone.key)}`);
     } catch (error) {
       next(error);
     }
@@ -319,7 +361,7 @@ function createApp() {
         listApprovedSubmissions(),
       ]);
       res.render("admin", {
-        title: "Admin Review",
+        title: "Ugly City Admin Review",
         submissions: pendingSubmissions,
         approvedSubmissions,
         eras: SURVIVAL_ERAS,
@@ -339,12 +381,9 @@ function createApp() {
       const discordUserId = parseOptionalDiscordUserId(req.body.override_discord_user_id);
       const discordUsername = parseOptionalText(req.body.override_discord_username, "Discord username", 64);
       const discordDisplayName = parseOptionalText(req.body.override_discord_display_name, "Display name", 64);
-      const overrideEraKey = String(req.body.override_era_key || "").trim();
-      const overrideNftUsedType = parseNftUsedType(req.body.override_nft_used_type);
-      const overrideNftUsedText = parseOptionalText(req.body.override_nft_used_text, "NFT used", 200);
-      if (overrideNftUsedType === "other" && !overrideNftUsedText) {
-        throw new Error("Please add the NFT used when selecting Other.");
-      }
+      const overrideEraKey = UGLY_CITY_ERA_KEY;
+      const overrideNftUsedType = "squigs";
+      const overrideNftUsedText = null;
       if (!validateEraKey(overrideEraKey)) throw new Error("Please choose a valid era for approval.");
       assertCollectionAllowedForEra(overrideNftUsedType, overrideEraKey);
       const reviewedBy = `${req.session.user.username} (${req.session.user.id})`;
@@ -396,12 +435,9 @@ function createApp() {
       const discordUserId = parseOptionalDiscordUserId(req.body.override_discord_user_id);
       const discordUsername = parseOptionalText(req.body.override_discord_username, "Discord username", 64);
       const discordDisplayName = parseOptionalText(req.body.override_discord_display_name, "Display name", 64);
-      const overrideEraKey = String(req.body.override_era_key || "").trim();
-      const overrideNftUsedType = parseNftUsedType(req.body.override_nft_used_type);
-      const overrideNftUsedText = parseOptionalText(req.body.override_nft_used_text, "NFT used", 200);
-      if (overrideNftUsedType === "other" && !overrideNftUsedText) {
-        throw new Error("Please add the NFT used when selecting Other.");
-      }
+      const overrideEraKey = UGLY_CITY_ERA_KEY;
+      const overrideNftUsedType = "squigs";
+      const overrideNftUsedText = null;
       if (!validateEraKey(overrideEraKey)) throw new Error("Please choose a valid era.");
       assertCollectionAllowedForEra(overrideNftUsedType, overrideEraKey);
       const reviewedBy = `${req.session.user.username} (${req.session.user.id})`;

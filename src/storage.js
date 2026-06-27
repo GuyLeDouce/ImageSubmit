@@ -1,7 +1,6 @@
 const fs = require("fs/promises");
 const path = require("path");
 const crypto = require("crypto");
-const { PutObjectCommand, S3Client } = require("@aws-sdk/client-s3");
 const { config } = require("./config");
 
 const IMAGE_EXTENSIONS = {
@@ -30,6 +29,7 @@ function buildStorageKey(originalName, mimeType) {
 
 function getS3Client() {
   if (s3Client) return s3Client;
+  const { S3Client } = require("@aws-sdk/client-s3");
   s3Client = new S3Client({
     region: config.s3Region,
     endpoint: config.s3Endpoint,
@@ -46,6 +46,7 @@ async function storeFile(file) {
   const storageKey = buildStorageKey(file.originalname, file.mimetype);
 
   if (config.storageDriver === "s3") {
+    const { PutObjectCommand } = require("@aws-sdk/client-s3");
     const client = getS3Client();
     await client.send(new PutObjectCommand({
       Bucket: config.s3Bucket,

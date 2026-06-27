@@ -1,6 +1,7 @@
 const { Pool } = require("pg");
 const { config, getSSL } = require("./config");
 const { ConflictError, SafeStartupError } = require("./errors");
+const { UGLY_CITY_ERA_KEY } = require("./uglyCityMilestones");
 
 function log(...args) {
   console.log("[SUBMISSION-DB]", ...args);
@@ -68,9 +69,15 @@ async function createPendingSubmission(input) {
         storage_key,
         mime_type,
         size_bytes,
-        reward_points
+        reward_points,
+        milestone_key,
+        milestone_number,
+        milestone_label,
+        milestone_district,
+        contains_squig_confirmed,
+        other_collections_text
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
       RETURNING id, submitted_at
     `,
     [
@@ -86,6 +93,12 @@ async function createPendingSubmission(input) {
       input.mimeType,
       input.sizeBytes,
       input.rewardPoints,
+      input.milestoneKey,
+      input.milestoneNumber,
+      input.milestoneLabel,
+      input.milestoneDistrict,
+      Boolean(input.containsSquigConfirmed),
+      input.otherCollectionsText,
     ]
   );
 
@@ -113,7 +126,13 @@ async function listPendingSubmissions() {
       reviewed_at,
       reviewed_by,
       decline_reason,
-      row_version
+      row_version,
+      milestone_key,
+      milestone_number,
+      milestone_label,
+      milestone_district,
+      contains_squig_confirmed,
+      other_collections_text
     FROM squig_survival_image_submissions
     WHERE status = 'pending'
     ORDER BY submitted_at ASC
@@ -143,7 +162,13 @@ async function listApprovedSubmissions() {
       reviewed_at,
       reviewed_by,
       decline_reason,
-      row_version
+      row_version,
+      milestone_key,
+      milestone_number,
+      milestone_label,
+      milestone_district,
+      contains_squig_confirmed,
+      other_collections_text
     FROM squig_survival_image_submissions
     WHERE status = 'approved'
     ORDER BY reviewed_at DESC NULLS LAST, submitted_at DESC
@@ -174,7 +199,13 @@ async function listSubmissionsForUser(discordUserId) {
         reviewed_at,
         reviewed_by,
         decline_reason,
-        row_version
+        row_version,
+        milestone_key,
+        milestone_number,
+        milestone_label,
+        milestone_district,
+        contains_squig_confirmed,
+        other_collections_text
       FROM squig_survival_image_submissions
       WHERE discord_user_id = $1
       ORDER BY
@@ -234,7 +265,7 @@ async function approveSubmission({
     const resolvedDiscordUsername = overrideDiscordUsername || submission.discord_username;
     const resolvedDiscordDisplayName =
       overrideDiscordDisplayName || submission.discord_display_name;
-    const resolvedEraKey = overrideEraKey || submission.era_key;
+    const resolvedEraKey = UGLY_CITY_ERA_KEY;
     const resolvedNftUsedType = overrideNftUsedType || submission.nft_used_type;
     const resolvedNftUsedText =
       resolvedNftUsedType === "other" ? overrideNftUsedText || submission.nft_used_text : null;
@@ -248,9 +279,13 @@ async function approveSubmission({
           created_at,
           era_keys,
           reward_points,
-          prompt_text
+          prompt_text,
+          milestone_key,
+          milestone_number,
+          milestone_label,
+          milestone_district
         )
-        VALUES ($1, $2, $3, now(), $4, $5, $6)
+        VALUES ($1, $2, $3, now(), $4, $5, $6, $7, $8, $9, $10)
       `,
       [
         submission.image_url,
@@ -259,6 +294,10 @@ async function approveSubmission({
         resolvedEraKey,
         rewardPoints,
         submission.prompt_text,
+        submission.milestone_key,
+        submission.milestone_number,
+        submission.milestone_label,
+        submission.milestone_district,
       ]
     );
     maybeInjectFailure({ injectFailureAt }, "after-live-insert");
@@ -355,6 +394,10 @@ async function approveSubmission({
           nftUsedType: resolvedNftUsedType,
           nftUsedText: resolvedNftUsedText,
           rewardPoints,
+          milestoneKey: submission.milestone_key,
+          milestoneNumber: submission.milestone_number,
+          milestoneLabel: submission.milestone_label,
+          milestoneDistrict: submission.milestone_district,
           rowVersion: updated.rows[0].row_version,
         }),
       ]
@@ -490,7 +533,7 @@ async function updateApprovedSubmission({
     const resolvedDiscordUsername = overrideDiscordUsername || submission.discord_username;
     const resolvedDiscordDisplayName =
       overrideDiscordDisplayName || submission.discord_display_name;
-    const resolvedEraKey = overrideEraKey || submission.era_key;
+    const resolvedEraKey = UGLY_CITY_ERA_KEY;
     const resolvedNftUsedType = overrideNftUsedType || submission.nft_used_type;
     const resolvedNftUsedText =
       resolvedNftUsedType === "other" ? overrideNftUsedText || submission.nft_used_text : null;
@@ -502,7 +545,11 @@ async function updateApprovedSubmission({
             era_keys = $2,
             reward_points = $3,
             added_by = $4,
-            prompt_text = $5
+            prompt_text = $5,
+            milestone_key = $10,
+            milestone_number = $11,
+            milestone_label = $12,
+            milestone_district = $13
         WHERE image_url = $6
           AND user_id = $7
           AND era_keys = $8
@@ -518,6 +565,10 @@ async function updateApprovedSubmission({
         submission.discord_user_id,
         submission.era_key,
         submission.reward_points,
+        submission.milestone_key,
+        submission.milestone_number,
+        submission.milestone_label,
+        submission.milestone_district,
       ]
     );
 
@@ -616,6 +667,10 @@ async function updateApprovedSubmission({
           nftUsedType: resolvedNftUsedType,
           nftUsedText: resolvedNftUsedText,
           rewardPoints,
+          milestoneKey: submission.milestone_key,
+          milestoneNumber: submission.milestone_number,
+          milestoneLabel: submission.milestone_label,
+          milestoneDistrict: submission.milestone_district,
           rowVersion: updated.rows[0].row_version,
         }),
       ]

@@ -3,49 +3,50 @@ const assert = require("node:assert/strict");
 
 const {
   SURVIVAL_ERAS,
+  UGLY_CITY_ERA_KEY,
   getEraByKey,
   isCollectionTypeAllowedForEra,
   resolveEraDefaultReward,
 } = require("../src/eras");
+const {
+  UGLY_CITY_MILESTONES,
+  getUglyCityMilestoneByKey,
+  getUglyCityMilestoneByNumber,
+} = require("../src/uglyCityMilestones");
 const { PROJECT_LINKS } = require("../src/links");
 
-test("preserves exact era keys", () => {
-  assert.deepEqual(
-    SURVIVAL_ERAS.map((era) => era.key),
-    [
-      "day_one",
-      "office_squigs",
-      "jobsite_squigs",
-      "movie_theater",
-      "airport",
-      "zombie_apocalypse",
-      "!revive Success",
-      "!revive Failed",
-    ]
-  );
+test("only exposes The Rise of Ugly City era", () => {
+  assert.deepEqual(SURVIVAL_ERAS, [
+    { key: "ugly_city", label: "The Rise of Ugly City" },
+  ]);
+  assert.equal(UGLY_CITY_ERA_KEY, "ugly_city");
+  assert.deepEqual(getEraByKey("ugly_city"), SURVIVAL_ERAS[0]);
+  assert.equal(getEraByKey("day_one"), null);
 });
 
-test("enforces Squigs-only eras", () => {
-  for (const key of ["day_one", "office_squigs", "jobsite_squigs"]) {
-    assert.equal(isCollectionTypeAllowedForEra(key, "squigs"), true);
-    assert.equal(isCollectionTypeAllowedForEra(key, "other"), false);
-    assert.equal(resolveEraDefaultReward("squigs", key), 150);
-    assert.equal(resolveEraDefaultReward("other", key), null);
-  }
+test("Ugly City requires Squigs internally and defaults to 100 CHARM", () => {
+  assert.equal(isCollectionTypeAllowedForEra("ugly_city", "squigs"), true);
+  assert.equal(isCollectionTypeAllowedForEra("ugly_city", "other"), false);
+  assert.equal(resolveEraDefaultReward("squigs", "ugly_city"), 100);
+  assert.equal(resolveEraDefaultReward("other", "ugly_city"), null);
 });
 
-test("allows other collections in non Squigs-only eras", () => {
-  for (const era of SURVIVAL_ERAS.filter((item) => !["day_one", "office_squigs", "jobsite_squigs"].includes(item.key))) {
-    assert.equal(isCollectionTypeAllowedForEra(era.key, "squigs"), true);
-    assert.equal(isCollectionTypeAllowedForEra(era.key, "other"), true);
-  }
-});
-
-test("uses revive reward defaults from domain model", () => {
-  assert.equal(resolveEraDefaultReward("squigs", "!revive Success"), 20);
-  assert.equal(resolveEraDefaultReward("other", "!revive Success"), 10);
-  assert.equal(resolveEraDefaultReward("squigs", "!revive Failed"), 20);
-  assert.equal(resolveEraDefaultReward("other", "!revive Failed"), 10);
+test("centralizes all 100 Ugly City milestones", () => {
+  assert.equal(UGLY_CITY_MILESTONES.length, 100);
+  assert.deepEqual(getUglyCityMilestoneByNumber(1), {
+    number: 1,
+    key: "empty_lot",
+    label: "Chapter 1 - Empty Lot",
+    district: "Empty Lot",
+  });
+  assert.deepEqual(getUglyCityMilestoneByKey("founders_office"), {
+    number: 100,
+    key: "founders_office",
+    label: "Chapter 100 - Founder's Office",
+    district: "Founder's Office",
+  });
+  assert.equal(getUglyCityMilestoneByKey("airport").number, 43);
+  assert.equal(getUglyCityMilestoneByKey("not_real"), null);
 });
 
 test("centralizes canonical project links", () => {
@@ -53,7 +54,6 @@ test("centralizes canonical project links", () => {
   assert.equal(PROJECT_LINKS.discord, "https://squigs.io/discord");
   assert.equal(PROJECT_LINKS.openSea, "https://opensea.io/collection/squigs-reloaded");
   assert.ok(PROJECT_LINKS.x.startsWith("https://x.com/"));
-  assert.ok(getEraByKey("day_one"));
 });
 
 test("only collection CTA destination resolves to Reloaded OpenSea collection", () => {

@@ -1,10 +1,8 @@
 <%- include("partials/header") %>
 
 <%
-  const eraLabelMap = eras.reduce((map, era) => {
-    map[era.key] = era.label;
-    return map;
-  }, {});
+  const eraLabel = eras[0]?.label || "The Rise of Ugly City";
+  const selectedMilestoneKey = selectedMilestone?.key || "";
   const submissionGroups = [
     { key: "pending", title: "Awaiting Approval", emptyText: "No images waiting for review yet." },
     { key: "approved", title: "Approved", emptyText: "No approved images yet." },
@@ -17,24 +15,32 @@
 
 <section class="stack-gap submit-page">
   <div class="stack-gap narrow form-shell">
-    <p class="eyebrow">Submission form</p>
-    <h1>Submit your image</h1>
+    <p class="eyebrow">The Rise of Ugly City</p>
+    <h1>Submit to Ugly City</h1>
     <p class="muted">Logged in as <strong><%= user.username %></strong> (<%= user.id %>)</p>
 
     <% if (submitted) { %>
       <div class="success-box">
-        Your image submission has been received for review. Watch for approval in <a href="https://discord.gg/UJgqevGaGV" target="_blank" rel="noreferrer">squigs.io/discord</a>.
+        Your Ugly City image has been submitted for review. If approved, it will enter the Ugly City image pool and earn 100 $CHARM.
       </div>
     <% } %>
 
     <form action="/submit" method="post" enctype="multipart/form-data" class="stack-gap panel form-panel">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <input type="hidden" name="era_key" value="ugly_city" />
+
+      <p class="muted">
+        Choose the Ugly City milestone this image was made for. Your image must include at least one Squig. Other NFTs, collections, backgrounds, memes, or characters are welcome as long as a Squig is clearly part of the image.
+      </p>
+
       <label class="field">
-        <span>Era</span>
-        <select name="era_key" required>
-          <option value="">Choose an era</option>
-          <% eras.forEach((era) => { %>
-            <option value="<%= era.key %>" data-allowed-collections="<%= era.allowedCollectionTypes.join(',') %>"><%= era.label %></option>
+        <span>Selected milestone</span>
+        <select name="milestone_key" required>
+          <option value="">Choose an Ugly City milestone</option>
+          <% milestones.forEach((milestone) => { %>
+            <option value="<%= milestone.key %>" <%= milestone.key === selectedMilestoneKey ? "selected" : "" %>>
+              <%= milestone.number %>. <%= milestone.district %>
+            </option>
           <% }) %>
         </select>
       </label>
@@ -45,22 +51,18 @@
         <small class="field-note">You can submit up to 10 images at once. Each image will be reviewed separately.</small>
       </label>
 
-      <label class="field">
-        <span>NFT used</span>
-        <select name="nft_used_type" data-nft-type-select required>
-          <option value="squigs" selected>Squigs Reloaded</option>
-          <option value="other">Other</option>
-        </select>
+      <label class="checkbox-field">
+        <input type="checkbox" name="contains_squig_confirmed" required />
+        <span>I confirm this image includes at least one Squig.</span>
       </label>
 
-      <label class="field is-hidden" data-nft-other-field>
-        <span>Which NFT?</span>
+      <label class="field">
+        <span>Other NFTs / collections included (optional)</span>
         <input
           type="text"
-          name="nft_used_text"
-          maxlength="200"
-          placeholder="Add the NFT used"
-          data-nft-other-input
+          name="other_collections_text"
+          maxlength="500"
+          placeholder="Collection names, characters, memes, or source notes"
         />
       </label>
 
@@ -74,14 +76,15 @@
         ></textarea>
       </label>
 
-      <button type="submit" class="button">Submit</button>
+      <p class="reward-note">Approved images earn 100 $CHARM.</p>
+      <button type="submit" class="button">Submit to Ugly City</button>
     </form>
   </div>
 
   <section class="stack-gap submission-history">
     <div class="submission-history__header">
       <p class="eyebrow">Your submissions</p>
-      <h2>All images linked to your Discord account</h2>
+      <h2>All Ugly City images linked to your Discord account</h2>
       <p class="muted">These are only the images submitted by <strong><%= user.username %></strong>.</p>
     </div>
 
@@ -114,12 +117,22 @@
                   <dl class="submission-tile__meta">
                     <div>
                       <dt>Era</dt>
-                      <dd><%= eraLabelMap[submission.era_key] || submission.era_key %></dd>
+                      <dd><%= eraLabel %></dd>
                     </div>
                     <div>
-                      <dt>NFT</dt>
-                      <dd><%= submission.nft_used_type === "other" ? submission.nft_used_text : "Squigs" %></dd>
+                      <dt>Milestone</dt>
+                      <dd><%= submission.milestone_label || submission.milestone_key || "Not set" %></dd>
                     </div>
+                    <div>
+                      <dt>Reward</dt>
+                      <dd><%= submission.reward_points || 100 %> $CHARM</dd>
+                    </div>
+                    <% if (submission.other_collections_text || submission.nft_used_text) { %>
+                      <div>
+                        <dt>Other collections</dt>
+                        <dd><%= submission.other_collections_text || submission.nft_used_text %></dd>
+                      </div>
+                    <% } %>
                     <% if (submission.status !== "pending") { %>
                       <div>
                         <dt>Reviewed</dt>
@@ -148,31 +161,5 @@
     <% }) %>
   </section>
 </section>
-
-<script nonce="<%= cspNonce %>">
-  (() => {
-    const eraSelect = document.querySelector('select[name="era_key"]');
-    const typeSelect = document.querySelector("[data-nft-type-select]");
-    const otherField = document.querySelector("[data-nft-other-field]");
-    const otherInput = document.querySelector("[data-nft-other-input]");
-    if (!typeSelect || !otherField || !otherInput) return;
-
-    const syncOtherField = () => {
-      const selectedEra = eraSelect?.selectedOptions?.[0];
-      const allowsOther = (selectedEra?.dataset.allowedCollections || "").split(",").includes("other");
-      const otherOption = typeSelect.querySelector('option[value="other"]');
-      if (otherOption) otherOption.disabled = Boolean(selectedEra && !allowsOther);
-      if (!allowsOther && typeSelect.value === "other") typeSelect.value = "squigs";
-      const isOther = typeSelect.value === "other";
-      otherField.classList.toggle("is-hidden", !isOther);
-      otherInput.required = isOther;
-      if (!isOther) otherInput.value = "";
-    };
-
-    typeSelect.addEventListener("change", syncOtherField);
-    eraSelect?.addEventListener("change", syncOtherField);
-    syncOtherField();
-  })();
-</script>
 
 <%- include("partials/footer") %>

@@ -1,148 +1,102 @@
 <%- include("partials/header") %>
 
-<section class="creator-hero">
-  <div class="creator-hero__backdrop"></div>
-  <div class="creator-hero__content">
-    <div class="creator-hero__copy">
-      <h1>Squigs Reloaded Creator Portal</h1>
-      <p class="creator-hero__tagline">Create chaos. Submit with Discord. Earn $CHARM when approved artwork is used.</p>
-      <p class="lead">
-        Build Squig Survival moments for the live Ugly Labs game pool. The team reviews every image for era fit,
-        collection eligibility, quality, and safety before it reaches The Gauntlet.
-      </p>
-      <div class="actions creator-hero__actions">
-        <% if (!user) { %>
-          <a class="button" href="/auth/discord">Log in with Discord</a>
-        <% } else if (user.isGuildMember) { %>
-          <a class="button" href="/submit">Submit an image</a>
-        <% } else { %>
-          <a class="button" href="<%= links.discord %>" target="_blank" rel="noreferrer">Join the Discord</a>
-        <% } %>
-        <a class="button secondary" href="<%= links.openSea %>" target="_blank" rel="noreferrer">Explore Squigs Reloaded</a>
-        <a class="button secondary" href="#era-guide">View era guide</a>
-      </div>
-      <div class="creator-hero__meta">
-        <span>Discord-gated submissions</span>
-        <span>Era-specific eligibility</span>
-        <span>Approval queue preserved</span>
-      </div>
-    </div>
-
-    <aside class="creator-sidecard">
+<section class="ugly-hero">
+  <div class="ugly-hero__copy">
+    <p class="eyebrow">Squig Survival Presents</p>
+    <h1>The Ugly City Image Factory</h1>
+    <p class="creator-hero__tagline">
+      Squig Survival is building the world's worst city, one milestone at a time. Every chapter unlocks a new district, and the community gets to help decide what Ugly City looks like.
+    </p>
+    <p class="lead">
+      Submit your Squigs into the districts. Build the chaos. Feed the game. Earn 100 $CHARM when your image is approved.
+    </p>
+    <div class="actions">
       <% if (!user) { %>
-        <h2>Submit into the live game pool</h2>
-        <p class="muted">Sign in with Discord, upload your image, and track review status from your creator history.</p>
-        <div class="actions">
-          <a class="button" href="/auth/discord">Log in</a>
-          <a class="button secondary" href="<%= links.discord %>" target="_blank" rel="noreferrer">Join Discord</a>
-        </div>
+        <a class="button" href="/auth/discord">Login with Discord to Submit</a>
+      <% } else if (user.isGuildMember) { %>
+        <a class="button" href="#milestones">Start Building Ugly City</a>
       <% } else { %>
-        <h2><%= user.isGuildMember ? "You are ready to create." : "Discord membership required." %></h2>
-        <div class="creator-status">
-          <p><strong>Account:</strong> <%= user.username %></p>
-          <p><strong>Membership:</strong> <%= user.isGuildMember ? "Verified" : "Not verified" %></p>
-        </div>
-        <div class="actions">
-          <% if (user.isGuildMember) { %>
-            <a class="button" href="/submit">Open submissions</a>
-          <% } else { %>
-            <a class="button" href="<%= links.discord %>" target="_blank" rel="noreferrer">Join Discord</a>
-          <% } %>
-          <% if (isAdmin) { %>
-            <a class="button secondary" href="/admin">Open admin</a>
-          <% } %>
-        </div>
+        <a class="button" href="<%= links.discord %>" target="_blank" rel="noreferrer">Join Ugly Labs Discord</a>
       <% } %>
-    </aside>
+      <a class="button secondary" href="#rules">Submission Rules</a>
+    </div>
   </div>
+
+  <aside class="ugly-hero__board">
+    <p class="eyebrow">Reward</p>
+    <p class="ugly-reward">100 <span>$CHARM</span></p>
+    <p class="muted">Every approved image becomes eligible for the Ugly City image pool. Admin approval does not guarantee in-game appearance.</p>
+  </aside>
 </section>
 
 <section class="creator-section" id="how-it-works">
   <div class="creator-section__heading">
     <p class="eyebrow">How It Works</p>
-    <h2>Create, submit, review, reward.</h2>
+    <h2>Pick a chapter, upload the chaos, wait for review.</h2>
   </div>
   <ol class="creator-steps">
-    <li>Connect with Discord and confirm Ugly Labs membership.</li>
-    <li>Choose the exact Squig Survival era your image belongs to.</li>
-    <li>Upload JPG, PNG, WebP, or GIF artwork with optional prompt context.</li>
-    <li>Admins approve, decline, or reconcile the submission.</li>
-    <li>Approved rows are inserted into The Gauntlet-compatible live table and notification queue.</li>
+    <li>Pick the Ugly City milestone your image fits.</li>
+    <li>Attach an image that includes at least one Squig.</li>
+    <li>Add optional prompt or other collection notes.</li>
+    <li>Admins review it for Squig presence, milestone fit, safety, and project fit.</li>
+    <li>Approved images earn 100 $CHARM and enter the Ugly City image pool.</li>
   </ol>
 </section>
 
-<section class="creator-section" id="era-guide">
+<section class="creator-section" id="rules">
   <div class="creator-section__heading">
-    <p class="eyebrow">Era Guide</p>
-    <h2>Rules generated from the same domain model used by validation.</h2>
-    <p class="muted">Day One, Office Squigs, and Jobsite Squigs are Squigs Reloaded only. The other active eras currently allow Squigs Reloaded plus other collections.</p>
+    <p class="eyebrow">Submission Rules</p>
+    <h2>No Squig, no approval.</h2>
   </div>
-  <div class="era-guide">
-    <% eras.forEach((era) => { %>
-      <article class="panel era-card">
-        <div class="era-card__top">
-          <p class="era-card__label">Era</p>
-          <h3><%= era.label %></h3>
-        </div>
-        <p class="era-card__summary"><%= era.summary %></p>
-        <p class="era-card__rule">
-          <%= era.allowedCollectionTypes.includes("other") ? "Squigs Reloaded + other collections" : "Squigs Reloaded only" %>
-        </p>
-        <p class="muted"><%= era.guidance %></p>
-      </article>
+  <ul class="creator-tags rules-list">
+    <li>Must include at least 1 Squig</li>
+    <li>Other NFTs or images are allowed, but a Squig must be clearly present</li>
+    <li>Pick the milestone your image was made for</li>
+    <li>Admins review every submission</li>
+    <li>Approved images earn 100 $CHARM</li>
+    <li>Approved images enter the Ugly City image pool</li>
+  </ul>
+</section>
+
+<section class="creator-section rewards-strip">
+  <div class="creator-section__heading">
+    <p class="eyebrow">Rewards</p>
+    <h2>100 $CHARM per approved Ugly City image.</h2>
+    <p class="muted">Images become eligible for The Rise of Ugly City after approval. Final game usage is curated by the project team.</p>
+  </div>
+</section>
+
+<section class="creator-section" id="milestones">
+  <div class="creator-section__heading">
+    <p class="eyebrow">Choose Your Milestone</p>
+    <h2>Build the city map one bad decision at a time.</h2>
+    <p class="muted">Each milestone opens the submit form with that chapter selected.</p>
+  </div>
+
+  <div class="milestone-grid">
+    <% milestones.forEach((milestone) => { %>
+      <a class="milestone-card" href="/submit?milestone=<%= encodeURIComponent(milestone.key) %>">
+        <span class="milestone-card__number"><%= milestone.number %></span>
+        <span class="milestone-card__name"><%= milestone.district %></span>
+      </a>
     <% }) %>
   </div>
 </section>
 
-<section class="creator-section">
-  <div class="creator-section__heading">
-    <p class="eyebrow">Reward Guide</p>
-    <h2>Defaults stay tied to era and collection eligibility.</h2>
-  </div>
-  <div class="creator-rewards">
-    <article class="panel creator-reward creator-reward--featured">
-      <p class="creator-reward__label">Standard Squigs Reloaded</p>
-      <p class="creator-reward__amount">150 <span>$CHARM</span></p>
-      <p class="muted">Applies to non-revive eras that accept Squigs Reloaded.</p>
-    </article>
-    <article class="panel creator-reward">
-      <p class="creator-reward__label">Standard other collection</p>
-      <p class="creator-reward__amount">100 <span>$CHARM</span></p>
-      <p class="muted">Only available in eras that explicitly allow other collections.</p>
-    </article>
-  </div>
-  <p class="muted">Revive eras default to 20 $CHARM for Squigs Reloaded and 10 $CHARM for other allowed collections.</p>
-</section>
-
-<section class="creator-section">
-  <div class="creator-section__heading">
-    <p class="eyebrow">Submission Checklist</p>
-    <h2>What helps an image survive review.</h2>
-  </div>
-  <ul class="creator-tags">
-    <li>matches the chosen era</li>
-    <li>uses an allowed collection type</li>
-    <li>reads clearly at game size</li>
-    <li>avoids generic portraits</li>
-    <li>includes prompt context when useful</li>
-  </ul>
-</section>
-
 <section class="creator-cta">
   <div class="creator-section__heading">
-    <p class="eyebrow">Community</p>
-    <h2>Browse Reloaded, join Discord, and keep the chaos moving.</h2>
+    <p class="eyebrow">Factory Floor</p>
+    <h2>Ugly City is not going to build itself. Unfortunately, the Squigs are helping.</h2>
   </div>
   <div class="actions">
     <% if (!user) { %>
-      <a class="button" href="/auth/discord">Log in with Discord</a>
+      <a class="button" href="/auth/discord">Login with Discord to Submit</a>
     <% } else if (user.isGuildMember) { %>
-      <a class="button" href="/submit">Submit an image</a>
+      <a class="button" href="#milestones">Pick a Milestone and Submit</a>
     <% } else { %>
-      <a class="button" href="<%= links.discord %>" target="_blank" rel="noreferrer">Join Discord</a>
+      <a class="button" href="<%= links.discord %>" target="_blank" rel="noreferrer">Join Ugly Labs Discord</a>
     <% } %>
-    <a class="button secondary" href="<%= links.openSea %>" target="_blank" rel="noreferrer">View the collection on OpenSea</a>
-    <a class="button secondary" href="<%= links.discord %>" target="_blank" rel="noreferrer">Join the Discord</a>
+    <a class="button secondary" href="<%= links.discord %>" target="_blank" rel="noreferrer">Discord</a>
   </div>
 </section>
 

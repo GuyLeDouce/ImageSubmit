@@ -4,7 +4,6 @@ const {
   COLLECTION_TYPES,
   SURVIVAL_ERA_KEYS,
   isCollectionTypeAllowedForEra,
-  resolveEraDefaultReward,
 } = require("./eras");
 
 const allowedMimeTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
@@ -30,24 +29,16 @@ function parseNftUsedType(rawValue) {
   if (value === COLLECTION_TYPES.squigs || value === COLLECTION_TYPES.other) {
     return value;
   }
-  throw new Error("Please choose whether the image used Squigs or another NFT.");
+  throw new Error("Please confirm the image includes at least one Squig.");
 }
 
-function isReviveEra(eraKey) {
-  return eraKey === "!revive Success" || eraKey === "!revive Failed";
-}
-
-function resolveDefaultRewardPoints(nftUsedType, eraKey) {
-  const reward = resolveEraDefaultReward(nftUsedType, eraKey);
-  if (reward === null) {
-    throw new Error("This era only accepts Squigs Reloaded submissions.");
-  }
-  return reward;
+function resolveDefaultRewardPoints() {
+  return 100;
 }
 
 function assertCollectionAllowedForEra(nftUsedType, eraKey) {
   if (!isCollectionTypeAllowedForEra(eraKey, nftUsedType)) {
-    throw new Error("This era only accepts Squigs Reloaded submissions.");
+    throw new Error("Every Ugly City submission must include at least one Squig.");
   }
 }
 
@@ -82,7 +73,6 @@ module.exports = {
   maxFilesPerSubmission,
   validateEraKey,
   parseNftUsedType,
-  isReviveEra,
   resolveDefaultRewardPoints,
   assertCollectionAllowedForEra,
   parseRewardPoints,
