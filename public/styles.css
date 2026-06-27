@@ -249,6 +249,19 @@ code {
   background: var(--mutant-green);
 }
 
+.nav-links > a.buy-squigs-link {
+  border-color: var(--line);
+  background: var(--ugly-yellow);
+  box-shadow: 4px 4px 0 var(--line);
+  font-weight: 950;
+}
+
+.nav-links > a.buy-squigs-link:hover {
+  background: var(--squig-pink);
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 var(--line);
+}
+
 .inline-form {
   display: inline-flex;
   margin: 0;
@@ -699,6 +712,67 @@ dd {
   background:
     linear-gradient(135deg, rgba(87, 227, 136, 0.28), transparent 48%),
     var(--bg-soft);
+}
+
+.era-portal {
+  grid-template-columns: minmax(0, 1.25fr) minmax(300px, 0.75fr);
+  align-items: stretch;
+  overflow: hidden;
+}
+
+.era-portal__main,
+.era-portal__rules,
+.era-lore {
+  display: grid;
+  gap: 16px;
+}
+
+.era-lore {
+  max-width: 860px;
+}
+
+.era-lore p {
+  color: #35423c;
+  font-size: 1.02rem;
+  line-height: 1.65;
+}
+
+.era-portal__rules {
+  align-content: start;
+  padding: 16px;
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  background:
+    repeating-linear-gradient(135deg, rgba(8, 16, 15, 0.08) 0 12px, transparent 12px 24px),
+    #fff;
+}
+
+.era-pass {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  background: #07100f;
+  color: var(--text);
+}
+
+.era-pass span {
+  color: var(--mutant-green);
+  font-size: 0.78rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.era-pass strong {
+  color: var(--ugly-yellow);
+  font-size: 1.85rem;
+  line-height: 1;
+}
+
+.era-pass p {
+  color: var(--text-soft);
+  line-height: 1.45;
 }
 
 .rewards-strip {
@@ -1321,6 +1395,7 @@ dd {
 
   .portal-hero,
   .info-grid,
+  .era-portal,
   .submit-layout,
   .submission-card,
   .dashboard-hero {
