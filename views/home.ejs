@@ -1,16 +1,17 @@
 <%- include("partials/header") %>
 
-<section class="ugly-hero">
-  <div class="ugly-hero__copy">
-    <p class="eyebrow">Squig Survival Presents</p>
-    <h1>Build The World's Worst City</h1>
+<section class="portal-hero">
+  <div class="portal-hero__copy">
+    <p class="eyebrow">Ugly Labs Submission Gate</p>
+    <h1>Squigs Reloaded Creator Portal</h1>
     <p class="creator-hero__tagline">
-      Squig Survival is building the world's worst city, one milestone at a time. Every chapter unlocks a new district, and the community gets to help decide what Ugly City looks like.
+      Community-made Squig moments enter the review queue here, then approved images become eligible for Squig Survival and The Rise of Ugly City image pools.
     </p>
     <p class="lead">
-      Submit your Squigs into the districts. Build the chaos. Feed the game. Earn 100 $CHARM when your image is approved.
+      Pick a milestone, upload something weird, keep at least one Squig clearly in the frame, and let the admins decide what joins the chaos.
     </p>
-    <div class="actions">
+
+    <div class="actions hero-actions">
       <% if (!user) { %>
         <a class="button" href="/auth/discord">Login with Discord to Submit</a>
       <% } else if (user.isGuildMember) { %>
@@ -19,59 +20,96 @@
         <a class="button" href="<%= links.discord %>" target="_blank" rel="noreferrer">Join Ugly Labs Discord</a>
       <% } %>
       <a class="button secondary" href="#rules">Submission Rules</a>
+      <a class="button ghost" href="<%= links.discord %>" target="_blank" rel="noreferrer">Discord</a>
+    </div>
+
+    <div class="status-badges" aria-label="Portal status">
+      <span>Discord-gated submissions</span>
+      <span>Admin approval queue</span>
+      <span>100 $CHARM on approval</span>
     </div>
   </div>
 
-  <aside class="ugly-hero__board" aria-label="Ugly City image factory summary">
-    <div class="factory-card factory-card--reward">
-      <p class="eyebrow">Image Factory</p>
-      <p class="factory-card__title">The Rise of Ugly City</p>
-      <p class="factory-card__copy">Approved images become eligible for the Ugly City image pool. Approval does not guarantee in-game appearance.</p>
-      <div class="factory-stat">
-        <strong>100</strong>
-        <span>$CHARM on approval</span>
-      </div>
+  <aside class="terminal-panel" aria-label="Ugly Labs control board">
+    <div class="terminal-panel__top">
+      <span></span>
+      <span></span>
+      <span></span>
+      <strong>UGLY_LABS_TERMINAL</strong>
     </div>
-    <div class="city-map" aria-hidden="true">
-      <span class="city-block city-block--wide">Empty Lot</span>
-      <span class="city-block">Workshop</span>
-      <span class="city-block">Junkyard</span>
-      <span class="city-block city-block--tall">Water Tower</span>
-      <span class="city-block">Harbor</span>
-      <span class="city-block">Airport</span>
-      <span class="city-block city-block--wide">Founders Plaza</span>
-      <span class="city-block">The Vault</span>
-      <span class="city-block">Ugly DMV</span>
+    <div class="terminal-lines">
+      <p><span>&gt;</span> AUTH: Discord required</p>
+      <p><span>&gt;</span> SERVER: Ugly Labs member check</p>
+      <p><span>&gt;</span> ERA: The Rise of Ugly City</p>
+      <p><span>&gt;</span> RULE: No Squig, no approval</p>
+      <p><span>&gt;</span> REWARD: 100 $CHARM</p>
+    </div>
+    <div class="chaos-meter">
+      <div class="chaos-meter__label">
+        <span>Chaos meter</span>
+        <strong>87%</strong>
+      </div>
+      <div class="chaos-meter__bar"><span></span></div>
+    </div>
+    <div class="sticker-stack" aria-hidden="true">
+      <span>QUEUE OPEN</span>
+      <span>SQUIGS ONLY*</span>
+      <span>ADMIN REVIEW</span>
     </div>
   </aside>
 </section>
 
-<div class="info-grid">
-  <section class="creator-section" id="how-it-works">
-    <div class="creator-section__heading">
-      <p class="eyebrow">How It Works</p>
-      <h2>Pick a chapter, upload the chaos, wait for review.</h2>
-    </div>
-    <ol class="creator-steps">
-      <li>Pick the Ugly City milestone your image fits.</li>
-      <li>Attach an image that includes at least one Squig.</li>
-      <li>Add optional prompt or other collection notes.</li>
-      <li>Admins review it for Squig presence, milestone fit, safety, and project fit.</li>
-      <li>Approved images earn 100 $CHARM and enter the Ugly City image pool.</li>
-    </ol>
-  </section>
+<section class="creator-section process-section" id="how-it-works">
+  <div class="creator-section__heading">
+    <p class="eyebrow">How It Works</p>
+    <h2>From Discord login to game-pool eligibility.</h2>
+  </div>
+  <ol class="process-grid">
+    <li>
+      <span>01</span>
+      <strong>Connect Discord</strong>
+      <p>Login with Discord and pass the Ugly Labs server membership gate.</p>
+    </li>
+    <li>
+      <span>02</span>
+      <strong>Pick the milestone</strong>
+      <p>Choose the Ugly City chapter your image was made for.</p>
+    </li>
+    <li>
+      <span>03</span>
+      <strong>Upload art</strong>
+      <p>Add up to 10 images, plus optional prompt and collection notes.</p>
+    </li>
+    <li>
+      <span>04</span>
+      <strong>Admin review</strong>
+      <p>Admins check Squig presence, milestone fit, project fit, and safety.</p>
+    </li>
+    <li>
+      <span>05</span>
+      <strong>Enter the pool</strong>
+      <p>Approved images become eligible for The Rise of Ugly City image pool.</p>
+    </li>
+    <li>
+      <span>06</span>
+      <strong>Earn $CHARM</strong>
+      <p>Approved submissions earn the configured 100 $CHARM reward.</p>
+    </li>
+  </ol>
+</section>
 
-  <section class="creator-section" id="rules">
+<div class="info-grid">
+  <section class="creator-section era-card-feature" id="rules">
     <div class="creator-section__heading">
-      <p class="eyebrow">Submission Rules</p>
-      <h2>No Squig, no approval.</h2>
+      <p class="eyebrow">Current Era</p>
+      <h2>The Rise of Ugly City</h2>
+      <p class="muted">Every milestone unlocks another district, broken landmark, or municipal mistake.</p>
     </div>
     <ul class="creator-tags rules-list">
       <li>Must include at least 1 Squig</li>
       <li>Other NFTs or images are allowed, but a Squig must be clearly present</li>
       <li>Pick the milestone your image was made for</li>
       <li>Admins review every submission</li>
-      <li>Approved images earn 100 $CHARM</li>
       <li>Approved images enter the Ugly City image pool</li>
     </ul>
   </section>
@@ -79,24 +117,37 @@
   <section class="creator-section rewards-strip">
     <div class="creator-section__heading">
       <p class="eyebrow">Rewards</p>
-      <h2>100 $CHARM per approved Ugly City image.</h2>
-      <p class="muted">Images become eligible for The Rise of Ugly City after approval. Final game usage is curated by the project team.</p>
+      <h2>100 $CHARM per approved image.</h2>
+      <p class="muted">Approval makes the image eligible for the Ugly City pool. Final game usage is curated by the project team.</p>
+    </div>
+    <div class="reward-card-row">
+      <div class="reward-card">
+        <span>Default reward</span>
+        <strong>100</strong>
+        <p>$CHARM on admin approval</p>
+      </div>
+      <div class="reward-card">
+        <span>Queue status</span>
+        <strong>Review</strong>
+        <p>Every submission is checked before entering the pool.</p>
+      </div>
     </div>
   </section>
 </div>
 
-<section class="creator-section" id="milestones">
+<section class="creator-section milestone-section" id="milestones">
   <div class="creator-section__heading">
-    <p class="eyebrow">Choose Your Milestone</p>
-    <h2>Build the city map one bad decision at a time.</h2>
-    <p class="muted">100 chapters, 100 district prompts. Each milestone opens the submit form with that chapter selected.</p>
+    <p class="eyebrow">Era / Milestone Guide</p>
+    <h2>Choose the Ugly City chapter your image belongs to.</h2>
+    <p class="muted">100 milestone prompts, each opening the submit form with that chapter selected.</p>
   </div>
 
   <div class="milestone-grid">
     <% milestones.forEach((milestone) => { %>
       <a class="milestone-card" href="/submit?milestone=<%= encodeURIComponent(milestone.key) %>">
-        <span class="milestone-card__number"><%= milestone.number %></span>
+        <span class="milestone-card__number">Chapter <%= milestone.number %></span>
         <span class="milestone-card__name"><%= milestone.district %></span>
+        <span class="milestone-card__meta">Eligible · 100 $CHARM</span>
       </a>
     <% }) %>
   </div>
@@ -104,8 +155,8 @@
 
 <section class="creator-cta">
   <div class="creator-section__heading">
-    <p class="eyebrow">Factory Floor</p>
-    <h2>Ugly City is not going to build itself. Unfortunately, the Squigs are helping.</h2>
+    <p class="eyebrow">Final Boss CTA</p>
+    <h2>Submit something ugly. Make it canon. Let the Squigs judge it.</h2>
   </div>
   <div class="actions">
     <% if (!user) { %>

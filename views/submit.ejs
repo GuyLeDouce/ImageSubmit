@@ -14,24 +14,46 @@
 %>
 
 <section class="stack-gap submit-page">
-  <div class="stack-gap narrow form-shell">
-    <p class="eyebrow">The Rise of Ugly City</p>
-    <h1>Submit to Ugly City</h1>
-    <p class="muted">Logged in as <strong><%= user.username %></strong> (<%= user.id %>)</p>
+  <header class="dashboard-hero">
+    <div>
+      <p class="eyebrow">Creator Dashboard</p>
+      <h1>Submit your image</h1>
+      <p class="lead">Images go to admin review first. Approved images become eligible for the Ugly City image pool and earn 100 $CHARM.</p>
+    </div>
+    <div class="user-badge">
+      <span>Discord account</span>
+      <strong><%= user.username %></strong>
+      <small><%= user.id %></small>
+    </div>
+  </header>
 
-    <% if (submitted) { %>
-      <div class="success-box">
-        Your Ugly City image has been submitted for review. If approved, it will enter the Ugly City image pool and earn 100 $CHARM.
+  <% if (submitted) { %>
+    <div class="success-box">
+      Your Ugly City image has been submitted for review. If approved, it will enter the Ugly City image pool and earn 100 $CHARM.
+    </div>
+  <% } %>
+
+  <div class="submit-layout">
+    <aside class="submit-brief">
+      <p class="eyebrow">Submission Rules</p>
+      <h2>One Squig minimum. Chaos optional.</h2>
+      <p>Choose the Ugly City milestone this image was made for. Other NFTs, collections, backgrounds, memes, or characters are welcome as long as a Squig is clearly part of the image.</p>
+      <div class="brief-list">
+        <span>Discord gated</span>
+        <span>Ugly Labs members only</span>
+        <span>Admin reviewed</span>
+        <span>100 $CHARM when approved</span>
       </div>
-    <% } %>
+    </aside>
 
     <form action="/submit" method="post" enctype="multipart/form-data" class="stack-gap panel form-panel">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
       <input type="hidden" name="era_key" value="ugly_city" />
 
-      <p class="muted">
-        Choose the Ugly City milestone this image was made for. Your image must include at least one Squig. Other NFTs, collections, backgrounds, memes, or characters are welcome as long as a Squig is clearly part of the image.
-      </p>
+      <div class="form-panel__header">
+        <p class="eyebrow">Upload Station</p>
+        <h2>The Rise of Ugly City</h2>
+      </div>
 
       <label class="field">
         <span>Selected milestone</span>
@@ -45,7 +67,7 @@
         </select>
       </label>
 
-      <label class="field">
+      <label class="field file-field">
         <span>Image uploads</span>
         <input type="file" name="images" accept="image/png,image/jpeg,image/webp,image/gif" multiple required />
         <small class="field-note">You can submit up to 10 images at once. Each image will be reviewed separately.</small>
@@ -84,7 +106,7 @@
   <section class="stack-gap submission-history">
     <div class="submission-history__header">
       <p class="eyebrow">Your submissions</p>
-      <h2>All Ugly City images linked to your Discord account</h2>
+      <h2>Images linked to your Discord account</h2>
       <p class="muted">These are only the images submitted by <strong><%= user.username %></strong>.</p>
     </div>
 
@@ -96,7 +118,7 @@
         </div>
 
         <% if (!group.items.length) { %>
-          <p class="muted"><%= group.emptyText %></p>
+          <p class="muted empty-state"><%= group.emptyText %></p>
         <% } else { %>
           <div class="submission-grid">
             <% group.items.forEach((submission) => { %>
@@ -142,7 +164,7 @@
                       </div>
                     <% } %>
                     <% if (submission.status === "declined" && submission.decline_reason) { %>
-                      <div>
+                      <div class="decline-reason">
                         <dt>Reason</dt>
                         <dd><%= submission.decline_reason %></dd>
                       </div>
