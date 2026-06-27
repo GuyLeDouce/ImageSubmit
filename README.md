@@ -39,6 +39,8 @@ Create a Discord OAuth2 application and configure a redirect URI like `https://y
 
 This app is intentionally separate from The Gauntlet bot runtime, but it must point at the same Postgres database. The production `start` script runs the reviewed, ledgered migrations before booting Express, then startup verifies required tables exist.
 
+The live image table is not created by this app. If startup reports `relation "squig_survival_images" does not exist` or `Live image table 'squig_survival_images' was not found`, Railway is pointed at the wrong or empty Postgres database. Attach the same database used by The Gauntlet, or set `LIVE_IMAGE_TABLE` to the actual existing live table name.
+
 Run the read-only preflight before migrations or cutover:
 
 ```bash

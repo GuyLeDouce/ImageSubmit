@@ -31,7 +31,7 @@ async function initDb() {
 
   if (!liveTableCheck.rows[0]?.table_name) {
     throw new SafeStartupError(
-      `Live image table '${config.liveImageTable}' was not found. Run reviewed migrations before starting the app.`
+      `Live image table '${config.liveImageTable}' was not found. Point DATABASE_URL at the same Postgres database used by The Gauntlet, or provision the live table before starting this app.`
     );
   }
   for (const tableName of [
