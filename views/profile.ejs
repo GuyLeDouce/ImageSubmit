@@ -2,7 +2,11 @@
 
 <%
   const eraLabel = eras[0]?.label || "The Rise of Ugly City";
-  const latestSubmission = submissions[0] || null;
+  const recentCreations = submissions.slice(0, 8);
+  const exampleCreations = Array.isArray(approvedExamples) ? approvedExamples : [];
+  const spotlightCreations = recentCreations.length ? recentCreations : exampleCreations;
+  const isExampleSpotlight = !recentCreations.length;
+  const loopingSpotlightCreations = spotlightCreations.length > 1 ? spotlightCreations.concat(spotlightCreations) : spotlightCreations;
   const statusLabels = {
     pending: "Awaiting Approval",
     approved: "Approved",
@@ -48,40 +52,53 @@
   </section>
 
   <section class="profile-feature-grid">
-    <article class="profile-feature-card">
-      <p class="eyebrow">Creator Status</p>
-      <h2><%= stats.total ? "Factory activity detected" : "No creations yet" %></h2>
-      <p>
-        <% if (stats.total) { %>
-          You have <strong><%= stats.total %></strong> submitted creation<%= stats.total === 1 ? "" : "s" %>, with <strong><%= stats.approved %></strong> approved and <strong><%= stats.pending %></strong> still waiting in the admin queue.
-        <% } else { %>
-          The factory has not received your first image yet. Pick a milestone, include a Squig, and start building Ugly City.
+    <article class="profile-feature-card profile-feature-card--latest profile-feature-card--wide">
+      <div class="profile-latest-header">
+        <div>
+          <p class="eyebrow"><%= isExampleSpotlight ? "Approved Creator Examples" : "Recent Creations" %></p>
+          <h2><%= isExampleSpotlight ? "See what creators are building" : "Your latest creations" %></h2>
+        </div>
+        <% if (spotlightCreations.length) { %>
+          <span><%= isExampleSpotlight ? "Main page examples" : `${spotlightCreations.length} recent ${spotlightCreations.length === 1 ? "image" : "images"}` %></span>
         <% } %>
-      </p>
-      <div class="actions">
-        <a class="button" href="/submit">Submit New Image</a>
-        <a class="button secondary" href="/#milestones">Browse Milestones</a>
       </div>
-    </article>
 
-    <article class="profile-feature-card profile-feature-card--latest">
-      <p class="eyebrow">Latest Creation</p>
-      <% if (latestSubmission) { %>
-        <a href="<%= latestSubmission.image_url %>" target="_blank" rel="noreferrer" class="profile-latest-media">
-          <img src="<%= latestSubmission.image_url %>" alt="Latest submitted image <%= latestSubmission.id %>" loading="lazy" />
-        </a>
-        <div class="profile-latest-meta">
-          <span class="submission-status submission-status--<%= latestSubmission.status %>"><%= statusLabels[latestSubmission.status] || latestSubmission.status %></span>
-          <strong><%= latestSubmission.milestone_label || latestSubmission.milestone_key || eraLabel %></strong>
-          <small><%= new Date(latestSubmission.submitted_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) %></small>
+      <% if (spotlightCreations.length) { %>
+        <div class="profile-creation-window">
+          <div class="profile-creation-track <%= spotlightCreations.length === 1 ? 'profile-creation-track--single' : '' %>">
+            <% loopingSpotlightCreations.forEach((creation) => { %>
+              <figure class="profile-creation-card">
+                <a href="<%= creation.image_url %>" target="_blank" rel="noreferrer" class="profile-latest-media">
+                  <img src="<%= creation.image_url %>" alt="<%= isExampleSpotlight ? 'Approved creator example' : 'Submitted image ' + creation.id %>" loading="lazy" />
+                </a>
+                <figcaption class="profile-latest-meta">
+                  <% if (isExampleSpotlight) { %>
+                    <span class="submission-status submission-status--approved">Approved example</span>
+                  <% } else { %>
+                    <span class="submission-status submission-status--<%= creation.status %>"><%= statusLabels[creation.status] || creation.status %></span>
+                  <% } %>
+                  <strong><%= creation.milestone_label || creation.milestone_key || creation.milestone_district || eraLabel %></strong>
+                  <% if (!isExampleSpotlight && creation.submitted_at) { %>
+                    <small><%= new Date(creation.submitted_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) %></small>
+                  <% } else { %>
+                    <small><%= creation.milestone_district || eraLabel %></small>
+                  <% } %>
+                </figcaption>
+              </figure>
+            <% }) %>
+          </div>
         </div>
       <% } else { %>
         <div class="profile-empty-art">
-          <span>NO IMAGE YET</span>
+          <span>NO IMAGES YET</span>
         </div>
-        <p>No latest creation to show.</p>
+        <p>No recent creations or approved examples are available yet.</p>
       <% } %>
     </article>
+
+    <div class="profile-feature-actions">
+      <a class="button" href="/submit">Submit New Image</a>
+    </div>
   </section>
 
   <section class="stack-gap profile-gallery">

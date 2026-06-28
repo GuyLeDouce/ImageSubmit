@@ -390,6 +390,11 @@ function createApp() {
       }
 
       const submissions = await listSubmissionsForUser(req.session.user.id);
+      const approvedExamples = submissions.length
+        ? []
+        : (await listApprovedSubmissions())
+            .filter((submission) => submission.era_key === UGLY_CITY_ERA_KEY)
+            .slice(0, 8);
       const stats = submissions.reduce(
         (totals, submission) => {
           totals.total += 1;
@@ -405,6 +410,7 @@ function createApp() {
         title: "Creator Profile",
         eras: SURVIVAL_ERAS,
         submissions,
+        approvedExamples,
         stats,
       });
     } catch (error) {

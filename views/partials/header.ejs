@@ -25,7 +25,7 @@
           </div>
         </div>
 
-        <nav class="nav">
+        <nav class="nav nav-desktop" aria-label="Primary navigation">
           <div class="nav-links">
             <a class="buy-squigs-link" href="<%= links.openSea %>" target="_blank" rel="noreferrer">Buy Squigs</a>
             <a href="<%= links.squigsHome %>" target="_blank" rel="noreferrer">Explore Reloaded</a>
@@ -65,6 +65,50 @@
             </a>
           </div>
         </nav>
+
+        <details class="mobile-nav">
+          <summary aria-label="Open navigation menu">Menu</summary>
+          <nav class="mobile-nav-panel" aria-label="Primary navigation">
+            <div class="nav-links">
+              <a class="buy-squigs-link" href="<%= links.openSea %>" target="_blank" rel="noreferrer">Buy Squigs</a>
+              <a href="<%= links.squigsHome %>" target="_blank" rel="noreferrer">Explore Reloaded</a>
+              <% if (user) { %>
+                <a href="/profile">Profile</a>
+                <a href="/submit">Submit</a>
+                <% if (isAdmin) { %>
+                  <a href="/admin">Admin</a>
+                <% } %>
+                <form action="/logout" method="post" class="inline-form">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                  <button type="submit" class="link-button">Log out</button>
+                </form>
+              <% } else { %>
+                <a href="/auth/discord">Login with Discord</a>
+              <% } %>
+            </div>
+
+            <div class="social-links" aria-label="Squigs links">
+              <a
+                class="social-button"
+                href="<%= links.discord %>"
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Open Squigs Discord"
+              >
+                <img src="/discord-logo.svg" alt="" aria-hidden="true" />
+              </a>
+              <a
+                class="social-button"
+                href="<%= links.x %>"
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Open Squigs on X"
+              >
+                <img src="/x-logo.svg" alt="" aria-hidden="true" />
+              </a>
+            </div>
+          </nav>
+        </details>
       </header>
 
       <% if (flash) { %>
