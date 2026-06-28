@@ -1583,6 +1583,11 @@ dd {
   font-weight: 760;
 }
 
+.milestone-discord-note {
+  color: #53635c;
+  font-weight: 780;
+}
+
 .small-field {
   max-width: 190px;
 }

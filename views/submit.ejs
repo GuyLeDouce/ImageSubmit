@@ -48,7 +48,7 @@
 
       <label class="field">
         <span>Selected milestone</span>
-        <select name="milestone_key" required data-milestone-select aria-describedby="milestone-concept-note">
+        <select name="milestone_key" required data-milestone-select aria-describedby="milestone-concept-note milestone-discord-note">
           <option value="">Choose an Ugly City milestone</option>
           <% milestones.forEach((milestone) => { %>
             <option
@@ -65,6 +65,9 @@
           id="milestone-concept-note"
           data-default-text="<%= defaultMilestoneConcept %>"
         ><%= selectedMilestoneConcept %></small>
+        <small class="field-note milestone-discord-note" id="milestone-discord-note">
+          Keep an eye on Discord for more milestone submission windows opening.
+        </small>
       </label>
 
       <label class="field file-field">
