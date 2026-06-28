@@ -164,8 +164,8 @@ code {
 .logo-button {
   flex: 0 0 auto;
   display: inline-flex;
-  width: 136px;
-  height: 56px;
+  width: 126px;
+  height: 78px;
   align-items: center;
   justify-content: center;
   overflow: hidden;
@@ -178,7 +178,7 @@ code {
 .logo-button img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   object-position: center;
 }
 
@@ -1533,6 +1533,27 @@ dd {
   gap: 6px;
   padding-bottom: 14px;
   border-bottom: 2px solid var(--line);
+}
+
+.era-intro {
+  display: grid;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 14px;
+  border: 2px solid rgba(8, 16, 15, 0.18);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(87, 227, 136, 0.16), transparent 54%),
+    #fff;
+}
+
+.era-intro p {
+  color: #3d4b45;
+  line-height: 1.55;
+}
+
+.era-intro strong {
+  color: var(--ink);
 }
 
 .field {
