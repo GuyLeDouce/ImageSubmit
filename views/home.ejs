@@ -1,174 +1,102 @@
 <%- include("partials/header") %>
 
-<section class="portal-hero">
-  <div class="portal-hero__copy">
+<section class="landing-hero">
+  <div class="landing-hero__copy">
     <p class="eyebrow">Ugly Labs Submission Gate</p>
-    <h1>Squigs Reloaded Creator Portal</h1>
+    <h1>Submit Squig moments for Ugly City</h1>
     <p class="creator-hero__tagline">
-      Community-made Squig moments enter the review queue here, then approved images become eligible for Squig Survival and The Rise of Ugly City image pools.
+      Upload community-made Squig images for The Rise of Ugly City. Admin-approved submissions earn 100 $CHARM and may enter the game image pool.
     </p>
-    <p class="lead">
-      Pick a milestone, upload something weird, keep at least one Squig clearly in the frame, and let the admins decide what joins the chaos.
-    </p>
+    <p class="lead">No Squig, no approval. Keep at least one Squig clearly visible.</p>
 
-    <div class="actions hero-actions">
+    <div class="landing-actions">
       <% if (!user) { %>
-        <a class="button" href="/auth/discord">Login with Discord to Submit</a>
+        <a class="button" href="/auth/discord">Login with Discord</a>
       <% } else if (user.isGuildMember) { %>
-        <a class="button" href="#milestones">Start Building Ugly City</a>
+        <a class="button" href="/submit">Start Submission</a>
       <% } else { %>
         <a class="button" href="<%= links.discord %>" target="_blank" rel="noreferrer">Join Ugly Labs Discord</a>
       <% } %>
-      <a class="button secondary" href="#rules">Submission Rules</a>
-      <a class="button ghost" href="<%= links.discord %>" target="_blank" rel="noreferrer">Discord</a>
+      <a class="text-cta" href="#rules">Read the rules</a>
     </div>
 
-    <div class="status-badges" aria-label="Portal status">
-      <span>Discord-gated submissions</span>
-      <span>Admin approval queue</span>
-      <span>100 $CHARM on approval</span>
+    <div class="info-chips" aria-label="Submission basics">
+      <span class="info-chip">Discord required</span>
+      <span class="info-chip">Squigs only</span>
+      <span class="info-chip">Admin reviewed</span>
+      <span class="info-chip">100 $CHARM</span>
     </div>
   </div>
 
-  <aside class="terminal-panel" aria-label="Ugly Labs control board">
-    <div class="terminal-panel__top">
-      <span></span>
-      <span></span>
-      <span></span>
-      <strong>UGLY_LABS_TERMINAL</strong>
-    </div>
-    <div class="terminal-lines">
-      <p><span>&gt;</span> AUTH: Discord required</p>
-      <p><span>&gt;</span> SERVER: Ugly Labs member check</p>
-      <p><span>&gt;</span> ERA: The Rise of Ugly City</p>
-      <p><span>&gt;</span> RULE: No Squig, no approval</p>
-      <p><span>&gt;</span> REWARD: 100 $CHARM</p>
-    </div>
-    <div class="chaos-meter">
-      <div class="chaos-meter__label">
-        <span>Chaos meter</span>
-        <strong>87%</strong>
-      </div>
-      <div class="chaos-meter__bar"><span></span></div>
-    </div>
-    <div class="sticker-stack" aria-hidden="true">
-      <span>QUEUE OPEN</span>
-      <span>SQUIGS ONLY*</span>
-      <span>ADMIN REVIEW</span>
+  <aside class="landing-hero__visual" aria-label="Example Squig creation previews">
+    <div class="example-stack">
+      <figure class="example-card example-card--primary">
+        <img src="/characters/Untitled%20design%20(1).png" alt="Example Squig character moment for Ugly City" loading="lazy" />
+        <figcaption>Example Squig moment</figcaption>
+      </figure>
+      <figure class="example-card example-card--secondary">
+        <img src="/characters/Untitled%20design%20(2).png" alt="Example Squig image matched to an Ugly City milestone" loading="lazy" />
+        <figcaption>Milestone fit</figcaption>
+      </figure>
+      <figure class="example-card example-card--tertiary">
+        <img src="/characters/Untitled%20design%20(3).png" alt="Example Squig image ready for admin review" loading="lazy" />
+        <figcaption>Ready for review</figcaption>
+      </figure>
     </div>
   </aside>
 </section>
 
-<section class="creator-section process-section" id="how-it-works">
+<section class="creator-section simple-section" id="how-it-works">
   <div class="creator-section__heading">
     <p class="eyebrow">How It Works</p>
-    <h2>From Discord login to game-pool eligibility.</h2>
+    <h2>Three steps. Keep it Squiggy.</h2>
   </div>
-  <ol class="process-grid">
-    <li>
+  <div class="simple-steps">
+    <article class="simple-step">
       <span>01</span>
-      <strong>Connect Discord</strong>
-      <p>Login with Discord and pass the Ugly Labs server membership gate.</p>
-    </li>
-    <li>
+      <h3>Pick a milestone in the submit form</h3>
+      <p>Choose the Ugly City chapter your image was made for after you log in.</p>
+    </article>
+    <article class="simple-step">
       <span>02</span>
-      <strong>Pick the milestone</strong>
-      <p>Choose the Ugly City chapter your image was made for.</p>
-    </li>
-    <li>
+      <h3>Upload an image with at least one Squig</h3>
+      <p>Other NFTs, memes, and backgrounds are fine if a Squig is clearly visible.</p>
+    </article>
+    <article class="simple-step">
       <span>03</span>
-      <strong>Upload art</strong>
-      <p>Add up to 10 images, plus optional prompt and collection notes.</p>
-    </li>
-    <li>
-      <span>04</span>
-      <strong>Admin review</strong>
-      <p>Admins check Squig presence, milestone fit, project fit, and safety.</p>
-    </li>
-    <li>
-      <span>05</span>
-      <strong>Enter the pool</strong>
-      <p>Approved images become eligible for The Rise of Ugly City image pool.</p>
-    </li>
-    <li>
-      <span>06</span>
-      <strong>Earn $CHARM</strong>
-      <p>When an approved image is randomly selected and used in the Squig Survival game in Discord, the creator earns the configured $CHARM reward.</p>
-    </li>
-  </ol>
-</section>
-
-<section class="creator-section era-card-feature era-portal" id="rules">
-  <div class="era-portal__main">
-    <div class="creator-section__heading">
-      <p class="eyebrow">Current Era Portal</p>
-      <h2>The Rise of Ugly City</h2>
-      <p class="muted">
-        Squig Survival has moved into its loudest era yet: a community-built city made from cursed permits, broken landmarks, bad planning, and Squigs who absolutely should not be trusted with municipal power.
-      </p>
-    </div>
-
-    <div class="era-lore">
-      <p>
-        Ugly City begins as an empty lot and grows one milestone at a time. Each chapter adds a new district, building, landmark, utility, or public mistake to the map. The city is not designed by one person. It is assembled from the weirdest approved images the community can feed into the factory.
-      </p>
-      <p>
-        Your submission should feel like it belongs to the chapter you choose. A Hospital image should feel like Ugly City's hospital. A Water Tower image should feel like the city's water tower. A Founder's Office image should feel like the room where someone made several irreversible decisions.
-      </p>
-      <p>
-        The only non-negotiable rule is simple: at least one Squig must be clearly present. Other NFTs, memes, characters, backgrounds, and outside images can join the scene, but the Squig is what makes it part of this world.
-      </p>
-    </div>
+      <h3>Admins review it</h3>
+      <p>Approved images earn 100 $CHARM and may enter the Ugly City image pool.</p>
+    </article>
   </div>
-
-  <aside class="era-portal__rules" aria-label="Current era submission rules">
-    <div class="era-pass">
-      <span>Era tag</span>
-      <strong>ugly_city</strong>
-      <p>Approved images become eligible for The Rise of Ugly City image pool.</p>
-    </div>
-    <ul class="creator-tags rules-list">
-      <li>Must include at least 1 Squig</li>
-      <li>Other NFTs or images are allowed, but a Squig must be clearly present</li>
-      <li>Pick the milestone your image was made for</li>
-      <li>Admins review every submission</li>
-      <li>Approved images enter the Ugly City image pool</li>
-    </ul>
-  </aside>
 </section>
 
-<section class="creator-section milestone-section" id="milestones">
+<section class="creator-section rules-panel" id="rules">
   <div class="creator-section__heading">
-    <p class="eyebrow">Era / Milestone Guide</p>
-    <h2>Choose the Ugly City chapter your image belongs to.</h2>
-    <p class="muted">100 milestone prompts, each opening the submit form with that chapter selected.</p>
+    <p class="eyebrow">Rules</p>
+    <h2>Simple rules for a weird city.</h2>
   </div>
-
-  <div class="milestone-grid">
-    <% milestones.forEach((milestone) => { %>
-      <a class="milestone-card" href="/submit?milestone=<%= encodeURIComponent(milestone.key) %>">
-        <span class="milestone-card__number">Chapter <%= milestone.number %></span>
-        <span class="milestone-card__name"><%= milestone.district %></span>
-        <span class="milestone-card__meta">Eligible · 100 $CHARM</span>
-      </a>
-    <% }) %>
-  </div>
+  <ul class="rules-list-simple">
+    <li>Must include at least one clearly visible Squig.</li>
+    <li>Other NFTs or images are allowed if a Squig is present.</li>
+    <li>Pick the closest Ugly City milestone on the submit page.</li>
+    <li>Admin approval is required.</li>
+    <li>Approval does not guarantee final in-game use.</li>
+  </ul>
 </section>
 
-<section class="creator-cta">
-  <div class="creator-section__heading">
-    <p class="eyebrow">Final Boss CTA</p>
-    <h2>Submit something ugly. Make it canon. Let the Squigs judge it.</h2>
+<section class="final-cta">
+  <div>
+    <p class="eyebrow">Ready for Review?</p>
+    <h2>Submit something ugly enough for the city.</h2>
   </div>
   <div class="actions">
     <% if (!user) { %>
-      <a class="button" href="/auth/discord">Login with Discord to Submit</a>
+      <a class="button" href="/auth/discord">Login with Discord</a>
     <% } else if (user.isGuildMember) { %>
-      <a class="button" href="#milestones">Pick a Milestone and Submit</a>
+      <a class="button" href="/submit">Start Submission</a>
     <% } else { %>
       <a class="button" href="<%= links.discord %>" target="_blank" rel="noreferrer">Join Ugly Labs Discord</a>
     <% } %>
-    <a class="button secondary" href="<%= links.discord %>" target="_blank" rel="noreferrer">Discord</a>
   </div>
 </section>
 
