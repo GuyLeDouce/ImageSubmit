@@ -1810,7 +1810,7 @@ dd {
 
 .admin-stats {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
 }
 
@@ -2635,6 +2635,15 @@ textarea:focus {
   border-width: 2px;
   border-radius: 999px;
   background: var(--ugly-yellow);
+}
+
+.approved-library-item--declined summary::after {
+  content: "Repair";
+  background: var(--squig-pink);
+}
+
+.approved-library-item--declined summary {
+  background: #fff0f5;
 }
 
 .approved-library-detail {

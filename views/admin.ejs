@@ -5,6 +5,7 @@
     map[era.key] = era.label;
     return map;
   }, {});
+  const repairMilestones = milestones || [];
 %>
 
 <section class="stack-gap admin-page">
@@ -19,6 +20,7 @@
     <div class="admin-stats" aria-label="Admin queue totals">
       <div><span>Pending</span><strong><%= submissions.length %></strong></div>
       <div><span>Approved</span><strong><%= approvedSubmissions.length %></strong></div>
+      <div><span>Declined</span><strong><%= declinedSubmissions.length %></strong></div>
     </div>
   </header>
 
@@ -218,12 +220,24 @@
                   </label>
                   <label class="field">
                     <span>Era key / game pool</span>
-                    <select name="override_era_key" required>
+                    <select name="override_era_key" required data-era-repair-select>
                       <% (adminRepairEras || eras).forEach((era) => { %>
                         <option value="<%= era.key %>" <%= era.key === submission.era_key ? "selected" : "" %>><%= era.label %></option>
                       <% }) %>
                     </select>
                     <small class="field-note">Admin repair only. New approvals still enter The Rise of Ugly City.</small>
+                  </label>
+                  <label class="field" data-milestone-repair-field>
+                    <span>Ugly City milestone</span>
+                    <select name="override_milestone_key">
+                      <option value="">No milestone metadata</option>
+                      <% repairMilestones.forEach((milestone) => { %>
+                        <option value="<%= milestone.key %>" <%= milestone.key === submission.milestone_key ? "selected" : "" %>>
+                          <%= milestone.number %>. <%= milestone.district %>
+                        </option>
+                      <% }) %>
+                    </select>
+                    <small class="field-note">Only used when The Rise of Ugly City is selected.</small>
                   </label>
                   <label class="field small-field">
                     <span>Reward points</span>
@@ -259,6 +273,146 @@
       </div>
     <% } %>
   </section>
+
+  <section class="stack-gap review-section">
+    <div class="section-title-row">
+      <div>
+        <p class="eyebrow">Declined Library</p>
+        <h2>Declined images and repair tools</h2>
+        <p class="muted">Declined entries remain available here so admins can repair account, era, reward, and milestone metadata without placing them in the live pool.</p>
+      </div>
+      <span class="submission-count"><%= declinedSubmissions.length %></span>
+    </div>
+
+    <% if (!declinedSubmissions.length) { %>
+      <div class="panel empty-state">No declined images yet.</div>
+    <% } %>
+
+    <% if (declinedSubmissions.length) { %>
+      <div class="approved-library-grid">
+        <% declinedSubmissions.forEach((submission) => { %>
+          <details class="approved-library-item approved-library-item--declined">
+            <summary aria-label="Edit declined submission <%= submission.id %>">
+              <img src="<%= submission.image_url %>" alt="Declined submission <%= submission.id %> preview" loading="lazy" />
+            </summary>
+
+            <div class="approved-library-detail">
+              <div class="submission-body__header">
+                <div>
+                  <p class="eyebrow">Declined #<%= submission.id %></p>
+                  <h2><%= submission.milestone_label || submission.milestone_key || "Declined image" %></h2>
+                </div>
+                <a href="<%= submission.image_url %>" target="_blank" rel="noreferrer" class="mini-link">Open image</a>
+              </div>
+
+              <dl class="meta-grid">
+                <div><dt>Discord username</dt><dd><%= submission.discord_username %></dd></div>
+                <div><dt>Discord user ID</dt><dd><%= submission.discord_user_id %></dd></div>
+                <div><dt>Display name</dt><dd><%= submission.discord_display_name || "Not set" %></dd></div>
+                <div><dt>Era</dt><dd><%= repairEraLabelMap[submission.era_key] || submission.era_key || "Not set" %></dd></div>
+                <div><dt>Milestone</dt><dd><%= submission.milestone_label || submission.milestone_key || "Not set" %></dd></div>
+                <div><dt>Other collections</dt><dd><%= submission.other_collections_text || submission.nft_used_text || "None provided" %></dd></div>
+                <div><dt>Prompt</dt><dd><%= submission.prompt_text || "Not provided" %></dd></div>
+                <div><dt>Reward</dt><dd><%= submission.reward_points || 100 %> $CHARM</dd></div>
+                <div><dt>Declined</dt><dd><%= submission.reviewed_at ? new Date(submission.reviewed_at).toLocaleString() : "Unknown" %></dd></div>
+                <div><dt>Reviewed by</dt><dd><%= submission.reviewed_by || "Unknown" %></dd></div>
+                <div><dt>Decline reason</dt><dd><%= submission.decline_reason || "Not provided" %></dd></div>
+                <div><dt>Image URL</dt><dd><a href="<%= submission.image_url %>" target="_blank" rel="noreferrer">Open image</a></dd></div>
+              </dl>
+
+              <div class="actions review-actions">
+                <form action="/admin/submissions/<%= submission.id %>/update-declined" method="post" class="approve-form review-form review-form--approve">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                  <input type="hidden" name="row_version" value="<%= submission.row_version %>" />
+                  <div class="review-form__header">
+                    <p class="eyebrow">Edit declined row</p>
+                    <strong>Save account, reward, era, or milestone repair</strong>
+                  </div>
+                  <label class="field">
+                    <span>Discord user ID</span>
+                    <input
+                      type="text"
+                      name="override_discord_user_id"
+                      inputmode="numeric"
+                      value="<%= submission.discord_user_id %>"
+                    />
+                  </label>
+                  <label class="field">
+                    <span>Username</span>
+                    <input
+                      type="text"
+                      name="override_discord_username"
+                      value="<%= submission.discord_username %>"
+                    />
+                  </label>
+                  <label class="field">
+                    <span>Display name</span>
+                    <input
+                      type="text"
+                      name="override_discord_display_name"
+                      value="<%= submission.discord_display_name || '' %>"
+                      placeholder="Not set"
+                    />
+                  </label>
+                  <label class="field">
+                    <span>Era key / game pool</span>
+                    <select name="override_era_key" required data-era-repair-select>
+                      <% (adminRepairEras || eras).forEach((era) => { %>
+                        <option value="<%= era.key %>" <%= era.key === submission.era_key ? "selected" : "" %>><%= era.label %></option>
+                      <% }) %>
+                    </select>
+                    <small class="field-note">Admin repair only. Declined images are not inserted into the live pool.</small>
+                  </label>
+                  <label class="field" data-milestone-repair-field>
+                    <span>Ugly City milestone</span>
+                    <select name="override_milestone_key">
+                      <option value="">No milestone metadata</option>
+                      <% repairMilestones.forEach((milestone) => { %>
+                        <option value="<%= milestone.key %>" <%= milestone.key === submission.milestone_key ? "selected" : "" %>>
+                          <%= milestone.number %>. <%= milestone.district %>
+                        </option>
+                      <% }) %>
+                    </select>
+                    <small class="field-note">Only used when The Rise of Ugly City is selected.</small>
+                  </label>
+                  <label class="field small-field">
+                    <span>Reward points</span>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100000"
+                      name="reward_points"
+                      value="<%= submission.reward_points || 100 %>"
+                      required
+                    />
+                  </label>
+                  <button type="submit" class="button secondary">Save changes</button>
+                </form>
+              </div>
+            </div>
+          </details>
+        <% }) %>
+      </div>
+    <% } %>
+  </section>
 </section>
+
+<script nonce="<%= cspNonce %>">
+  (() => {
+    const uglyCityEraKey = "ugly_city";
+    document.querySelectorAll("[data-era-repair-select]").forEach((select) => {
+      const form = select.closest("form");
+      const milestoneField = form?.querySelector("[data-milestone-repair-field]");
+      if (!milestoneField) return;
+
+      const syncMilestoneVisibility = () => {
+        milestoneField.hidden = select.value !== uglyCityEraKey;
+      };
+
+      select.addEventListener("change", syncMilestoneVisibility);
+      syncMilestoneVisibility();
+    });
+  })();
+</script>
 
 <%- include("partials/footer") %>

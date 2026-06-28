@@ -8,10 +8,12 @@ const {
   createPendingSubmission,
   listPendingSubmissions,
   listApprovedSubmissions,
+  listDeclinedSubmissions,
   listSubmissionsForUser,
   approveSubmission,
   declineSubmission,
   updateApprovedSubmission,
+  updateDeclinedSubmission,
   unapproveSubmission,
 } = require("./db");
 const { config, validateConfig } = require("./config");
@@ -64,6 +66,15 @@ function parseCookieHeader(header) {
       }
       return cookies;
     }, {});
+}
+
+function resolveAdminRepairMilestone(eraKey, milestoneKey) {
+  if (eraKey !== UGLY_CITY_ERA_KEY) return null;
+  const key = String(milestoneKey || "").trim();
+  if (!key) return null;
+  const milestone = getUglyCityMilestoneByKey(key);
+  if (!milestone) throw new Error("Please choose a valid Ugly City milestone.");
+  return milestone;
 }
 
 function createApp() {
@@ -448,16 +459,19 @@ function createApp() {
 
   app.get("/admin", requireAdmin, async (req, res, next) => {
     try {
-      const [pendingSubmissions, approvedSubmissions] = await Promise.all([
+      const [pendingSubmissions, approvedSubmissions, declinedSubmissions] = await Promise.all([
         listPendingSubmissions(),
         listApprovedSubmissions(),
+        listDeclinedSubmissions(),
       ]);
       res.render("admin", {
         title: "Ugly City Admin Review",
         submissions: pendingSubmissions,
         approvedSubmissions,
+        declinedSubmissions,
         eras: SURVIVAL_ERAS,
         adminRepairEras: ADMIN_REPAIR_ERAS,
+        milestones: UGLY_CITY_MILESTONES,
       });
     } catch (error) {
       next(error);
@@ -529,6 +543,7 @@ function createApp() {
       const discordUsername = parseOptionalText(req.body.override_discord_username, "Discord username", 64);
       const discordDisplayName = parseOptionalText(req.body.override_discord_display_name, "Display name", 64);
       const overrideEraKey = String(req.body.override_era_key || "").trim();
+      const overrideMilestone = resolveAdminRepairMilestone(overrideEraKey, req.body.override_milestone_key);
       const overrideNftUsedType = "squigs";
       const overrideNftUsedText = null;
       if (!getAdminRepairEraByKey(overrideEraKey)) throw new Error("Please choose a valid admin repair era.");
@@ -541,6 +556,7 @@ function createApp() {
         overrideDiscordUsername: discordUsername,
         overrideDiscordDisplayName: discordDisplayName,
         overrideEraKey,
+        overrideMilestone,
         overrideNftUsedType,
         overrideNftUsedText: overrideNftUsedType === "other" ? overrideNftUsedText : null,
         expectedRowVersion,
@@ -548,6 +564,40 @@ function createApp() {
         requestId: req.id,
       });
       setFlash(req, "success", "Approved image updated.");
+      res.redirect("/admin");
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/admin/submissions/:id/update-declined", requireAdmin, async (req, res, next) => {
+    try {
+      const submissionId = Number(req.params.id);
+      if (!Number.isInteger(submissionId) || submissionId <= 0) throw new Error("Invalid submission id.");
+      const rewardPoints = parseRewardPoints(req.body.reward_points || "100");
+      const expectedRowVersion = Number(req.body.row_version);
+      if (!Number.isInteger(expectedRowVersion) || expectedRowVersion <= 0) throw new Error("Invalid row version.");
+      const discordUserId = parseOptionalDiscordUserId(req.body.override_discord_user_id);
+      const discordUsername = parseOptionalText(req.body.override_discord_username, "Discord username", 64);
+      const discordDisplayName = parseOptionalText(req.body.override_discord_display_name, "Display name", 64);
+      const overrideEraKey = String(req.body.override_era_key || "").trim();
+      if (!getAdminRepairEraByKey(overrideEraKey)) throw new Error("Please choose a valid admin repair era.");
+      const overrideMilestone = resolveAdminRepairMilestone(overrideEraKey, req.body.override_milestone_key);
+      const reviewedBy = `${req.session.user.username} (${req.session.user.id})`;
+      await updateDeclinedSubmission({
+        submissionId,
+        rewardPoints,
+        reviewedBy,
+        overrideDiscordUserId: discordUserId,
+        overrideDiscordUsername: discordUsername,
+        overrideDiscordDisplayName: discordDisplayName,
+        overrideEraKey,
+        overrideMilestone,
+        expectedRowVersion,
+        actorDiscordId: req.session.user.id,
+        requestId: req.id,
+      });
+      setFlash(req, "success", "Declined image updated.");
       res.redirect("/admin");
     } catch (error) {
       next(error);

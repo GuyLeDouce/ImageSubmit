@@ -241,6 +241,42 @@ async function listApprovedSubmissions() {
   return result.rows;
 }
 
+async function listDeclinedSubmissions() {
+  const result = await pool.query(`
+    SELECT
+      id,
+      discord_user_id,
+      discord_username,
+      discord_display_name,
+      era_key,
+      prompt_text,
+      nft_used_type,
+      nft_used_text,
+      image_url,
+      storage_key,
+      mime_type,
+      size_bytes,
+      status,
+      reward_points,
+      submitted_at,
+      reviewed_at,
+      reviewed_by,
+      decline_reason,
+      row_version,
+      milestone_key,
+      milestone_number,
+      milestone_label,
+      milestone_district,
+      contains_squig_confirmed,
+      other_collections_text
+    FROM squig_survival_image_submissions
+    WHERE status = 'declined'
+    ORDER BY reviewed_at DESC NULLS LAST, submitted_at DESC
+  `);
+
+  return result.rows;
+}
+
 async function listSubmissionsForUser(discordUserId) {
   const result = await pool.query(
     `
@@ -564,6 +600,7 @@ async function updateApprovedSubmission({
   overrideDiscordUsername,
   overrideDiscordDisplayName,
   overrideEraKey,
+  overrideMilestone,
   overrideNftUsedType,
   overrideNftUsedText,
   expectedRowVersion,
@@ -598,6 +635,10 @@ async function updateApprovedSubmission({
     const resolvedDiscordDisplayName =
       overrideDiscordDisplayName || submission.discord_display_name;
     const resolvedEraKey = overrideEraKey || submission.era_key || UGLY_CITY_ERA_KEY;
+    const resolvedMilestone =
+      resolvedEraKey === UGLY_CITY_ERA_KEY && overrideMilestone
+        ? overrideMilestone
+        : null;
     const resolvedNftUsedType = overrideNftUsedType || submission.nft_used_type;
     const resolvedNftUsedText =
       resolvedNftUsedType === "other" ? overrideNftUsedText || submission.nft_used_text : null;
@@ -629,10 +670,10 @@ async function updateApprovedSubmission({
         submission.discord_user_id,
         submission.era_key,
         submission.reward_points,
-        submission.milestone_key,
-        submission.milestone_number,
-        submission.milestone_label,
-        submission.milestone_district,
+        resolvedMilestone?.key || null,
+        resolvedMilestone?.number || null,
+        resolvedMilestone?.label || null,
+        resolvedMilestone?.district || null,
       ]
     );
 
@@ -677,12 +718,16 @@ async function updateApprovedSubmission({
             reward_points = $6,
             nft_used_type = $7,
             nft_used_text = $8,
+            milestone_key = $9,
+            milestone_number = $10,
+            milestone_label = $11,
+            milestone_district = $12,
             reviewed_at = now(),
-            reviewed_by = $9,
+            reviewed_by = $13,
             row_version = row_version + 1
         WHERE id = $1
           AND status = 'approved'
-          AND row_version = $10
+          AND row_version = $14
         RETURNING id, reviewed_at, row_version
       `,
       [
@@ -694,6 +739,10 @@ async function updateApprovedSubmission({
         rewardPoints,
         resolvedNftUsedType,
         resolvedNftUsedText,
+        resolvedMilestone?.key || null,
+        resolvedMilestone?.number || null,
+        resolvedMilestone?.label || null,
+        resolvedMilestone?.district || null,
         reviewedBy,
         expectedRowVersion,
       ]
@@ -731,10 +780,142 @@ async function updateApprovedSubmission({
           nftUsedType: resolvedNftUsedType,
           nftUsedText: resolvedNftUsedText,
           rewardPoints,
-          milestoneKey: submission.milestone_key,
-          milestoneNumber: submission.milestone_number,
-          milestoneLabel: submission.milestone_label,
-          milestoneDistrict: submission.milestone_district,
+          milestoneKey: resolvedMilestone?.key || null,
+          milestoneNumber: resolvedMilestone?.number || null,
+          milestoneLabel: resolvedMilestone?.label || null,
+          milestoneDistrict: resolvedMilestone?.district || null,
+          rowVersion: updated.rows[0].row_version,
+        }),
+      ]
+    );
+    maybeInjectFailure({ injectFailureAt }, "after-audit-insert");
+
+    await client.query("COMMIT");
+    return updated.rows[0];
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+async function updateDeclinedSubmission({
+  submissionId,
+  rewardPoints,
+  reviewedBy,
+  overrideDiscordUserId,
+  overrideDiscordUsername,
+  overrideDiscordDisplayName,
+  overrideEraKey,
+  overrideMilestone,
+  expectedRowVersion,
+  actorDiscordId,
+  requestId,
+  injectFailureAt,
+}) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const currentResult = await client.query(
+      `
+        SELECT *
+        FROM squig_survival_image_submissions
+        WHERE id = $1
+        FOR UPDATE
+      `,
+      [submissionId]
+    );
+
+    const submission = currentResult.rows[0];
+    if (!submission) throw new Error("Declined submission not found.");
+    if (submission.status !== "declined") {
+      throw new Error("Only declined submissions can be edited here.");
+    }
+    if (Number(submission.row_version) !== Number(expectedRowVersion)) {
+      throw new ConflictError("This declined submission changed while you were editing it. Refresh and try again.");
+    }
+
+    const resolvedDiscordUserId = overrideDiscordUserId || submission.discord_user_id;
+    const resolvedDiscordUsername = overrideDiscordUsername || submission.discord_username;
+    const resolvedDiscordDisplayName =
+      overrideDiscordDisplayName || submission.discord_display_name;
+    const resolvedEraKey = overrideEraKey || submission.era_key || UGLY_CITY_ERA_KEY;
+    const resolvedMilestone =
+      resolvedEraKey === UGLY_CITY_ERA_KEY && overrideMilestone
+        ? overrideMilestone
+        : null;
+
+    const updated = await client.query(
+      `
+        UPDATE squig_survival_image_submissions
+        SET discord_user_id = $2,
+            discord_username = $3,
+            discord_display_name = $4,
+            era_key = $5,
+            reward_points = $6,
+            milestone_key = $7,
+            milestone_number = $8,
+            milestone_label = $9,
+            milestone_district = $10,
+            reviewed_at = now(),
+            reviewed_by = $11,
+            row_version = row_version + 1
+        WHERE id = $1
+          AND status = 'declined'
+          AND row_version = $12
+        RETURNING id, reviewed_at, row_version
+      `,
+      [
+        submissionId,
+        resolvedDiscordUserId,
+        resolvedDiscordUsername,
+        resolvedDiscordDisplayName,
+        resolvedEraKey,
+        rewardPoints,
+        resolvedMilestone?.key || null,
+        resolvedMilestone?.number || null,
+        resolvedMilestone?.label || null,
+        resolvedMilestone?.district || null,
+        reviewedBy,
+        expectedRowVersion,
+      ]
+    );
+    if (updated.rowCount !== 1) {
+      throw new ConflictError("This declined submission changed while you were editing it. Refresh and try again.");
+    }
+    maybeInjectFailure({ injectFailureAt }, "after-submission-update");
+
+    await client.query(
+      `
+        INSERT INTO squig_survival_image_moderation_audit (
+          submission_id,
+          action,
+          actor_discord_id,
+          actor_display_snapshot,
+          request_id,
+          before_json,
+          after_json,
+          outcome
+        )
+        VALUES ($1, 'update-declined', $2, $3, $4, to_jsonb($5::json), to_jsonb($6::json), 'updated')
+      `,
+      [
+        submissionId,
+        actorDiscordId || null,
+        reviewedBy,
+        requestId || null,
+        JSON.stringify(submission),
+        JSON.stringify({
+          discordUserId: resolvedDiscordUserId,
+          discordUsername: resolvedDiscordUsername,
+          discordDisplayName: resolvedDiscordDisplayName,
+          eraKey: resolvedEraKey,
+          rewardPoints,
+          milestoneKey: resolvedMilestone?.key || null,
+          milestoneNumber: resolvedMilestone?.number || null,
+          milestoneLabel: resolvedMilestone?.label || null,
+          milestoneDistrict: resolvedMilestone?.district || null,
           rowVersion: updated.rows[0].row_version,
         }),
       ]
@@ -872,9 +1053,11 @@ module.exports = {
   createPendingSubmission,
   listPendingSubmissions,
   listApprovedSubmissions,
+  listDeclinedSubmissions,
   listSubmissionsForUser,
   approveSubmission,
   declineSubmission,
   updateApprovedSubmission,
+  updateDeclinedSubmission,
   unapproveSubmission,
 };
