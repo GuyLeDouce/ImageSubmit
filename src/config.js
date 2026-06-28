@@ -23,6 +23,13 @@ function parseTrustedProxy(value) {
   return raw;
 }
 
+function parseMilestonesAllowed(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return 100;
+  if (!/^\d+$/.test(raw)) return 100;
+  return Math.min(100, Math.max(0, Number(raw)));
+}
+
 const config = {
   env: process.env.NODE_ENV || "development",
   isProduction: (process.env.NODE_ENV || "development") === "production",
@@ -37,6 +44,7 @@ const config = {
   discordRedirectUri: process.env.DISCORD_REDIRECT_URI || "",
   discordGuildId: process.env.DISCORD_GUILD_ID || "",
   adminDiscordIds: new Set(parseCsv(process.env.ADMIN_DISCORD_IDS)),
+  milestonesAllowed: parseMilestonesAllowed(process.env.MILESTONES_ALLOWED),
   maxUploadMb: Math.max(1, Number(process.env.MAX_UPLOAD_MB || "10")),
   trustedProxy: parseTrustedProxy(process.env.TRUSTED_PROXY),
   storageDriver: (process.env.STORAGE_DRIVER || "local").toLowerCase(),
@@ -82,6 +90,7 @@ function validateConfig() {
 module.exports = {
   config,
   getSSL,
+  parseMilestonesAllowed,
   parseTrustedProxy,
   validateConfig,
 };

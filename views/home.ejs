@@ -1,13 +1,17 @@
 <%- include("partials/header") %>
 
+<%
+  const examples = Array.isArray(approvedExamples) ? approvedExamples : [];
+%>
+
 <section class="landing-hero">
   <div class="landing-hero__copy">
     <p class="eyebrow">Ugly Labs Submission Gate</p>
     <h1>Submit Squig moments for Ugly City</h1>
     <p class="creator-hero__tagline">
-      Upload community-made Squig images for The Rise of Ugly City. Admin-approved submissions earn 100 $CHARM and may enter the game image pool.
+      You are the creator. Upload your Squig image for The Rise of Ugly City, choose the milestone it belongs to, and send it into admin review.
     </p>
-    <p class="lead">No Squig, no approval. Keep at least one Squig clearly visible.</p>
+    <p class="lead">Admin-approved submissions earn 100 $CHARM and may enter the game image pool. No Squig, no approval.</p>
 
     <div class="landing-actions">
       <% if (!user) { %>
@@ -28,20 +32,32 @@
     </div>
   </div>
 
-  <aside class="landing-hero__visual" aria-label="Example Squig creation previews">
-    <div class="example-stack">
-      <figure class="example-card example-card--primary">
-        <img src="/characters/Untitled%20design%20(1).png" alt="Example Squig character moment for Ugly City" loading="lazy" />
-        <figcaption>Example Squig moment</figcaption>
-      </figure>
-      <figure class="example-card example-card--secondary">
-        <img src="/characters/Untitled%20design%20(2).png" alt="Example Squig image matched to an Ugly City milestone" loading="lazy" />
-        <figcaption>Milestone fit</figcaption>
-      </figure>
-      <figure class="example-card example-card--tertiary">
-        <img src="/characters/Untitled%20design%20(3).png" alt="Example Squig image ready for admin review" loading="lazy" />
-        <figcaption>Ready for review</figcaption>
-      </figure>
+  <aside class="landing-hero__visual" aria-label="Approved creator examples">
+    <div class="approved-example-showcase">
+      <div class="approved-example-header">
+        <p class="eyebrow">Approved Creator Examples</p>
+        <span>Rotating from the live approval pool</span>
+      </div>
+      <% if (examples.length) { %>
+        <div class="approved-example-window">
+          <div class="approved-example-track">
+            <% examples.concat(examples).forEach((example, index) => { %>
+              <figure class="approved-example-card">
+                <img src="<%= example.image_url %>" alt="Approved Squig creator image for <%= example.milestone_label || example.milestone_district || 'The Rise of Ugly City' %>" loading="lazy" />
+                <figcaption>
+                  <span>Approved example</span>
+                  <strong><%= example.milestone_label || example.milestone_district || "Ugly City image pool" %></strong>
+                </figcaption>
+              </figure>
+            <% }) %>
+          </div>
+        </div>
+      <% } else { %>
+        <div class="approved-example-empty">
+          <span>Approved examples will appear here</span>
+          <p>Your approved image could become one of the examples creators see first.</p>
+        </div>
+      <% } %>
     </div>
   </aside>
 </section>
@@ -55,17 +71,17 @@
     <article class="simple-step">
       <span>01</span>
       <h3>Pick a milestone in the submit form</h3>
-      <p>Choose the Ugly City chapter your image was made for after you log in.</p>
+      <p>You choose the Ugly City chapter your image was made for after you log in.</p>
     </article>
     <article class="simple-step">
       <span>02</span>
       <h3>Upload an image with at least one Squig</h3>
-      <p>Other NFTs, memes, and backgrounds are fine if a Squig is clearly visible.</p>
+      <p>You can include other NFTs, memes, and backgrounds if a Squig is clearly visible.</p>
     </article>
     <article class="simple-step">
       <span>03</span>
       <h3>Admins review it</h3>
-      <p>Approved images earn 100 $CHARM and may enter the Ugly City image pool.</p>
+      <p>Your approved image earns 100 $CHARM and may enter the Ugly City image pool.</p>
     </article>
   </div>
 </section>
@@ -87,7 +103,7 @@
 <section class="final-cta">
   <div>
     <p class="eyebrow">Ready for Review?</p>
-    <h2>Submit something ugly enough for the city.</h2>
+    <h2>Your Squig belongs somewhere in Ugly City.</h2>
   </div>
   <div class="actions">
     <% if (!user) { %>

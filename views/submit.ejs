@@ -3,6 +3,9 @@
 <%
   const eraLabel = eras[0]?.label || "The Rise of Ugly City";
   const selectedMilestoneKey = selectedMilestone?.key || "";
+  const conceptByMilestone = milestoneConcepts || {};
+  const defaultMilestoneConcept = "Choose a milestone to see what kind of Ugly City image fits that chapter.";
+  const selectedMilestoneConcept = conceptByMilestone[selectedMilestoneKey] || defaultMilestoneConcept;
   const submissionGroups = [
     { key: "pending", title: "Awaiting Approval", emptyText: "No images waiting for review yet." },
     { key: "approved", title: "Approved", emptyText: "No approved images yet." },
@@ -33,19 +36,7 @@
     </div>
   <% } %>
 
-  <div class="submit-layout">
-    <aside class="submit-brief">
-      <p class="eyebrow">Submission Rules</p>
-      <h2>One Squig minimum. Chaos optional.</h2>
-      <p>Choose the Ugly City milestone this image was made for. Other NFTs, collections, backgrounds, memes, or characters are welcome as long as a Squig is clearly part of the image.</p>
-      <div class="brief-list">
-        <span>Discord gated</span>
-        <span>Ugly Labs members only</span>
-        <span>Admin reviewed</span>
-        <span>100 $CHARM when approved</span>
-      </div>
-    </aside>
-
+  <div class="submit-layout submit-layout--single">
     <form action="/submit" method="post" enctype="multipart/form-data" class="stack-gap panel form-panel">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
       <input type="hidden" name="era_key" value="ugly_city" />
@@ -57,15 +48,23 @@
 
       <label class="field">
         <span>Selected milestone</span>
-        <select name="milestone_key" required>
+        <select name="milestone_key" required data-milestone-select aria-describedby="milestone-concept-note">
           <option value="">Choose an Ugly City milestone</option>
           <% milestones.forEach((milestone) => { %>
-            <option value="<%= milestone.key %>" <%= milestone.key === selectedMilestoneKey ? "selected" : "" %>>
+            <option
+              value="<%= milestone.key %>"
+              data-concept="<%= conceptByMilestone[milestone.key] || defaultMilestoneConcept %>"
+              <%= milestone.key === selectedMilestoneKey ? "selected" : "" %>
+            >
               <%= milestone.number %>. <%= milestone.district %>
             </option>
           <% }) %>
         </select>
-        <small class="field-note">Choose the Ugly City milestone this image was made for.</small>
+        <small
+          class="field-note milestone-concept-note"
+          id="milestone-concept-note"
+          data-default-text="<%= defaultMilestoneConcept %>"
+        ><%= selectedMilestoneConcept %></small>
       </label>
 
       <label class="field file-field">
@@ -184,5 +183,21 @@
     <% }) %>
   </section>
 </section>
+
+<script nonce="<%= cspNonce %>">
+  (() => {
+    const select = document.querySelector("[data-milestone-select]");
+    const note = document.getElementById("milestone-concept-note");
+    if (!select || !note) return;
+
+    const updateConcept = () => {
+      const option = select.options[select.selectedIndex];
+      note.textContent = option?.dataset.concept || note.dataset.defaultText;
+    };
+
+    select.addEventListener("change", updateConcept);
+    updateConcept();
+  })();
+</script>
 
 <%- include("partials/footer") %>

@@ -23,7 +23,9 @@ Copy `.env.example` to `.env` and fill in values.
 
 Required: `SESSION_SECRET`, `DATABASE_URL`, `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, `DISCORD_REDIRECT_URI`, `DISCORD_GUILD_ID`
 
-Useful: `ADMIN_DISCORD_IDS=123,456`, `LIVE_IMAGE_TABLE=squig_survival_images`, `SESSION_TABLE=session`, `PUBLIC_BASE_URL=https://your-service.up.railway.app`, `MAX_UPLOAD_MB=10`, `TRUSTED_PROXY=1`
+Useful: `ADMIN_DISCORD_IDS=123,456`, `LIVE_IMAGE_TABLE=squig_survival_images`, `SESSION_TABLE=session`, `PUBLIC_BASE_URL=https://your-service.up.railway.app`, `MILESTONES_ALLOWED=100`, `MAX_UPLOAD_MB=10`, `TRUSTED_PROXY=1`
+
+`MILESTONES_ALLOWED` controls how many Ugly City milestones are visible and submittable in the `/submit` milestone dropdown. For example, `MILESTONES_ALLOWED=12` opens chapters 1 through 12. Leave it unset, or set it to `100`, to show every milestone.
 
 Storage:
 

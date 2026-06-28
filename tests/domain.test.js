@@ -15,7 +15,12 @@ const {
   getUglyCityMilestoneByKey,
   getUglyCityMilestoneByNumber,
 } = require("../src/uglyCityMilestones");
+const {
+  UGLY_CITY_MILESTONE_CONCEPTS,
+  getUglyCityMilestoneConceptByKey,
+} = require("../src/uglyCityMilestoneConcepts");
 const { PROJECT_LINKS } = require("../src/links");
+const { parseMilestonesAllowed } = require("../src/config");
 
 test("only exposes The Rise of Ugly City era", () => {
   assert.deepEqual(SURVIVAL_ERAS, [
@@ -69,6 +74,25 @@ test("centralizes all 100 Ugly City milestones", () => {
   });
   assert.equal(getUglyCityMilestoneByKey("airport").number, 43);
   assert.equal(getUglyCityMilestoneByKey("not_real"), null);
+});
+
+test("parses visible Ugly City milestone limit", () => {
+  assert.equal(parseMilestonesAllowed(""), 100);
+  assert.equal(parseMilestonesAllowed(undefined), 100);
+  assert.equal(parseMilestonesAllowed("12"), 12);
+  assert.equal(parseMilestonesAllowed("0"), 0);
+  assert.equal(parseMilestonesAllowed("150"), 100);
+  assert.equal(parseMilestonesAllowed("not-a-number"), 100);
+});
+
+test("provides concept guidance for every Ugly City milestone", () => {
+  assert.equal(Object.keys(UGLY_CITY_MILESTONE_CONCEPTS).length, UGLY_CITY_MILESTONES.length);
+  for (const milestone of UGLY_CITY_MILESTONES) {
+    assert.equal(typeof getUglyCityMilestoneConceptByKey(milestone.key), "string");
+    assert.ok(getUglyCityMilestoneConceptByKey(milestone.key).length > 40);
+  }
+  assert.match(getUglyCityMilestoneConceptByKey("empty_lot"), /empty lot/i);
+  assert.match(getUglyCityMilestoneConceptByKey("founders_office"), /Founder/i);
 });
 
 test("centralizes canonical project links", () => {

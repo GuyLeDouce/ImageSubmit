@@ -487,6 +487,122 @@ dd {
   place-items: center;
 }
 
+.approved-example-showcase {
+  width: min(100%, 430px);
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 248, 232, 0.96);
+  color: var(--ink);
+  box-shadow: var(--shadow-hard);
+}
+
+.approved-example-header {
+  display: grid;
+  gap: 4px;
+}
+
+.approved-example-header .eyebrow {
+  color: #603311;
+}
+
+.approved-example-header span {
+  color: #4d5c55;
+  font-size: 0.92rem;
+  font-weight: 850;
+}
+
+.approved-example-window {
+  overflow: hidden;
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  background: #07100f;
+}
+
+.approved-example-track {
+  display: flex;
+  width: max-content;
+  gap: 12px;
+  padding: 12px;
+  animation: approved-example-scroll 32s linear infinite;
+}
+
+.approved-example-card {
+  width: 260px;
+  flex: 0 0 auto;
+  margin: 0;
+  overflow: hidden;
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.approved-example-card img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  background: #d8e5df;
+}
+
+.approved-example-card figcaption {
+  display: grid;
+  gap: 4px;
+  min-height: 74px;
+  padding: 10px 11px;
+  border-top: 2px solid var(--line);
+}
+
+.approved-example-card figcaption span {
+  color: #4d5c55;
+  font-size: 0.78rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.approved-example-card figcaption strong {
+  color: var(--ink);
+  line-height: 1.15;
+}
+
+.approved-example-empty {
+  display: grid;
+  gap: 12px;
+  min-height: 310px;
+  align-content: center;
+  padding: 22px;
+  border: 2px dashed var(--line);
+  border-radius: 8px;
+  background:
+    repeating-linear-gradient(135deg, rgba(8, 16, 15, 0.08) 0 12px, transparent 12px 24px),
+    #e9f6ff;
+}
+
+.approved-example-empty span {
+  width: fit-content;
+  padding: 8px 10px;
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  background: var(--ugly-yellow);
+  color: var(--ink);
+  font-weight: 950;
+}
+
+.approved-example-empty p {
+  color: #4d5c55;
+  line-height: 1.5;
+}
+
+@keyframes approved-example-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
 .example-stack {
   position: relative;
   width: min(100%, 430px);
@@ -1377,6 +1493,12 @@ dd {
   align-items: start;
 }
 
+.submit-layout--single {
+  display: block;
+  max-width: 820px;
+  margin: 0 auto;
+}
+
 .submit-brief {
   position: sticky;
   top: 112px;
@@ -1427,6 +1549,17 @@ dd {
   color: #4d5c55;
   font-size: 0.92rem;
   line-height: 1.4;
+}
+
+.milestone-concept-note {
+  display: block;
+  padding: 12px 13px;
+  border: 2px solid rgba(8, 16, 15, 0.18);
+  border-radius: 8px;
+  background: #fff7bc;
+  color: #34443c;
+  font-size: 0.96rem;
+  font-weight: 760;
 }
 
 .small-field {
@@ -1672,6 +1805,73 @@ dd {
 
 .review-section {
   padding-top: 2px;
+}
+
+.approved-library-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 14px;
+}
+
+.approved-library-item {
+  min-width: 0;
+}
+
+.approved-library-item summary {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: var(--shadow-hard);
+  cursor: pointer;
+  list-style: none;
+}
+
+.approved-library-item summary::-webkit-details-marker {
+  display: none;
+}
+
+.approved-library-item summary::after {
+  content: "Edit";
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  padding: 6px 8px;
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  background: var(--ugly-yellow);
+  color: var(--ink);
+  font-size: 0.76rem;
+  font-weight: 950;
+}
+
+.approved-library-item[open] {
+  grid-column: 1 / -1;
+}
+
+.approved-library-item[open] summary {
+  max-width: 260px;
+  margin-bottom: 14px;
+}
+
+.approved-library-item summary img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  background: #d8e5df;
+}
+
+.approved-library-detail {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg-soft);
+  color: var(--ink);
+  box-shadow: var(--shadow-hard);
 }
 
 .section-title-row {
@@ -1941,6 +2141,14 @@ dd {
     min-height: 330px;
   }
 
+  .approved-example-showcase {
+    width: 100%;
+  }
+
+  .approved-example-card {
+    width: 220px;
+  }
+
   .example-card {
     width: 190px;
   }
@@ -2023,5 +2231,9 @@ dd {
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
+  }
+
+  .approved-example-track {
+    animation: none;
   }
 }

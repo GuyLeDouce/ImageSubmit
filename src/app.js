@@ -21,6 +21,7 @@ const {
   UGLY_CITY_MILESTONES,
   getUglyCityMilestoneByKey,
 } = require("./uglyCityMilestones");
+const { getUglyCityMilestoneConceptByKey } = require("./uglyCityMilestoneConcepts");
 const {
   createStateToken,
   getDiscordAuthUrl,
@@ -250,12 +251,24 @@ function createApp() {
     next();
   }
 
-  app.get("/", (req, res) => {
-    res.render("home", {
-      title: "The Ugly City Image Factory",
-      eras: SURVIVAL_ERAS,
-      milestones: UGLY_CITY_MILESTONES,
-    });
+  function getSubmissionMilestones() {
+    return UGLY_CITY_MILESTONES.slice(0, config.milestonesAllowed);
+  }
+
+  app.get("/", async (req, res, next) => {
+    try {
+      const approvedExamples = (await listApprovedSubmissions())
+        .filter((submission) => submission.era_key === UGLY_CITY_ERA_KEY)
+        .slice(0, 8);
+      res.render("home", {
+        title: "The Ugly City Image Factory",
+        eras: SURVIVAL_ERAS,
+        milestones: UGLY_CITY_MILESTONES,
+        approvedExamples,
+      });
+    } catch (error) {
+      next(error);
+    }
   });
 
   app.get("/auth/discord", (req, res) => {
@@ -337,12 +350,19 @@ function createApp() {
         return res.status(403).render("blocked", { title: "Join Ugly Labs Discord" });
       }
 
-      const selectedMilestone = getUglyCityMilestoneByKey(String(req.query.milestone || "").trim());
+      const milestones = getSubmissionMilestones();
+      const requestedMilestone = getUglyCityMilestoneByKey(String(req.query.milestone || "").trim());
+      const selectedMilestone = milestones.some((milestone) => milestone.key === requestedMilestone?.key)
+        ? requestedMilestone
+        : null;
       const submissions = await listSubmissionsForUser(req.session.user.id);
       res.render("submit", {
         title: "Submit to Ugly City",
         eras: SURVIVAL_ERAS,
-        milestones: UGLY_CITY_MILESTONES,
+        milestones,
+        milestoneConcepts: Object.fromEntries(
+          milestones.map((milestone) => [milestone.key, getUglyCityMilestoneConceptByKey(milestone.key)])
+        ),
         selectedMilestone,
         submitted: req.query.submitted === "1",
         submissions,
@@ -385,11 +405,11 @@ function createApp() {
     try {
       const eraKey = UGLY_CITY_ERA_KEY;
       const milestoneKey = String(req.body.milestone_key || "").trim();
-      const milestone = getUglyCityMilestoneByKey(milestoneKey);
+      const milestone = getSubmissionMilestones().find((candidate) => candidate.key === milestoneKey) || null;
       const promptText = parseOptionalText(req.body.prompt_text, "Prompt", 4000);
       const otherCollectionsText = parseOptionalText(req.body.other_collections_text, "Other NFTs / collections included", 500);
       const nftUsedType = "squigs";
-      if (!milestone) throw new Error("Please choose a valid Ugly City milestone.");
+      if (!milestone) throw new Error("Please choose an available Ugly City milestone.");
       if (req.body.contains_squig_confirmed !== "on") {
         throw new Error("Please confirm that your image includes at least one Squig.");
       }

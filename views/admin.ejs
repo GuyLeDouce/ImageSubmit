@@ -151,111 +151,113 @@
       <div class="panel empty-state">No approved images yet.</div>
     <% } %>
 
-    <% approvedSubmissions.forEach((submission) => { %>
-      <article class="submission-card review-card approved-card">
-        <div class="submission-media">
-          <a href="<%= submission.image_url %>" target="_blank" rel="noreferrer">
-            <img src="<%= submission.image_url %>" alt="Approved submission <%= submission.id %> preview" />
-          </a>
-          <span class="submission-status submission-status--approved">Approved</span>
-        </div>
-        <div class="submission-body">
-          <div class="submission-body__header">
-            <div>
-              <p class="eyebrow">Approved #<%= submission.id %></p>
-              <h2><%= submission.milestone_label || submission.milestone_key || "Approved image" %></h2>
+    <% if (approvedSubmissions.length) { %>
+      <div class="approved-library-grid">
+        <% approvedSubmissions.forEach((submission) => { %>
+          <details class="approved-library-item">
+            <summary aria-label="Edit approved submission <%= submission.id %>">
+              <img src="<%= submission.image_url %>" alt="Approved submission <%= submission.id %> preview" loading="lazy" />
+            </summary>
+
+            <div class="approved-library-detail">
+              <div class="submission-body__header">
+                <div>
+                  <p class="eyebrow">Approved #<%= submission.id %></p>
+                  <h2><%= submission.milestone_label || submission.milestone_key || "Approved image" %></h2>
+                </div>
+                <a href="<%= submission.image_url %>" target="_blank" rel="noreferrer" class="mini-link">Open image</a>
+              </div>
+
+              <dl class="meta-grid">
+                <div><dt>Discord username</dt><dd><%= submission.discord_username %></dd></div>
+                <div><dt>Discord user ID</dt><dd><%= submission.discord_user_id %></dd></div>
+                <div><dt>Display name</dt><dd><%= submission.discord_display_name || "Not set" %></dd></div>
+                <div><dt>Era</dt><dd><%= repairEraLabelMap[submission.era_key] || submission.era_key || "Not set" %></dd></div>
+                <div><dt>Milestone</dt><dd><%= submission.milestone_label || submission.milestone_key || "Not set" %></dd></div>
+                <div><dt>Other collections</dt><dd><%= submission.other_collections_text || submission.nft_used_text || "None provided" %></dd></div>
+                <div><dt>Prompt</dt><dd><%= submission.prompt_text || "Not provided" %></dd></div>
+                <div><dt>Reward</dt><dd><%= submission.reward_points || 100 %> $CHARM</dd></div>
+                <div><dt>Approved</dt><dd><%= submission.reviewed_at ? new Date(submission.reviewed_at).toLocaleString() : "Unknown" %></dd></div>
+                <div><dt>Approved by</dt><dd><%= submission.reviewed_by || "Unknown" %></dd></div>
+                <div><dt>Image URL</dt><dd><a href="<%= submission.image_url %>" target="_blank" rel="noreferrer">Open image</a></dd></div>
+              </dl>
+
+              <div class="actions review-actions">
+                <form action="/admin/submissions/<%= submission.id %>/update-approved" method="post" class="approve-form review-form review-form--approve">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                  <input type="hidden" name="row_version" value="<%= submission.row_version %>" />
+                  <div class="review-form__header">
+                    <p class="eyebrow">Edit approved row</p>
+                    <strong>Save account, reward, or era repair</strong>
+                  </div>
+                  <label class="field">
+                    <span>Discord user ID</span>
+                    <input
+                      type="text"
+                      name="override_discord_user_id"
+                      inputmode="numeric"
+                      value="<%= submission.discord_user_id %>"
+                    />
+                  </label>
+                  <label class="field">
+                    <span>Username</span>
+                    <input
+                      type="text"
+                      name="override_discord_username"
+                      value="<%= submission.discord_username %>"
+                    />
+                  </label>
+                  <label class="field">
+                    <span>Display name</span>
+                    <input
+                      type="text"
+                      name="override_discord_display_name"
+                      value="<%= submission.discord_display_name || '' %>"
+                      placeholder="Not set"
+                    />
+                  </label>
+                  <label class="field">
+                    <span>Era key / game pool</span>
+                    <select name="override_era_key" required>
+                      <% (adminRepairEras || eras).forEach((era) => { %>
+                        <option value="<%= era.key %>" <%= era.key === submission.era_key ? "selected" : "" %>><%= era.label %></option>
+                      <% }) %>
+                    </select>
+                    <small class="field-note">Admin repair only. New approvals still enter The Rise of Ugly City.</small>
+                  </label>
+                  <label class="field small-field">
+                    <span>Reward points</span>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100000"
+                      name="reward_points"
+                      value="<%= submission.reward_points || 100 %>"
+                      required
+                    />
+                  </label>
+                  <button type="submit" class="button secondary">Save changes</button>
+                </form>
+
+                <form action="/admin/submissions/<%= submission.id %>/unapprove" method="post" class="review-form review-form--decline">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                  <input type="hidden" name="row_version" value="<%= submission.row_version %>" />
+                  <div class="review-form__header">
+                    <p class="eyebrow">Unapprove</p>
+                    <strong>Remove from live pool</strong>
+                  </div>
+                  <label class="field">
+                    <span>Unapprove reason</span>
+                    <textarea name="reason" rows="3" maxlength="500" required placeholder="Why should this image be removed from the live pool?"></textarea>
+                  </label>
+                  <button type="submit" class="button danger">Unapprove and remove from live pool</button>
+                </form>
+              </div>
             </div>
-            <a href="<%= submission.image_url %>" target="_blank" rel="noreferrer" class="mini-link">Open image</a>
-          </div>
-
-          <dl class="meta-grid">
-            <div><dt>Discord username</dt><dd><%= submission.discord_username %></dd></div>
-            <div><dt>Discord user ID</dt><dd><%= submission.discord_user_id %></dd></div>
-            <div><dt>Display name</dt><dd><%= submission.discord_display_name || "Not set" %></dd></div>
-            <div><dt>Era</dt><dd><%= repairEraLabelMap[submission.era_key] || submission.era_key || "Not set" %></dd></div>
-            <div><dt>Milestone</dt><dd><%= submission.milestone_label || submission.milestone_key || "Not set" %></dd></div>
-            <div><dt>Other collections</dt><dd><%= submission.other_collections_text || submission.nft_used_text || "None provided" %></dd></div>
-            <div><dt>Prompt</dt><dd><%= submission.prompt_text || "Not provided" %></dd></div>
-            <div><dt>Reward</dt><dd><%= submission.reward_points || 100 %> $CHARM</dd></div>
-            <div><dt>Approved</dt><dd><%= submission.reviewed_at ? new Date(submission.reviewed_at).toLocaleString() : "Unknown" %></dd></div>
-            <div><dt>Approved by</dt><dd><%= submission.reviewed_by || "Unknown" %></dd></div>
-            <div><dt>Image URL</dt><dd><a href="<%= submission.image_url %>" target="_blank" rel="noreferrer">Open image</a></dd></div>
-          </dl>
-
-          <div class="actions review-actions">
-            <form action="/admin/submissions/<%= submission.id %>/update-approved" method="post" class="approve-form review-form review-form--approve">
-              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-              <input type="hidden" name="row_version" value="<%= submission.row_version %>" />
-              <div class="review-form__header">
-                <p class="eyebrow">Edit approved row</p>
-                <strong>Save account, reward, or era repair</strong>
-              </div>
-              <label class="field">
-                <span>Discord user ID</span>
-                <input
-                  type="text"
-                  name="override_discord_user_id"
-                  inputmode="numeric"
-                  value="<%= submission.discord_user_id %>"
-                />
-              </label>
-              <label class="field">
-                <span>Username</span>
-                <input
-                  type="text"
-                  name="override_discord_username"
-                  value="<%= submission.discord_username %>"
-                />
-              </label>
-              <label class="field">
-                <span>Display name</span>
-                <input
-                  type="text"
-                  name="override_discord_display_name"
-                  value="<%= submission.discord_display_name || '' %>"
-                  placeholder="Not set"
-                />
-              </label>
-              <label class="field">
-                <span>Era key / game pool</span>
-                <select name="override_era_key" required>
-                  <% (adminRepairEras || eras).forEach((era) => { %>
-                    <option value="<%= era.key %>" <%= era.key === submission.era_key ? "selected" : "" %>><%= era.label %></option>
-                  <% }) %>
-                </select>
-                <small class="field-note">Admin repair only. New approvals still enter The Rise of Ugly City.</small>
-              </label>
-              <label class="field small-field">
-                <span>Reward points</span>
-                <input
-                  type="number"
-                  min="0"
-                  max="100000"
-                  name="reward_points"
-                  value="<%= submission.reward_points || 100 %>"
-                  required
-                />
-              </label>
-              <button type="submit" class="button secondary">Save changes</button>
-            </form>
-
-            <form action="/admin/submissions/<%= submission.id %>/unapprove" method="post" class="review-form review-form--decline">
-              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-              <input type="hidden" name="row_version" value="<%= submission.row_version %>" />
-              <div class="review-form__header">
-                <p class="eyebrow">Unapprove</p>
-                <strong>Remove from live pool</strong>
-              </div>
-              <label class="field">
-                <span>Unapprove reason</span>
-                <textarea name="reason" rows="3" maxlength="500" required placeholder="Why should this image be removed from the live pool?"></textarea>
-              </label>
-              <button type="submit" class="button danger">Unapprove and remove from live pool</button>
-            </form>
-          </div>
-        </div>
-      </article>
-    <% }) %>
+          </details>
+        <% }) %>
+      </div>
+    <% } %>
   </section>
 </section>
 
