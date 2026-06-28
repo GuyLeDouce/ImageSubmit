@@ -759,18 +759,6 @@ dd {
   box-shadow: var(--shadow-soft);
 }
 
-.portal-hero::after {
-  content: "UGLY CITY";
-  position: absolute;
-  right: 24px;
-  bottom: 20px;
-  z-index: 0;
-  color: rgba(248, 243, 223, 0.05);
-  font-size: 8rem;
-  font-weight: 950;
-  line-height: 1;
-}
-
 .portal-hero__copy,
 .terminal-panel {
   position: relative;
@@ -1286,6 +1274,10 @@ dd {
   grid-template-columns: auto minmax(0, 1fr);
   gap: 18px;
   align-items: center;
+}
+
+.profile-identity h1 {
+  font-size: clamp(2.35rem, 6vw, 3.55rem);
 }
 
 .profile-avatar {
@@ -2048,21 +2040,6 @@ dd {
   box-shadow: 8px 8px 0 var(--line);
 }
 
-.topbar::before {
-  content: "UGLY CITY";
-  align-self: stretch;
-  display: grid;
-  place-items: center;
-  padding: 0 10px;
-  border: 2px solid var(--line);
-  border-radius: 999px;
-  background: var(--light-sky);
-  color: var(--ink);
-  font-size: 0.72rem;
-  font-weight: 950;
-  transform: rotate(-2deg);
-}
-
 .logo-button {
   width: 150px;
   height: 74px;
@@ -2672,11 +2649,6 @@ body:not(.home-page) main > .stack-gap:not(.submit-page):not(.profile-page):not(
     flex-direction: column;
   }
 
-  .topbar::before {
-    width: fit-content;
-    min-height: 32px;
-  }
-
   .nav {
     justify-content: flex-start;
   }
@@ -2798,10 +2770,6 @@ body:not(.home-page) main > .stack-gap:not(.submit-page):not(.profile-page):not(
 
   .landing-hero {
     padding: 18px;
-  }
-
-  .portal-hero::after {
-    display: none;
   }
 
   .creator-hero__tagline {
