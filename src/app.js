@@ -77,6 +77,20 @@ function resolveAdminRepairMilestone(eraKey, milestoneKey) {
   return milestone;
 }
 
+function parseImageUrl(rawValue) {
+  const value = String(rawValue || "").trim();
+  if (!value) throw new Error("Image URL is required.");
+  if (value.length > 2048) throw new Error("Image URL must be 2048 characters or fewer.");
+  if (value.startsWith("/")) return value;
+  try {
+    const parsed = new URL(value);
+    if (parsed.protocol === "http:" || parsed.protocol === "https:") return value;
+  } catch (error) {
+    // Fall through to the field-specific error below.
+  }
+  throw new Error("Image URL must be a valid http, https, or site-relative URL.");
+}
+
 function createApp() {
   validateConfig();
 
@@ -494,9 +508,18 @@ function createApp() {
       const discordUserId = parseOptionalDiscordUserId(req.body.override_discord_user_id);
       const discordUsername = parseOptionalText(req.body.override_discord_username, "Discord username", 64);
       const discordDisplayName = parseOptionalText(req.body.override_discord_display_name, "Display name", 64);
+      const imageUrl = parseImageUrl(req.body.image_url);
+      const promptText = parseOptionalText(req.body.prompt_text, "Prompt", 4000);
+      const otherCollectionsText = parseOptionalText(req.body.other_collections_text, "Other NFTs / collections included", 500);
+      const overrideMilestone = resolveAdminRepairMilestone(UGLY_CITY_ERA_KEY, req.body.override_milestone_key);
+      if (!overrideMilestone) throw new Error("Please choose a valid Ugly City milestone.");
+      const containsSquigConfirmed = req.body.contains_squig_confirmed === "on";
+      if (!containsSquigConfirmed) {
+        throw new Error("Please confirm that the approved image includes at least one Squig.");
+      }
       const overrideEraKey = UGLY_CITY_ERA_KEY;
       const overrideNftUsedType = "squigs";
-      const overrideNftUsedText = null;
+      const overrideNftUsedText = otherCollectionsText;
       if (!validateEraKey(overrideEraKey)) throw new Error("Please choose a valid era for approval.");
       assertCollectionAllowedForEra(overrideNftUsedType, overrideEraKey);
       const reviewedBy = `${req.session.user.username} (${req.session.user.id})`;
@@ -508,8 +531,13 @@ function createApp() {
         overrideDiscordUsername: discordUsername,
         overrideDiscordDisplayName: discordDisplayName,
         overrideEraKey,
+        overrideImageUrl: imageUrl,
+        overridePromptText: promptText,
+        overrideMilestone,
         overrideNftUsedType,
         overrideNftUsedText: overrideNftUsedType === "other" ? overrideNftUsedText : null,
+        overrideOtherCollectionsText: otherCollectionsText,
+        overrideContainsSquigConfirmed: containsSquigConfirmed,
         expectedRowVersion,
         actorDiscordId: req.session.user.id,
         requestId: req.id,

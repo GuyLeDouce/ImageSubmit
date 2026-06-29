@@ -57,9 +57,9 @@ async function prepareLegacyMigratedDb() {
 
 async function counts(pool) {
   const [submissions, live, notifications, audit] = await Promise.all([
-    pool.query("SELECT id, status, row_version, decline_reason FROM squig_survival_image_submissions ORDER BY id"),
-    pool.query("SELECT image_url, user_id, era_keys, reward_points FROM squig_survival_images ORDER BY id"),
-    pool.query("SELECT submission_id, image_url, post_status FROM squig_survival_image_approval_notifications ORDER BY id"),
+    pool.query("SELECT id, status, row_version, decline_reason, image_url, prompt_text, milestone_key, contains_squig_confirmed, other_collections_text FROM squig_survival_image_submissions ORDER BY id"),
+    pool.query("SELECT image_url, user_id, era_keys, reward_points, prompt_text, milestone_key FROM squig_survival_images ORDER BY id"),
+    pool.query("SELECT submission_id, image_url, post_status, prompt_text FROM squig_survival_image_approval_notifications ORDER BY id"),
     pool.query("SELECT submission_id, action, actor_discord_id, request_id, before_json, after_json, reason, outcome FROM squig_survival_image_moderation_audit ORDER BY id"),
   ]);
   return { submissions: submissions.rows, live: live.rows, notifications: notifications.rows, audit: audit.rows };
@@ -73,16 +73,27 @@ test("approval transaction commits live row, notification, submission update, an
     rewardPoints: 150,
     reviewedBy: "mod (999999999999999999)",
     overrideEraKey: "day_one",
+    overrideImageUrl: "https://cdn.example.test/pending-edited.png",
+    overridePromptText: "edited prompt",
+    overrideMilestone: { key: "edited-milestone", number: 99, label: "Edited milestone", district: "Edited district" },
     overrideNftUsedType: "squigs",
+    overrideOtherCollectionsText: "edited notes",
+    overrideContainsSquigConfirmed: true,
     expectedRowVersion: 1,
     actorDiscordId: "999999999999999999",
     requestId: "req-approve",
   });
   const state = await counts(pool);
-  assert.equal(state.submissions.find((row) => Number(row.id) === 101).status, "approved");
-  assert.equal(state.submissions.find((row) => Number(row.id) === 101).row_version, 2);
-  assert.ok(state.live.some((row) => row.image_url === "https://cdn.example.test/pending.png"));
-  assert.ok(state.notifications.some((row) => Number(row.submission_id) === 101));
+  const approvedSubmission = state.submissions.find((row) => Number(row.id) === 101);
+  assert.equal(approvedSubmission.status, "approved");
+  assert.equal(approvedSubmission.row_version, 2);
+  assert.equal(approvedSubmission.image_url, "https://cdn.example.test/pending-edited.png");
+  assert.equal(approvedSubmission.prompt_text, "edited prompt");
+  assert.equal(approvedSubmission.milestone_key, "edited-milestone");
+  assert.equal(approvedSubmission.contains_squig_confirmed, true);
+  assert.equal(approvedSubmission.other_collections_text, "edited notes");
+  assert.ok(state.live.some((row) => row.image_url === "https://cdn.example.test/pending-edited.png" && row.prompt_text === "edited prompt" && row.milestone_key === "edited-milestone"));
+  assert.ok(state.notifications.some((row) => Number(row.submission_id) === 101 && row.image_url === "https://cdn.example.test/pending-edited.png" && row.prompt_text === "edited prompt"));
   const audit = state.audit.find((row) => Number(row.submission_id) === 101);
   assert.equal(audit.action, "approve");
   assert.equal(audit.actor_discord_id, "999999999999999999");

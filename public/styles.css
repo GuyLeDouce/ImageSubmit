@@ -1961,6 +1961,11 @@ dd {
   font-weight: 950;
 }
 
+.approved-library-item--pending summary::after {
+  content: "Review";
+  background: var(--ugly-yellow);
+}
+
 .approved-library-item[open] {
   grid-column: 1 / -1;
 }
@@ -2790,6 +2795,15 @@ textarea:focus {
   border-width: 2px;
   border-radius: 999px;
   background: var(--ugly-yellow);
+}
+
+.approved-library-item--pending summary::after {
+  content: "Review";
+  background: var(--ugly-yellow);
+}
+
+.approved-library-item--pending summary {
+  background: #fff9d7;
 }
 
 .approved-library-item--declined summary::after {

@@ -37,106 +37,144 @@
       <div class="panel empty-state">No pending submissions.</div>
     <% } %>
 
-    <% submissions.forEach((submission) => { %>
-      <article class="submission-card review-card">
-        <div class="submission-media">
-          <a href="<%= submission.image_url %>" target="_blank" rel="noreferrer">
-            <img src="<%= submission.image_url %>" alt="Submission <%= submission.id %> preview" />
-          </a>
-          <span class="submission-status submission-status--pending">Awaiting Approval</span>
-        </div>
-        <div class="submission-body">
-          <div class="submission-body__header">
-            <div>
-              <p class="eyebrow">Submission #<%= submission.id %></p>
-              <h2><%= submission.milestone_label || submission.milestone_key || "Milestone not selected" %></h2>
+    <% if (submissions.length) { %>
+      <div class="approved-library-grid">
+        <% submissions.forEach((submission) => { %>
+          <details class="approved-library-item approved-library-item--pending">
+            <summary aria-label="Review pending submission <%= submission.id %>">
+              <img src="<%= submission.image_url %>" alt="Pending submission <%= submission.id %> preview" loading="lazy" />
+            </summary>
+
+            <div class="approved-library-detail">
+              <div class="submission-body__header">
+                <div>
+                  <p class="eyebrow">Pending #<%= submission.id %></p>
+                  <h2><%= submission.milestone_label || submission.milestone_key || "Milestone not selected" %></h2>
+                </div>
+                <a href="<%= submission.image_url %>" target="_blank" rel="noreferrer" class="mini-link">Open image</a>
+              </div>
+
+              <dl class="meta-grid">
+                <div><dt>Submitted</dt><dd><%= new Date(submission.submitted_at).toLocaleString() %></dd></div>
+                <div><dt>Status</dt><dd>Awaiting Approval</dd></div>
+                <div><dt>Discord username</dt><dd><%= submission.discord_username %></dd></div>
+                <div><dt>Discord user ID</dt><dd><%= submission.discord_user_id %></dd></div>
+                <div><dt>Display name</dt><dd><%= submission.discord_display_name || "Not set" %></dd></div>
+                <div><dt>Era</dt><dd>The Rise of Ugly City</dd></div>
+                <div><dt>Selected milestone</dt><dd><%= submission.milestone_label || submission.milestone_key || "Not selected" %></dd></div>
+                <div><dt>District</dt><dd><%= submission.milestone_district || "Not selected" %></dd></div>
+                <div><dt>Squig confirmed by user</dt><dd><%= submission.contains_squig_confirmed ? "Yes" : "No" %></dd></div>
+                <div><dt>Reward default</dt><dd><%= submission.reward_points || 100 %> $CHARM</dd></div>
+              </dl>
+
+              <div class="review-note">
+                Edit the submitted details before approval if the admin review needs corrections. Decline if the image does not clearly contain a Squig.
+              </div>
+
+              <div class="actions review-actions">
+                <form action="/admin/submissions/<%= submission.id %>/approve" method="post" class="approve-form review-form review-form--approve">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                  <input type="hidden" name="row_version" value="<%= submission.row_version %>" />
+                  <div class="review-form__header">
+                    <p class="eyebrow">Edit and approve</p>
+                    <strong>Save corrections and send to live pool</strong>
+                  </div>
+                  <label class="field">
+                    <span>Discord user ID</span>
+                    <input
+                      type="text"
+                      name="override_discord_user_id"
+                      inputmode="numeric"
+                      value="<%= submission.discord_user_id %>"
+                      required
+                    />
+                  </label>
+                  <label class="field">
+                    <span>Username</span>
+                    <input
+                      type="text"
+                      name="override_discord_username"
+                      value="<%= submission.discord_username %>"
+                    />
+                  </label>
+                  <label class="field">
+                    <span>Display name</span>
+                    <input
+                      type="text"
+                      name="override_discord_display_name"
+                      value="<%= submission.discord_display_name || '' %>"
+                      placeholder="Not set"
+                    />
+                  </label>
+                  <label class="field">
+                    <span>Image URL</span>
+                    <input
+                      type="text"
+                      name="image_url"
+                      value="<%= submission.image_url %>"
+                      required
+                    />
+                  </label>
+                  <label class="field">
+                    <span>Ugly City milestone</span>
+                    <select name="override_milestone_key" required>
+                      <% repairMilestones.forEach((milestone) => { %>
+                        <option value="<%= milestone.key %>" <%= milestone.key === submission.milestone_key ? "selected" : "" %>>
+                          <%= milestone.number %>. <%= milestone.district %>
+                        </option>
+                      <% }) %>
+                    </select>
+                  </label>
+                  <label class="field">
+                    <span>Prompt used</span>
+                    <textarea name="prompt_text" rows="4" maxlength="4000"><%= submission.prompt_text || "" %></textarea>
+                  </label>
+                  <label class="field">
+                    <span>Other collections included</span>
+                    <textarea name="other_collections_text" rows="3" maxlength="500" placeholder="None provided"><%= submission.other_collections_text || submission.nft_used_text || "" %></textarea>
+                  </label>
+                  <label class="checkbox-field">
+                    <input
+                      type="checkbox"
+                      name="contains_squig_confirmed"
+                      <%= submission.contains_squig_confirmed ? "checked" : "" %>
+                      required
+                    />
+                    <span>Image includes at least one clearly visible Squig</span>
+                  </label>
+                  <label class="field small-field">
+                    <span>Reward points</span>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100000"
+                      name="reward_points"
+                      value="<%= submission.reward_points || 100 %>"
+                      required
+                    />
+                  </label>
+                  <button type="submit" class="button">Approve</button>
+                </form>
+
+                <form action="/admin/submissions/<%= submission.id %>/decline" method="post" class="review-form review-form--decline">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                  <input type="hidden" name="row_version" value="<%= submission.row_version %>" />
+                  <div class="review-form__header">
+                    <p class="eyebrow">Decline</p>
+                    <strong>Keep it out of the pool</strong>
+                  </div>
+                  <label class="field">
+                    <span>Decline reason</span>
+                    <textarea name="reason" rows="3" maxlength="500" required placeholder="No clear Squig, milestone mismatch, unsafe content, or spam"></textarea>
+                  </label>
+                  <button type="submit" class="button danger">Decline</button>
+                </form>
+              </div>
             </div>
-            <a href="<%= submission.image_url %>" target="_blank" rel="noreferrer" class="mini-link">Open image</a>
-          </div>
-
-          <dl class="meta-grid">
-            <div><dt>Discord username</dt><dd><%= submission.discord_username %></dd></div>
-            <div><dt>Discord user ID</dt><dd><%= submission.discord_user_id %></dd></div>
-            <div><dt>Display name</dt><dd><%= submission.discord_display_name || "Not set" %></dd></div>
-            <div><dt>Era</dt><dd>The Rise of Ugly City</dd></div>
-            <div><dt>Selected milestone</dt><dd><%= submission.milestone_label || submission.milestone_key || "Not selected" %></dd></div>
-            <div><dt>District</dt><dd><%= submission.milestone_district || "Not selected" %></dd></div>
-            <div><dt>Squig confirmed by user</dt><dd><%= submission.contains_squig_confirmed ? "Yes" : "No" %></dd></div>
-            <div><dt>Other collections included</dt><dd><%= submission.other_collections_text || submission.nft_used_text || "None provided" %></dd></div>
-            <div><dt>Prompt used</dt><dd><%= submission.prompt_text || "Not provided" %></dd></div>
-            <div><dt>Reward default</dt><dd><%= submission.reward_points || 100 %> $CHARM</dd></div>
-            <div><dt>Submitted</dt><dd><%= new Date(submission.submitted_at).toLocaleString() %></dd></div>
-            <div><dt>Image URL</dt><dd><a href="<%= submission.image_url %>" target="_blank" rel="noreferrer">Open image</a></dd></div>
-          </dl>
-
-          <div class="review-note">
-            Decline if the image does not clearly contain a Squig.
-          </div>
-
-          <div class="actions review-actions">
-            <form action="/admin/submissions/<%= submission.id %>/approve" method="post" class="approve-form review-form review-form--approve">
-              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-              <input type="hidden" name="row_version" value="<%= submission.row_version %>" />
-              <div class="review-form__header">
-                <p class="eyebrow">Approve</p>
-                <strong>Send to live pool</strong>
-              </div>
-              <label class="field">
-                <span>Override Discord user ID</span>
-                <input
-                  type="text"
-                  name="override_discord_user_id"
-                  inputmode="numeric"
-                  placeholder="<%= submission.discord_user_id %>"
-                />
-              </label>
-              <label class="field">
-                <span>Override username</span>
-                <input
-                  type="text"
-                  name="override_discord_username"
-                  placeholder="<%= submission.discord_username %>"
-                />
-              </label>
-              <label class="field">
-                <span>Override display name</span>
-                <input
-                  type="text"
-                  name="override_discord_display_name"
-                  placeholder="<%= submission.discord_display_name || 'Not set' %>"
-                />
-              </label>
-              <label class="field small-field">
-                <span>Reward points</span>
-                <input
-                  type="number"
-                  min="0"
-                  max="100000"
-                  name="reward_points"
-                  value="<%= submission.reward_points || 100 %>"
-                  required
-                />
-              </label>
-              <button type="submit" class="button">Approve</button>
-            </form>
-
-            <form action="/admin/submissions/<%= submission.id %>/decline" method="post" class="review-form review-form--decline">
-              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-              <input type="hidden" name="row_version" value="<%= submission.row_version %>" />
-              <div class="review-form__header">
-                <p class="eyebrow">Decline</p>
-                <strong>Keep it out of the pool</strong>
-              </div>
-              <label class="field">
-                <span>Decline reason</span>
-                <textarea name="reason" rows="3" maxlength="500" required placeholder="No clear Squig, milestone mismatch, unsafe content, or spam"></textarea>
-              </label>
-              <button type="submit" class="button danger">Decline</button>
-            </form>
-          </div>
-        </div>
-      </article>
-    <% }) %>
+          </details>
+        <% }) %>
+      </div>
+    <% } %>
   </section>
 
   <section class="stack-gap review-section">

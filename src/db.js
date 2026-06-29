@@ -332,8 +332,13 @@ async function approveSubmission({
   overrideDiscordUsername,
   overrideDiscordDisplayName,
   overrideEraKey,
+  overrideImageUrl,
+  overridePromptText,
+  overrideMilestone,
   overrideNftUsedType,
   overrideNftUsedText,
+  overrideOtherCollectionsText,
+  overrideContainsSquigConfirmed,
   expectedRowVersion,
   actorDiscordId,
   requestId,
@@ -366,9 +371,23 @@ async function approveSubmission({
     const resolvedDiscordDisplayName =
       overrideDiscordDisplayName || submission.discord_display_name;
     const resolvedEraKey = UGLY_CITY_ERA_KEY;
+    const resolvedImageUrl = overrideImageUrl || submission.image_url;
+    const resolvedPromptText = overridePromptText === undefined ? submission.prompt_text : overridePromptText;
+    const resolvedMilestone = overrideMilestone || {
+      key: submission.milestone_key,
+      number: submission.milestone_number,
+      label: submission.milestone_label,
+      district: submission.milestone_district,
+    };
     const resolvedNftUsedType = overrideNftUsedType || submission.nft_used_type;
     const resolvedNftUsedText =
       resolvedNftUsedType === "other" ? overrideNftUsedText || submission.nft_used_text : null;
+    const resolvedOtherCollectionsText =
+      overrideOtherCollectionsText === undefined ? submission.other_collections_text : overrideOtherCollectionsText;
+    const resolvedContainsSquigConfirmed =
+      typeof overrideContainsSquigConfirmed === "boolean"
+        ? overrideContainsSquigConfirmed
+        : submission.contains_squig_confirmed;
 
     await client.query(
       `
@@ -388,16 +407,16 @@ async function approveSubmission({
         VALUES ($1, $2, $3, now(), $4, $5, $6, $7, $8, $9, $10)
       `,
       [
-        submission.image_url,
+        resolvedImageUrl,
         resolvedDiscordUserId,
         reviewedBy,
         resolvedEraKey,
         rewardPoints,
-        submission.prompt_text,
-        submission.milestone_key,
-        submission.milestone_number,
-        submission.milestone_label,
-        submission.milestone_district,
+        resolvedPromptText,
+        resolvedMilestone?.key || null,
+        resolvedMilestone?.number || null,
+        resolvedMilestone?.label || null,
+        resolvedMilestone?.district || null,
       ]
     );
     maybeInjectFailure({ injectFailureAt }, "after-live-insert");
@@ -421,8 +440,8 @@ async function approveSubmission({
         resolvedDiscordUserId,
         resolvedDiscordUsername,
         resolvedEraKey,
-        submission.image_url,
-        submission.prompt_text,
+        resolvedImageUrl,
+        resolvedPromptText,
         rewardPoints,
         reviewedBy,
       ]
@@ -438,14 +457,22 @@ async function approveSubmission({
             era_key = $5,
             nft_used_type = $6,
             nft_used_text = $7,
+            image_url = $8,
+            prompt_text = $9,
+            milestone_key = $10,
+            milestone_number = $11,
+            milestone_label = $12,
+            milestone_district = $13,
+            contains_squig_confirmed = $14,
+            other_collections_text = $15,
             status = 'approved',
-            reward_points = $8,
+            reward_points = $16,
             reviewed_at = now(),
-            reviewed_by = $9,
+            reviewed_by = $17,
             row_version = row_version + 1
         WHERE id = $1
           AND status = 'pending'
-          AND row_version = $10
+          AND row_version = $18
         RETURNING id, reviewed_at, discord_user_id, row_version
       `,
       [
@@ -456,6 +483,14 @@ async function approveSubmission({
         resolvedEraKey,
         resolvedNftUsedType,
         resolvedNftUsedText,
+        resolvedImageUrl,
+        resolvedPromptText,
+        resolvedMilestone?.key || null,
+        resolvedMilestone?.number || null,
+        resolvedMilestone?.label || null,
+        resolvedMilestone?.district || null,
+        resolvedContainsSquigConfirmed,
+        resolvedOtherCollectionsText,
         rewardPoints,
         reviewedBy,
         expectedRowVersion,
@@ -491,13 +526,17 @@ async function approveSubmission({
           discordUsername: resolvedDiscordUsername,
           discordDisplayName: resolvedDiscordDisplayName,
           eraKey: resolvedEraKey,
+          imageUrl: resolvedImageUrl,
+          promptText: resolvedPromptText,
           nftUsedType: resolvedNftUsedType,
           nftUsedText: resolvedNftUsedText,
+          otherCollectionsText: resolvedOtherCollectionsText,
+          containsSquigConfirmed: resolvedContainsSquigConfirmed,
           rewardPoints,
-          milestoneKey: submission.milestone_key,
-          milestoneNumber: submission.milestone_number,
-          milestoneLabel: submission.milestone_label,
-          milestoneDistrict: submission.milestone_district,
+          milestoneKey: resolvedMilestone?.key || null,
+          milestoneNumber: resolvedMilestone?.number || null,
+          milestoneLabel: resolvedMilestone?.label || null,
+          milestoneDistrict: resolvedMilestone?.district || null,
           rowVersion: updated.rows[0].row_version,
         }),
       ]
