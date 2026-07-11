@@ -22,6 +22,12 @@
       <div><span>Approved</span><strong><%= approvedSubmissions.length %></strong></div>
       <div><span>Declined</span><strong><%= declinedSubmissions.length %></strong></div>
     </div>
+    <div class="admin-hero-actions">
+      <button type="button" class="button secondary" data-gif-button>GIF</button>
+      <span class="field-note" data-gif-status>
+        Downloads 10 random images from the latest 50 approved creations.
+      </span>
+    </div>
   </header>
 
   <section class="stack-gap review-section">
@@ -45,7 +51,11 @@
               <img src="<%= submission.image_url %>" alt="Pending submission <%= submission.id %> preview" loading="lazy" />
             </summary>
 
-            <div class="approved-library-detail">
+            <div class="approved-library-detail admin-review-detail">
+              <a href="<%= submission.image_url %>" target="_blank" rel="noreferrer" class="admin-review-full-image">
+                <img src="<%= submission.image_url %>" alt="Pending submission <%= submission.id %> full view" loading="lazy" />
+              </a>
+
               <div class="submission-body__header">
                 <div>
                   <p class="eyebrow">Pending #<%= submission.id %></p>
@@ -54,7 +64,37 @@
                 <a href="<%= submission.image_url %>" target="_blank" rel="noreferrer" class="mini-link">Open image</a>
               </div>
 
-              <dl class="meta-grid">
+              <dl class="meta-grid meta-grid--simple">
+                <div><dt>Display name</dt><dd><%= submission.discord_display_name || "Not set" %></dd></div>
+                <div><dt>Era</dt><dd>The Rise of Ugly City</dd></div>
+                <div><dt>Milestone</dt><dd><%= submission.milestone_label || submission.milestone_key || "Not selected" %></dd></div>
+                <div><dt>Prompt</dt><dd><%= submission.prompt_text ? "Yes" : "No" %></dd></div>
+              </dl>
+
+              <div class="actions review-primary-actions">
+                <form action="/admin/submissions/<%= submission.id %>/approve" method="post">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                  <input type="hidden" name="row_version" value="<%= submission.row_version %>" />
+                  <input type="hidden" name="override_discord_user_id" value="<%= submission.discord_user_id %>" />
+                  <input type="hidden" name="override_discord_username" value="<%= submission.discord_username %>" />
+                  <input type="hidden" name="override_discord_display_name" value="<%= submission.discord_display_name || '' %>" />
+                  <input type="hidden" name="image_url" value="<%= submission.image_url %>" />
+                  <input type="hidden" name="override_milestone_key" value="<%= submission.milestone_key || '' %>" />
+                  <textarea name="prompt_text" hidden><%= submission.prompt_text || "" %></textarea>
+                  <textarea name="other_collections_text" hidden><%= submission.other_collections_text || submission.nft_used_text || "" %></textarea>
+                  <% if (submission.contains_squig_confirmed) { %>
+                    <input type="hidden" name="contains_squig_confirmed" value="on" />
+                  <% } %>
+                  <input type="hidden" name="reward_points" value="<%= submission.reward_points || 100 %>" />
+                  <button type="submit" class="button">Approve</button>
+                </form>
+                <button type="button" class="button secondary" data-review-toggle="edit">Edit</button>
+                <button type="button" class="button ghost" data-review-toggle="rows">View</button>
+                <button type="button" class="button danger" data-review-toggle="decline">Decline</button>
+              </div>
+
+              <div class="review-panel is-hidden" data-review-panel="rows">
+                <dl class="meta-grid">
                 <div><dt>Submitted</dt><dd><%= new Date(submission.submitted_at).toLocaleString() %></dd></div>
                 <div><dt>Status</dt><dd>Awaiting Approval</dd></div>
                 <div><dt>Discord username</dt><dd><%= submission.discord_username %></dd></div>
@@ -65,13 +105,17 @@
                 <div><dt>District</dt><dd><%= submission.milestone_district || "Not selected" %></dd></div>
                 <div><dt>Squig confirmed by user</dt><dd><%= submission.contains_squig_confirmed ? "Yes" : "No" %></dd></div>
                 <div><dt>Reward default</dt><dd><%= submission.reward_points || 100 %> $CHARM</dd></div>
-              </dl>
+                <div><dt>Other collections</dt><dd><%= submission.other_collections_text || submission.nft_used_text || "None provided" %></dd></div>
+                <div><dt>Prompt text</dt><dd><%= submission.prompt_text || "Not provided" %></dd></div>
+                <div><dt>Image URL</dt><dd><a href="<%= submission.image_url %>" target="_blank" rel="noreferrer">Open image</a></dd></div>
+                </dl>
+              </div>
 
               <div class="review-note">
                 Edit the submitted details before approval if the admin review needs corrections. Decline if the image does not clearly contain a Squig.
               </div>
 
-              <div class="actions review-actions">
+              <div class="actions review-actions review-panel is-hidden" data-review-panel="edit">
                 <form action="/admin/submissions/<%= submission.id %>/approve" method="post" class="approve-form review-form review-form--approve">
                   <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
                   <input type="hidden" name="row_version" value="<%= submission.row_version %>" />
@@ -153,9 +197,11 @@
                       required
                     />
                   </label>
-                  <button type="submit" class="button">Approve</button>
+                  <button type="submit" class="button">Save and approve</button>
                 </form>
+              </div>
 
+              <div class="actions review-actions review-panel is-hidden" data-review-panel="decline">
                 <form action="/admin/submissions/<%= submission.id %>/decline" method="post" class="review-form review-form--decline">
                   <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
                   <input type="hidden" name="row_version" value="<%= submission.row_version %>" />
@@ -199,7 +245,7 @@
               <img src="<%= submission.image_url %>" alt="Approved submission <%= submission.id %> preview" loading="lazy" />
             </summary>
 
-            <div class="approved-library-detail">
+            <div class="approved-library-detail" data-gif-source="<%= submission.image_url %>">
               <div class="submission-body__header">
                 <div>
                   <p class="eyebrow">Approved #<%= submission.id %></p>
@@ -435,22 +481,6 @@
   </section>
 </section>
 
-<script nonce="<%= cspNonce %>">
-  (() => {
-    const uglyCityEraKey = "ugly_city";
-    document.querySelectorAll("[data-era-repair-select]").forEach((select) => {
-      const form = select.closest("form");
-      const milestoneField = form?.querySelector("[data-milestone-repair-field]");
-      if (!milestoneField) return;
-
-      const syncMilestoneVisibility = () => {
-        milestoneField.hidden = select.value !== uglyCityEraKey;
-      };
-
-      select.addEventListener("change", syncMilestoneVisibility);
-      syncMilestoneVisibility();
-    });
-  })();
-</script>
+<script src="/admin.js" defer></script>
 
 <%- include("partials/footer") %>

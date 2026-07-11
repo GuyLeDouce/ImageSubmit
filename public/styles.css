@@ -1917,6 +1917,13 @@ dd {
   font-size: 2rem;
 }
 
+.admin-hero-actions {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  justify-items: start;
+}
+
 .review-section {
   padding-top: 2px;
 }
@@ -1991,6 +1998,28 @@ dd {
   background: var(--bg-soft);
   color: var(--ink);
   box-shadow: var(--shadow-hard);
+}
+
+.admin-review-detail {
+  align-items: start;
+}
+
+.admin-review-full-image {
+  display: block;
+  max-height: 82vh;
+  overflow: auto;
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: var(--shadow-hard);
+}
+
+.admin-review-full-image img {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
 }
 
 .section-title-row {
@@ -2068,9 +2097,21 @@ dd {
   background: #fff;
 }
 
+.meta-grid--simple {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
 .review-actions {
   align-items: stretch;
   margin-top: 2px;
+}
+
+.review-primary-actions {
+  align-items: center;
+}
+
+.review-panel {
+  width: 100%;
 }
 
 .review-form {
