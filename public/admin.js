@@ -51,13 +51,13 @@
     gifStatus.textContent = "Building GIF from random approved creations.";
 
     try {
-      const selectedUrls = shuffle(gifSources).slice(0, Math.min(10, gifSources.length));
-      const gif = await buildAnimatedGif(selectedUrls, {
+      const gifResult = await buildAnimatedGif(shuffle(gifSources), {
         width: 512,
         height: 512,
         delayCs: 250,
+        maxFrames: 10,
       });
-      const objectUrl = URL.createObjectURL(gif);
+      const objectUrl = URL.createObjectURL(gifResult.blob);
       const anchor = document.createElement("a");
       anchor.href = objectUrl;
       anchor.download = `squig-survival-${new Date().toISOString().slice(0, 10)}.gif`;
@@ -65,7 +65,8 @@
       anchor.click();
       anchor.remove();
       setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
-      gifStatus.textContent = `Downloaded GIF with ${selectedUrls.length} random creation${selectedUrls.length === 1 ? "" : "s"}.`;
+      const skippedText = gifResult.skipped ? ` Skipped ${gifResult.skipped} image${gifResult.skipped === 1 ? "" : "s"} that could not load.` : "";
+      gifStatus.textContent = `Downloaded GIF with ${gifResult.frameCount} random creation${gifResult.frameCount === 1 ? "" : "s"}.${skippedText}`;
     } catch (error) {
       gifStatus.textContent = error?.message || "Could not build the GIF.";
     } finally {
@@ -89,30 +90,52 @@
     canvas.height = options.height;
     const context = canvas.getContext("2d", { willReadFrequently: true });
     const frames = [];
+    let skipped = 0;
 
     for (const url of urls) {
-      const image = await loadImage(url);
-      drawContainedImage(context, image, options.width, options.height);
-      let imageData;
       try {
-        imageData = context.getImageData(0, 0, options.width, options.height);
+        const image = await loadImage(toGifLoadUrl(url));
+        drawContainedImage(context, image, options.width, options.height);
+        const imageData = context.getImageData(0, 0, options.width, options.height);
+        frames.push(imageDataToPaletteIndexes(imageData));
       } catch (error) {
-        throw new Error("This browser could not read one of the images for GIF export. Open the image locally or use same-origin uploads.");
+        skipped += 1;
       }
-      frames.push(imageDataToPaletteIndexes(imageData));
+
+      if (frames.length >= options.maxFrames) {
+        break;
+      }
     }
 
-    return new Blob([encodeGif(frames, options.width, options.height, options.delayCs)], {
-      type: "image/gif",
-    });
+    if (!frames.length) {
+      throw new Error("Could not load any approved images for the GIF.");
+    }
+
+    return {
+      blob: new Blob([encodeGif(frames, options.width, options.height, options.delayCs)], {
+        type: "image/gif",
+      }),
+      frameCount: frames.length,
+      skipped,
+    };
+  }
+
+  function toGifLoadUrl(url) {
+    if (url.startsWith("/") && !url.startsWith("//")) return url;
+
+    const parsed = new URL(url, window.location.origin);
+    if (parsed.origin === window.location.origin) {
+      return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+    }
+
+    return `/admin/image-proxy?url=${encodeURIComponent(parsed.href)}`;
   }
 
   function loadImage(url) {
     return new Promise((resolve, reject) => {
       const image = new Image();
-      image.crossOrigin = "anonymous";
       image.onload = () => resolve(image);
-      image.onerror = () => reject(new Error("Could not load one of the selected images for the GIF."));
+      image.onerror = () => reject(new Error("Could not load image."));
       image.src = url;
     });
   }

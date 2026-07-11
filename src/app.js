@@ -48,6 +48,7 @@ const { ConflictError } = require("./errors");
 
 const OAUTH_STATE_COOKIE = "squig.oauth.state";
 const OAUTH_STATE_MAX_AGE_MS = 1000 * 60 * 10;
+const MAX_PROXY_IMAGE_BYTES = 20 * 1024 * 1024;
 
 function parseCookieHeader(header) {
   return String(header || "")
@@ -89,6 +90,30 @@ function parseImageUrl(rawValue) {
     // Fall through to the field-specific error below.
   }
   throw new Error("Image URL must be a valid http, https, or site-relative URL.");
+}
+
+function parseProxyImageUrl(rawValue) {
+  const value = String(rawValue || "").trim();
+  if (!value || value.length > 2048) throw new Error("Image URL is required.");
+  const parsed = new URL(value);
+  const isPrivate172 =
+    parsed.hostname.startsWith("172.") &&
+    Number(parsed.hostname.split(".")[1]) >= 16 &&
+    Number(parsed.hostname.split(".")[1]) <= 31;
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    throw new Error("Only http and https image URLs can be proxied.");
+  }
+  if (
+    parsed.hostname === "localhost" ||
+    parsed.hostname === "::1" ||
+    parsed.hostname.startsWith("127.") ||
+    parsed.hostname.startsWith("10.") ||
+    isPrivate172 ||
+    parsed.hostname.startsWith("192.168.")
+  ) {
+    throw new Error("This image URL cannot be proxied.");
+  }
+  return parsed;
 }
 
 function createApp() {
@@ -495,6 +520,64 @@ function createApp() {
       });
     } catch (error) {
       next(error);
+    }
+  });
+
+  app.get("/admin/image-proxy", requireAdmin, async (req, res, next) => {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+
+    try {
+      let imageUrl;
+      try {
+        imageUrl = parseProxyImageUrl(req.query.url);
+      } catch (error) {
+        return res.status(400).send(error.message || "Invalid image URL.");
+      }
+
+      const upstream = await fetch(imageUrl, {
+        redirect: "follow",
+        signal: controller.signal,
+        headers: {
+          accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+          "user-agent": "SquigSurvivalAdminImageProxy/1.0",
+        },
+      });
+
+      if (!upstream.ok) {
+        return res.status(502).send("Image could not be loaded.");
+      }
+      try {
+        parseProxyImageUrl(upstream.url);
+      } catch (error) {
+        return res.status(400).send("Redirected image URL cannot be proxied.");
+      }
+
+      const contentType = upstream.headers.get("content-type") || "application/octet-stream";
+      if (!contentType.toLowerCase().startsWith("image/")) {
+        return res.status(415).send("URL did not return an image.");
+      }
+
+      const contentLength = Number(upstream.headers.get("content-length") || 0);
+      if (contentLength > MAX_PROXY_IMAGE_BYTES) {
+        return res.status(413).send("Image is too large.");
+      }
+
+      const imageBytes = Buffer.from(await upstream.arrayBuffer());
+      if (imageBytes.length > MAX_PROXY_IMAGE_BYTES) {
+        return res.status(413).send("Image is too large.");
+      }
+
+      res.setHeader("Cache-Control", "private, max-age=300");
+      res.setHeader("Content-Type", contentType);
+      res.send(imageBytes);
+    } catch (error) {
+      if (error?.name === "AbortError") {
+        return res.status(504).send("Image request timed out.");
+      }
+      next(error);
+    } finally {
+      clearTimeout(timeout);
     }
   });
 
