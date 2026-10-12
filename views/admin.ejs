@@ -66,7 +66,7 @@
 
               <dl class="meta-grid meta-grid--simple">
                 <div><dt>Display name</dt><dd><%= submission.discord_display_name || "Not set" %></dd></div>
-                <div><dt>Era</dt><dd>The Rise of Ugly City</dd></div>
+                <div><dt>Era</dt><dd><%= repairEraLabelMap[submission.era_key] || submission.era_key %></dd></div>
                 <div><dt>Milestone</dt><dd><%= submission.milestone_label || submission.milestone_key || "Not selected" %></dd></div>
                 <div><dt>Prompt</dt><dd><%= submission.prompt_text ? "Yes" : "No" %></dd></div>
               </dl>
@@ -100,7 +100,7 @@
                 <div><dt>Discord username</dt><dd><%= submission.discord_username %></dd></div>
                 <div><dt>Discord user ID</dt><dd><%= submission.discord_user_id %></dd></div>
                 <div><dt>Display name</dt><dd><%= submission.discord_display_name || "Not set" %></dd></div>
-                <div><dt>Era</dt><dd>The Rise of Ugly City</dd></div>
+                <div><dt>Era</dt><dd><%= repairEraLabelMap[submission.era_key] || submission.era_key %></dd></div>
                 <div><dt>Selected milestone</dt><dd><%= submission.milestone_label || submission.milestone_key || "Not selected" %></dd></div>
                 <div><dt>District</dt><dd><%= submission.milestone_district || "Not selected" %></dd></div>
                 <div><dt>Squig confirmed by user</dt><dd><%= submission.contains_squig_confirmed ? "Yes" : "No" %></dd></div>
@@ -160,10 +160,20 @@
                     />
                   </label>
                   <label class="field">
-                    <span>Ugly City milestone</span>
-                    <select name="override_milestone_key" required>
+                    <span>Era / game pool</span>
+                    <select name="override_era_key" required data-era-repair-select>
+                      <option value="">Choose an era</option>
+                      <% approvalEras.forEach((era) => { %>
+                        <option value="<%= era.key %>" <%= era.key === submission.era_key ? "selected" : "" %>><%= era.label %></option>
+                      <% }) %>
+                    </select>
+                  </label>
+                  <label class="field" data-milestone-repair-field data-required-milestone>
+                    <span>Milestone</span>
+                    <select name="override_milestone_key">
+                      <option value="">Choose a milestone</option>
                       <% repairMilestones.forEach((milestone) => { %>
-                        <option value="<%= milestone.key %>" <%= milestone.key === submission.milestone_key ? "selected" : "" %>>
+                        <option value="<%= milestone.key %>" data-era="<%= milestone.eraKey %>" <%= milestone.eraKey === submission.era_key && milestone.key === submission.milestone_key ? "selected" : "" %>>
                           <%= milestone.number %>. <%= milestone.district %>
                         </option>
                       <% }) %>
@@ -309,19 +319,19 @@
                         <option value="<%= era.key %>" <%= era.key === submission.era_key ? "selected" : "" %>><%= era.label %></option>
                       <% }) %>
                     </select>
-                    <small class="field-note">Admin repair only. New approvals still enter The Rise of Ugly City.</small>
+                    <small class="field-note">Choose the game pool for this image.</small>
                   </label>
                   <label class="field" data-milestone-repair-field>
-                    <span>Ugly City milestone</span>
+                    <span>Milestone</span>
                     <select name="override_milestone_key">
                       <option value="">No milestone metadata</option>
                       <% repairMilestones.forEach((milestone) => { %>
-                        <option value="<%= milestone.key %>" <%= milestone.key === submission.milestone_key ? "selected" : "" %>>
+                        <option value="<%= milestone.key %>" data-era="<%= milestone.eraKey %>" <%= milestone.eraKey === submission.era_key && milestone.key === submission.milestone_key ? "selected" : "" %>>
                           <%= milestone.number %>. <%= milestone.district %>
                         </option>
                       <% }) %>
                     </select>
-                    <small class="field-note">Only used when The Rise of Ugly City is selected.</small>
+                    <small class="field-note">Milestones belong to the selected era.</small>
                   </label>
                   <label class="field small-field">
                     <span>Reward points</span>
@@ -448,16 +458,16 @@
                     <small class="field-note">Admin repair only. Declined images are not inserted into the live pool.</small>
                   </label>
                   <label class="field" data-milestone-repair-field>
-                    <span>Ugly City milestone</span>
+                    <span>Milestone</span>
                     <select name="override_milestone_key">
                       <option value="">No milestone metadata</option>
                       <% repairMilestones.forEach((milestone) => { %>
-                        <option value="<%= milestone.key %>" <%= milestone.key === submission.milestone_key ? "selected" : "" %>>
+                        <option value="<%= milestone.key %>" data-era="<%= milestone.eraKey %>" <%= milestone.eraKey === submission.era_key && milestone.key === submission.milestone_key ? "selected" : "" %>>
                           <%= milestone.number %>. <%= milestone.district %>
                         </option>
                       <% }) %>
                     </select>
-                    <small class="field-note">Only used when The Rise of Ugly City is selected.</small>
+                    <small class="field-note">Milestones belong to the selected era.</small>
                   </label>
                   <label class="field small-field">
                     <span>Reward points</span>

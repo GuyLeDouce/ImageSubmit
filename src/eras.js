@@ -5,9 +5,51 @@ const COLLECTION_TYPES = Object.freeze({
   other: "other",
 });
 
-const SURVIVAL_ERAS = Object.freeze([
-  { key: UGLY_CITY_ERA_KEY, label: "The Rise of Ugly City" },
-]);
+const ERA_CATALOG = validateEraCatalog(require("./eraCatalog"));
+const SURVIVAL_ERAS = Object.freeze(ERA_CATALOG.filter((era) => era.acceptingSubmissions));
+
+function validateEraCatalog(catalog) {
+  const keys = new Set();
+  for (const era of catalog) {
+    if (!/^[a-z0-9_]+$/.test(era.key) || keys.has(era.key) || !era.label ||
+        typeof era.description !== "string" || typeof era.acceptingSubmissions !== "boolean" ||
+        !Array.isArray(era.milestones) ||
+        (era.submissionMilestoneLimit !== undefined && (!Number.isInteger(era.submissionMilestoneLimit) || era.submissionMilestoneLimit < 0))) throw new Error("Invalid or duplicate era configuration.");
+    keys.add(era.key);
+    const milestoneKeys = new Set();
+    const numbers = new Set();
+    for (const milestone of era.milestones) {
+      if (!/^[a-z0-9_]+$/.test(milestone.key) || milestoneKeys.has(milestone.key) ||
+          !Number.isInteger(milestone.number) || milestone.number < 1 || numbers.has(milestone.number) ||
+          !milestone.label || !milestone.district) throw new Error(`Invalid milestone in ${era.key}.`);
+      milestoneKeys.add(milestone.key);
+      numbers.add(milestone.number);
+      Object.freeze(milestone);
+    }
+    Object.freeze(era.milestones);
+    Object.freeze(era);
+  }
+  return Object.freeze(catalog);
+}
+
+function getEraMilestones(eraKey, { forSubmission = false, legacyLimit = 100 } = {}) {
+  const era = ERA_CATALOG.find((candidate) => candidate.key === eraKey);
+  if (!era || (forSubmission && !era.acceptingSubmissions)) return [];
+  if (forSubmission && era.usesLegacyMilestoneLimit) return era.milestones.slice(0, legacyLimit);
+  return forSubmission && era.submissionMilestoneLimit !== undefined
+    ? era.milestones.slice(0, era.submissionMilestoneLimit)
+    : era.milestones;
+}
+
+function resolveEraMilestone(eraKey, milestoneKey, { required = false, ...options } = {}) {
+  const key = String(milestoneKey || "").trim();
+  const milestones = getEraMilestones(eraKey, options);
+  const era = ERA_CATALOG.find((candidate) => candidate.key === eraKey);
+  if (!key && !(required && era?.milestones.length)) return null;
+  const milestone = milestones.find((candidate) => candidate.key === key);
+  if (!milestone) throw Object.assign(new Error("Please choose an available milestone for the selected era."), { statusCode: 400 });
+  return milestone;
+}
 
 const LEGACY_SURVIVAL_ERAS = Object.freeze([
   { key: "day_one", label: "Day One" },
@@ -21,8 +63,8 @@ const LEGACY_SURVIVAL_ERAS = Object.freeze([
 ]);
 
 const ADMIN_REPAIR_ERAS = Object.freeze([
-  ...SURVIVAL_ERAS,
-  ...LEGACY_SURVIVAL_ERAS,
+  ...ERA_CATALOG,
+  ...LEGACY_SURVIVAL_ERAS.filter((legacy) => !ERA_CATALOG.some((era) => era.key === legacy.key)),
 ]);
 
 const SURVIVAL_ERA_KEYS = new Set(SURVIVAL_ERAS.map((era) => era.key));
@@ -37,7 +79,7 @@ function getAdminRepairEraByKey(eraKey) {
 }
 
 function isCollectionTypeAllowedForEra(eraKey, collectionType) {
-  return eraKey === UGLY_CITY_ERA_KEY && collectionType === COLLECTION_TYPES.squigs;
+  return SURVIVAL_ERA_KEYS.has(eraKey) && collectionType === COLLECTION_TYPES.squigs;
 }
 
 function resolveEraDefaultReward(collectionType, eraKey) {
@@ -46,6 +88,10 @@ function resolveEraDefaultReward(collectionType, eraKey) {
 }
 
 module.exports = {
+  ERA_CATALOG,
+  validateEraCatalog,
+  getEraMilestones,
+  resolveEraMilestone,
   COLLECTION_TYPES,
   UGLY_CITY_ERA_KEY,
   SURVIVAL_ERAS,

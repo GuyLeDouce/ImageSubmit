@@ -22,8 +22,8 @@ const {
 const { PROJECT_LINKS } = require("../src/links");
 const { parseMilestonesAllowed } = require("../src/config");
 
-test("only exposes The Rise of Ugly City era", () => {
-  assert.deepEqual(SURVIVAL_ERAS, [
+test("starts with Ugly City as the first configured era", () => {
+  assert.deepEqual(SURVIVAL_ERAS.map(({ key, label }) => ({ key, label })), [
     { key: "ugly_city", label: "The Rise of Ugly City" },
   ]);
   assert.equal(UGLY_CITY_ERA_KEY, "ugly_city");

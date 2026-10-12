@@ -38,7 +38,7 @@ function resolveDefaultRewardPoints() {
 
 function assertCollectionAllowedForEra(nftUsedType, eraKey) {
   if (!isCollectionTypeAllowedForEra(eraKey, nftUsedType)) {
-    throw new Error("Every Ugly City submission must include at least one Squig.");
+    throw new Error("Every Squig Survival submission must include at least one Squig.");
   }
 }
 

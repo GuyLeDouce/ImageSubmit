@@ -1,10 +1,11 @@
 <%- include("partials/header") %>
 
 <%
-  const eraLabel = eras[0]?.label || "The Rise of Ugly City";
+  const eraLabel = selectedEra?.label || "Squig Survival";
+  const eraLabels = Object.fromEntries(adminRepairEras.map((era) => [era.key, era.label]));
   const selectedMilestoneKey = selectedMilestone?.key || "";
   const conceptByMilestone = milestoneConcepts || {};
-  const defaultMilestoneConcept = "Choose a milestone to see what kind of Ugly City image fits that chapter.";
+  const defaultMilestoneConcept = "Choose a milestone to see what kind of image fits that chapter.";
   const selectedMilestoneConcept = conceptByMilestone[selectedMilestoneKey] || defaultMilestoneConcept;
   const submissionGroups = [
     { key: "pending", title: "Awaiting Approval", emptyText: "No images waiting for review yet." },
@@ -27,29 +28,32 @@
 
   <% if (submitted) { %>
     <div class="success-box">
-      Your Ugly City image has been submitted for review. If approved, it will enter the Ugly City image pool and earn 100 $CHARM.
+      Your images have been submitted for review for their selected era.
     </div>
   <% } %>
 
+  <form action="/submit" method="get" class="panel">
+    <label class="field"><span>Choose your era</span><select name="era" required>
+      <% eras.forEach((era) => { %><option value="<%= era.key %>" <%= selectedEra?.key === era.key ? "selected" : "" %>><%= era.label %></option><% }) %>
+    </select></label><button class="button" type="submit">Open era</button>
+  </form>
+  <% if (selectedEra && (!selectedEra.milestones.length || milestones.length)) { %>
   <div class="submit-layout submit-layout--single">
     <form action="/submit" method="post" enctype="multipart/form-data" class="stack-gap panel form-panel">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-      <input type="hidden" name="era_key" value="ugly_city" />
+      <input type="hidden" name="era_key" value="<%= selectedEra.key %>" />
 
       <div class="form-panel__header">
         <p class="eyebrow">Upload Station</p>
-        <h2>The Rise of Ugly City</h2>
-        <div class="era-intro">
-          <p>The Squigs crash-landed on an empty patch of dirt with scrap, bad ideas, and way too much confidence.</p>
-          <p>Now they are building the world's worst city, one chaotic milestone at a time. Every image you submit helps bring a new district to life.</p>
-          <p><strong>Your mission:</strong> create milestone images that show the Squigs building, exploring, and surviving the beautiful disaster known as Ugly City.</p>
-        </div>
+        <h2><%= eraLabel %></h2>
+        <div class="era-intro"><p><%= selectedEra.description %></p></div>
       </div>
 
+      <% if (milestones.length) { %>
       <label class="field">
         <span>Selected milestone</span>
         <select name="milestone_key" required data-milestone-select aria-describedby="milestone-concept-note milestone-discord-note">
-          <option value="">Choose an Ugly City milestone</option>
+          <option value="">Choose a milestone</option>
           <% milestones.forEach((milestone) => { %>
             <option
               value="<%= milestone.key %>"
@@ -70,6 +74,7 @@
         </small>
       </label>
 
+      <% } %>
       <label class="field file-field">
         <span>Image uploads</span>
         <input type="file" name="images" accept="image/png,image/jpeg,image/webp,image/gif" multiple required />
@@ -102,10 +107,11 @@
       </label>
 
       <p class="reward-note">Approved images earn 100 $CHARM.</p>
-      <button type="submit" class="button">Submit to Ugly City</button>
+      <button type="submit" class="button">Submit images</button>
     </form>
   </div>
 
+  <% } else { %><p class="panel">Submissions are currently closed for this era. Check back for the next window.</p><% } %>
   <section class="stack-gap submission-history">
     <div class="submission-history__header">
       <p class="eyebrow">Your submissions</p>
@@ -142,7 +148,7 @@
                   <dl class="submission-tile__meta">
                     <div>
                       <dt>Era</dt>
-                      <dd><%= eraLabel %></dd>
+                      <dd><%= eraLabels[submission.era_key] || submission.era_key %></dd>
                     </div>
                     <div>
                       <dt>Milestone</dt>

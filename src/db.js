@@ -1,7 +1,6 @@
 const { Pool } = require("pg");
 const { config, getSSL } = require("./config");
 const { ConflictError, SafeStartupError } = require("./errors");
-const { UGLY_CITY_ERA_KEY } = require("./uglyCityMilestones");
 
 function log(...args) {
   console.log("[SUBMISSION-DB]", ...args);
@@ -370,10 +369,10 @@ async function approveSubmission({
     const resolvedDiscordUsername = overrideDiscordUsername || submission.discord_username;
     const resolvedDiscordDisplayName =
       overrideDiscordDisplayName || submission.discord_display_name;
-    const resolvedEraKey = UGLY_CITY_ERA_KEY;
+    const resolvedEraKey = overrideEraKey || submission.era_key;
     const resolvedImageUrl = overrideImageUrl || submission.image_url;
     const resolvedPromptText = overridePromptText === undefined ? submission.prompt_text : overridePromptText;
-    const resolvedMilestone = overrideMilestone || {
+    const resolvedMilestone = overrideMilestone !== undefined ? overrideMilestone : resolvedEraKey !== submission.era_key ? null : {
       key: submission.milestone_key,
       number: submission.milestone_number,
       label: submission.milestone_label,
@@ -673,11 +672,8 @@ async function updateApprovedSubmission({
     const resolvedDiscordUsername = overrideDiscordUsername || submission.discord_username;
     const resolvedDiscordDisplayName =
       overrideDiscordDisplayName || submission.discord_display_name;
-    const resolvedEraKey = overrideEraKey || submission.era_key || UGLY_CITY_ERA_KEY;
-    const resolvedMilestone =
-      resolvedEraKey === UGLY_CITY_ERA_KEY && overrideMilestone
-        ? overrideMilestone
-        : null;
+    const resolvedEraKey = overrideEraKey || submission.era_key;
+    const resolvedMilestone = overrideMilestone || null;
     const resolvedNftUsedType = overrideNftUsedType || submission.nft_used_type;
     const resolvedNftUsedText =
       resolvedNftUsedType === "other" ? overrideNftUsedText || submission.nft_used_text : null;
@@ -879,11 +875,8 @@ async function updateDeclinedSubmission({
     const resolvedDiscordUsername = overrideDiscordUsername || submission.discord_username;
     const resolvedDiscordDisplayName =
       overrideDiscordDisplayName || submission.discord_display_name;
-    const resolvedEraKey = overrideEraKey || submission.era_key || UGLY_CITY_ERA_KEY;
-    const resolvedMilestone =
-      resolvedEraKey === UGLY_CITY_ERA_KEY && overrideMilestone
-        ? overrideMilestone
-        : null;
+    const resolvedEraKey = overrideEraKey || submission.era_key;
+    const resolvedMilestone = overrideMilestone || null;
 
     const updated = await client.query(
       `

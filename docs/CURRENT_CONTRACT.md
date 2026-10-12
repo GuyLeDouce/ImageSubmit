@@ -61,16 +61,19 @@ Stored era keys are integration identifiers and must remain exact:
 - `!revive Success`
 - `!revive Failed`
 
-## Rewards And Eligibility
+## Factory Era Catalog And Eligibility
 
-Domain rules are centralized in `src/eras.js`.
+Current rules supersede the historical baseline above:
 
-- `day_one`, `office_squigs`, and `jobsite_squigs` allow Squigs Reloaded only.
-- Other active eras currently allow Squigs Reloaded and other collections.
-- Standard Squigs Reloaded reward: 150.
-- Standard other collection reward: 100 where allowed.
-- Revive Squigs Reloaded reward: 20.
-- Revive other collection reward: 10 where allowed.
+- `src/eraCatalog.js` defines configured eras, descriptions, milestone metadata, and submission availability.
+- `ugly_city` remains the first open era, with unchanged milestone identifiers.
+- Legacy era keys remain available for admin repair; they are not automatically reopened.
+- Every new submission requires at least one Squig. The default reward is 100 $CHARM.
+- Moderators can approve pending images for a configured era even after its submission window closes.
+- Approval writes the selected era to the live image row and notification; it never forces `ugly_city`.
+- Existing routes, session identity, database columns, and transactional moderation remain unchanged.
+
+See [Era setup](ERAS.md) for the configuration format and The Gauntlet handoff.
 
 ## External Links
 
