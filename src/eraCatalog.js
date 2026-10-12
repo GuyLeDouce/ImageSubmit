@@ -15,4 +15,11 @@ module.exports = [
     // Existing MILESTONES_ALLOWED remains the Ugly City submission window.
     usesLegacyMilestoneLimit: true,
   },
+  {
+    key: "death_race",
+    label: "Death Race",
+    description: "One or more Squigs in a wild post-apocalyptic death race. Any approved image can appear at any milestone. No milestone assignment needed.",
+    acceptingSubmissions: true,
+    milestones: [],
+  },
 ];
