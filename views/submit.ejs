@@ -75,6 +75,19 @@
       </label>
 
       <% } %>
+      <% if (selectedEra.key === "death_race") { %>
+      <section class="panel stack-gap" aria-label="Death Race creator prompts">
+        <h3>Death Race — Creator Prompt Library</h3>
+        <p>Use your Squig reference images with any prompt below. Images can contain one or more Squigs and are eligible for every milestone.</p>
+        <% deathRacePrompts.forEach((item) => { %>
+          <details class="field">
+            <summary><%= item.title %></summary>
+            <textarea readonly rows="5" aria-label="<%= item.title %> prompt"><%= item.prompt %></textarea>
+            <button class="button" type="button" data-copy-death-race-prompt>Copy prompt</button>
+          </details>
+        <% }) %>
+      </section>
+      <% } %>
       <label class="field file-field">
         <span>Image uploads</span>
         <input type="file" name="images" accept="image/png,image/jpeg,image/webp,image/gif" multiple required />
@@ -210,3 +223,14 @@
 </script>
 
 <%- include("partials/footer") %>
+
+<script nonce="<%= cspNonce %>">
+  document.querySelectorAll("[data-copy-death-race-prompt]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const prompt = button.parentElement.querySelector("textarea");
+      if (!prompt) return;
+      try { await navigator.clipboard.writeText(prompt.value); button.textContent = "Copied!"; }
+      catch { prompt.focus(); prompt.select(); button.textContent = "Select and copy prompt"; }
+    });
+  });
+</script>
