@@ -4,6 +4,13 @@ const { getUglyCityMilestoneConceptByKey } = require("./uglyCityMilestoneConcept
 
 module.exports = [
   {
+    key: "death_race",
+    label: "Death Race",
+    description: "One or more Squigs in a wild post-apocalyptic death race. Any approved image can appear at any milestone. No milestone assignment needed.",
+    acceptingSubmissions: true,
+    milestones: [],
+  },
+  {
     key: "ugly_city",
     label: "The Rise of Ugly City",
     description: "The Squigs are building, exploring, and surviving the world's worst city, one chaotic milestone at a time.",
