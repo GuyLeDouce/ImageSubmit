@@ -1,20 +1,23 @@
-# Ugly City Image Factory
+# Squig Survival Image Factory
 
-A separate Node.js web app for Discord-authenticated Squig Survival image submissions for **The Rise of Ugly City**. It verifies Ugly Labs Discord membership, stores uploads by URL, queues submissions for admin moderation, and only writes approved images to The Gauntlet's live `squig_survival_images` table.
+Create and moderate images for multiple Squig Survival eras. Ugly City is the first configured era. See [Era setup](docs/ERAS.md) to add another world and coordinate its keys with The Gauntlet.
+
+
+A separate Node.js web app for Discord-authenticated Squig Survival image submissions across configured eras. It verifies Ugly Labs Discord membership, stores uploads by URL, queues submissions for admin moderation, and only writes approved images to The Gauntlet's live `squig_survival_images` table.
 
 ## What it does
 
 - Uses Discord OAuth login to collect the submitter's Discord ID, username, and display name.
 - Confirms the user is in the configured Ugly Labs Discord server.
 - Blocks submissions for non-members and sends them to `squigs.io/discord`.
-- Requires every submission to select one of the 100 Ugly City milestones.
+- Lets creators choose an open era and, when configured, one of its available milestones.
 - Requires the user to confirm the image includes at least one Squig.
 - Allows optional notes for other NFTs, collections, images, characters, backgrounds, or memes included in the image.
-- Writes pending submissions to `squig_survival_image_submissions` with `era_key = "ugly_city"`, milestone metadata, Squig confirmation, prompt text, and a 100 $CHARM reward default.
+- Writes pending submissions to `squig_survival_image_submissions` with the selected `era_key`, milestone metadata, Squig confirmation, prompt text, and a 100 $CHARM reward default.
 - Restricts admin review to Discord-authenticated users listed in `ADMIN_DISCORD_IDS`.
 - Lets admins approve or decline each image. Images without a clearly visible Squig should be declined.
-- On approval, inserts into the existing live table expected by The Gauntlet with `era_keys = "ugly_city"` and `reward_points = 100` by default.
-- Approved images become eligible for the Ugly City image pool; approval does not guarantee in-game appearance.
+- On approval, inserts into the existing live table expected by The Gauntlet with the selected `era_keys` value and `reward_points = 100` by default.
+- Approved images become eligible for their selected Squig Survival era image pool; approval does not guarantee in-game appearance.
 - Supports local uploads for development and S3-compatible uploads for production.
 
 ## Environment variables
@@ -54,7 +57,7 @@ Approval flow:
 1. Insert pending uploads into `squig_survival_image_submissions`.
 2. Admin approves.
 3. App inserts a live row into `squig_survival_images`.
-4. The live row keeps `era_keys = "ugly_city"` so The Gauntlet can find Ugly City images.
+4. The live row stores the selected era key and milestone metadata so The Gauntlet can find the correct pool.
 5. App marks the pending row as `approved`.
 
 Decline flow:

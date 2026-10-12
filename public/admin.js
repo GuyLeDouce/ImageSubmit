@@ -1,13 +1,22 @@
 (() => {
-  const uglyCityEraKey = "ugly_city";
-
   document.querySelectorAll("[data-era-repair-select]").forEach((select) => {
     const form = select.closest("form");
     const milestoneField = form?.querySelector("[data-milestone-repair-field]");
     if (!milestoneField) return;
 
     const syncMilestoneVisibility = () => {
-      milestoneField.hidden = select.value !== uglyCityEraKey;
+      const milestoneSelect = milestoneField.querySelector("select");
+      let available = 0;
+      for (const option of milestoneSelect.options) {
+        if (!option.value) continue;
+        const matches = option.dataset.era === select.value;
+        option.hidden = !matches;
+        option.disabled = !matches;
+        if (matches) available += 1;
+        if (!matches && option.selected) milestoneSelect.value = "";
+      }
+      milestoneField.hidden = available === 0;
+      milestoneSelect.required = available > 0 && milestoneField.hasAttribute("data-required-milestone");
     };
 
     select.addEventListener("change", syncMilestoneVisibility);

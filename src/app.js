@@ -17,13 +17,10 @@ const {
   unapproveSubmission,
 } = require("./db");
 const { config, validateConfig } = require("./config");
-const { SURVIVAL_ERAS, ADMIN_REPAIR_ERAS, getAdminRepairEraByKey } = require("./eras");
 const {
-  UGLY_CITY_ERA_KEY,
-  UGLY_CITY_MILESTONES,
-  getUglyCityMilestoneByKey,
-} = require("./uglyCityMilestones");
-const { getUglyCityMilestoneConceptByKey } = require("./uglyCityMilestoneConcepts");
+  ERA_CATALOG, SURVIVAL_ERAS, ADMIN_REPAIR_ERAS,
+  getAdminRepairEraByKey, getEraByKey, getEraMilestones, resolveEraMilestone,
+} = require("./eras");
 const {
   createStateToken,
   getDiscordAuthUrl,
@@ -70,12 +67,7 @@ function parseCookieHeader(header) {
 }
 
 function resolveAdminRepairMilestone(eraKey, milestoneKey) {
-  if (eraKey !== UGLY_CITY_ERA_KEY) return null;
-  const key = String(milestoneKey || "").trim();
-  if (!key) return null;
-  const milestone = getUglyCityMilestoneByKey(key);
-  if (!milestone) throw new Error("Please choose a valid Ugly City milestone.");
-  return milestone;
+  return resolveEraMilestone(eraKey, milestoneKey);
 }
 
 function parseImageUrl(rawValue) {
@@ -301,19 +293,16 @@ function createApp() {
     next();
   }
 
-  function getSubmissionMilestones() {
-    return UGLY_CITY_MILESTONES.slice(0, config.milestonesAllowed);
+  function getSubmissionMilestones(eraKey) {
+    return getEraMilestones(eraKey, { forSubmission: true, legacyLimit: config.milestonesAllowed });
   }
 
   app.get("/", async (req, res, next) => {
     try {
-      const approvedExamples = (await listApprovedSubmissions())
-        .filter((submission) => submission.era_key === UGLY_CITY_ERA_KEY)
-        .slice(0, 8);
+      const approvedExamples = (await listApprovedSubmissions()).slice(0, 8);
       res.render("home", {
-        title: "The Ugly City Image Factory",
+        title: "Squig Survival Image Factory",
         eras: SURVIVAL_ERAS,
-        milestones: UGLY_CITY_MILESTONES,
         approvedExamples,
       });
     } catch (error) {
@@ -391,7 +380,7 @@ function createApp() {
   });
 
   app.get("/submit/:milestoneKey", requireAuth, (req, res) => {
-    res.redirect(`/submit?milestone=${encodeURIComponent(req.params.milestoneKey)}`);
+    res.redirect(`/submit?era=ugly_city&milestone=${encodeURIComponent(req.params.milestoneKey)}`);
   });
 
   app.get("/submit", requireAuth, async (req, res, next) => {
@@ -400,18 +389,25 @@ function createApp() {
         return res.status(403).render("blocked", { title: "Join Ugly Labs Discord" });
       }
 
-      const milestones = getSubmissionMilestones();
-      const requestedMilestone = getUglyCityMilestoneByKey(String(req.query.milestone || "").trim());
+      const requestedEraKey = String(req.query.era || "");
+      const selectedEra = requestedEraKey ? getEraByKey(requestedEraKey) : SURVIVAL_ERAS[0] || null;
+      if (requestedEraKey && !selectedEra) {
+        throw Object.assign(new Error("This era is not accepting submissions."), { statusCode: 400 });
+      }
+      const milestones = getSubmissionMilestones(selectedEra?.key);
+      const requestedMilestone = milestones.find((milestone) => milestone.key === String(req.query.milestone || "").trim());
       const selectedMilestone = milestones.some((milestone) => milestone.key === requestedMilestone?.key)
         ? requestedMilestone
         : null;
       const submissions = await listSubmissionsForUser(req.session.user.id);
       res.render("submit", {
-        title: "Submit to Ugly City",
+        title: "Squig Survival Image Factory — Submit",
+        selectedEra,
+        adminRepairEras: ADMIN_REPAIR_ERAS,
         eras: SURVIVAL_ERAS,
         milestones,
         milestoneConcepts: Object.fromEntries(
-          milestones.map((milestone) => [milestone.key, getUglyCityMilestoneConceptByKey(milestone.key)])
+          milestones.map((milestone) => [milestone.key, milestone.concept || ""])
         ),
         selectedMilestone,
         submitted: req.query.submitted === "1",
@@ -431,9 +427,7 @@ function createApp() {
       const submissions = await listSubmissionsForUser(req.session.user.id);
       const approvedExamples = submissions.length
         ? []
-        : (await listApprovedSubmissions())
-            .filter((submission) => submission.era_key === UGLY_CITY_ERA_KEY)
-            .slice(0, 8);
+        : (await listApprovedSubmissions()).slice(0, 8);
       const stats = submissions.reduce(
         (totals, submission) => {
           totals.total += 1;
@@ -447,6 +441,7 @@ function createApp() {
 
       res.render("profile", {
         title: "Creator Profile",
+        adminRepairEras: ADMIN_REPAIR_ERAS,
         eras: SURVIVAL_ERAS,
         submissions,
         approvedExamples,
@@ -459,13 +454,13 @@ function createApp() {
 
   app.post("/submit", requireVerifiedMember, upload.array("images", maxFilesPerSubmission), requireVerifiedFormRequest, async (req, res, next) => {
     try {
-      const eraKey = UGLY_CITY_ERA_KEY;
+      const eraKey = String(req.body.era_key || "").trim();
+      if (!validateEraKey(eraKey)) throw Object.assign(new Error("Please choose an era accepting submissions."), { statusCode: 400 });
       const milestoneKey = String(req.body.milestone_key || "").trim();
-      const milestone = getSubmissionMilestones().find((candidate) => candidate.key === milestoneKey) || null;
+      const milestone = resolveEraMilestone(eraKey, milestoneKey, { required: true, forSubmission: true, legacyLimit: config.milestonesAllowed });
       const promptText = parseOptionalText(req.body.prompt_text, "Prompt", 4000);
       const otherCollectionsText = parseOptionalText(req.body.other_collections_text, "Other NFTs / collections included", 500);
       const nftUsedType = "squigs";
-      if (!milestone) throw new Error("Please choose an available Ugly City milestone.");
       if (req.body.contains_squig_confirmed !== "on") {
         throw new Error("Please confirm that your image includes at least one Squig.");
       }
@@ -484,10 +479,10 @@ function createApp() {
           nftUsedText: otherCollectionsText,
           otherCollectionsText,
           containsSquigConfirmed: true,
-          milestoneKey: milestone.key,
-          milestoneNumber: milestone.number,
-          milestoneLabel: milestone.label,
-          milestoneDistrict: milestone.district,
+          milestoneKey: milestone?.key || null,
+          milestoneNumber: milestone?.number || null,
+          milestoneLabel: milestone?.label || null,
+          milestoneDistrict: milestone?.district || null,
           rewardPoints: resolveDefaultRewardPoints(),
           imageUrl: stored.publicUrl,
           storageKey: stored.storageKey,
@@ -496,7 +491,7 @@ function createApp() {
         });
       }
 
-      res.redirect(`/submit?submitted=1&milestone=${encodeURIComponent(milestone.key)}`);
+      res.redirect(`/submit?era=${encodeURIComponent(eraKey)}&submitted=1${milestone ? `&milestone=${encodeURIComponent(milestone.key)}` : ""}`);
     } catch (error) {
       next(error);
     }
@@ -510,13 +505,14 @@ function createApp() {
         listDeclinedSubmissions(),
       ]);
       res.render("admin", {
-        title: "Ugly City Admin Review",
+        title: "Squig Survival Admin Review",
         submissions: pendingSubmissions,
         approvedSubmissions,
         declinedSubmissions,
         eras: SURVIVAL_ERAS,
         adminRepairEras: ADMIN_REPAIR_ERAS,
-        milestones: UGLY_CITY_MILESTONES,
+        approvalEras: ERA_CATALOG,
+        milestones: ERA_CATALOG.flatMap((era) => era.milestones.map((milestone) => ({ ...milestone, eraKey: era.key }))),
       });
     } catch (error) {
       next(error);
@@ -594,17 +590,15 @@ function createApp() {
       const imageUrl = parseImageUrl(req.body.image_url);
       const promptText = parseOptionalText(req.body.prompt_text, "Prompt", 4000);
       const otherCollectionsText = parseOptionalText(req.body.other_collections_text, "Other NFTs / collections included", 500);
-      const overrideMilestone = resolveAdminRepairMilestone(UGLY_CITY_ERA_KEY, req.body.override_milestone_key);
-      if (!overrideMilestone) throw new Error("Please choose a valid Ugly City milestone.");
+      const overrideEraKey = String(req.body.override_era_key || "").trim();
+      const overrideMilestone = resolveEraMilestone(overrideEraKey, req.body.override_milestone_key, { required: true });
       const containsSquigConfirmed = req.body.contains_squig_confirmed === "on";
       if (!containsSquigConfirmed) {
         throw new Error("Please confirm that the approved image includes at least one Squig.");
       }
-      const overrideEraKey = UGLY_CITY_ERA_KEY;
       const overrideNftUsedType = "squigs";
       const overrideNftUsedText = otherCollectionsText;
-      if (!validateEraKey(overrideEraKey)) throw new Error("Please choose a valid era for approval.");
-      assertCollectionAllowedForEra(overrideNftUsedType, overrideEraKey);
+      if (!ERA_CATALOG.some((era) => era.key === overrideEraKey)) throw new Error("Please choose a configured era for approval.");
       const reviewedBy = `${req.session.user.username} (${req.session.user.id})`;
       await approveSubmission({
         submissionId,

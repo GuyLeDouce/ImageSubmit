@@ -7,9 +7,9 @@
 <section class="landing-hero">
   <div class="landing-hero__copy">
     <p class="eyebrow">Ugly Labs Submission Gate</p>
-    <h1>Help build Ugly City</h1>
+    <h1>Squig Survival Image Factory</h1>
     <p class="creator-hero__tagline">
-      Use your Squigs and create images for the different milestones for the Rise of Ugly City, the new era for Squig Survival.
+      Create the worlds your Squigs survive. Choose an era, find your scene, and help bring Squig Survival to life.
     </p>
     <p class="lead">Admin-approved submissions earn 100 $CHARM and may enter the game image pool. No Squig, no approval.</p>
 
@@ -35,10 +35,10 @@
           <div class="approved-example-track">
             <% examples.concat(examples).forEach((example, index) => { %>
               <figure class="approved-example-card">
-                <img src="<%= example.image_url %>" alt="Approved Squig creator image for <%= example.milestone_label || example.milestone_district || 'The Rise of Ugly City' %>" loading="lazy" />
+                <img src="<%= example.image_url %>" alt="Approved Squig creator image for <%= example.milestone_label || example.milestone_district || example.era_key %>" loading="lazy" />
                 <figcaption>
                   <span>Approved example</span>
-                  <strong><%= example.milestone_label || example.milestone_district || "Ugly City image pool" %></strong>
+                  <strong><%= example.milestone_label || example.milestone_district || example.era_key %></strong>
                 </figcaption>
               </figure>
             <% }) %>
@@ -54,6 +54,16 @@
   </aside>
 </section>
 
+<section class="creator-section simple-section">
+  <div class="creator-section__heading"><p class="eyebrow">Open Eras</p><h2>Choose your world</h2></div>
+  <div class="simple-steps">
+    <% eras.forEach((era) => { %>
+      <article class="simple-step"><h3><%= era.label %></h3><p><%= era.description %></p>
+      <a class="button" href="/submit?era=<%= encodeURIComponent(era.key) %>">Create for this era</a></article>
+    <% }) %>
+    <% if (!eras.length) { %><p>New submission windows are coming soon.</p><% } %>
+  </div>
+</section>
 <section class="creator-section simple-section" id="how-it-works">
   <div class="creator-section__heading">
     <p class="eyebrow">How It Works</p>
@@ -62,8 +72,8 @@
   <div class="simple-steps">
     <article class="simple-step">
       <span>01</span>
-      <h3>Pick a milestone in the submit form</h3>
-      <p>You choose the Ugly City chapter your image was made for after you log in.</p>
+      <h3>Choose an era and milestone</h3>
+      <p>Choose an open era, then follow its creative brief and available milestones.</p>
     </article>
     <article class="simple-step">
       <span>02</span>
@@ -86,7 +96,7 @@
   <ul class="rules-list-simple">
     <li>Must include at least one clearly visible Squig.</li>
     <li>Other NFTs or images are allowed if a Squig is present.</li>
-    <li>Ensure you choose the Ugly City milestone that best suits your image creation.</li>
+    <li>Ensure you choose the era and milestone that best suits your image creation.</li>
     <li>Admin approval is required.</li>
     <li>Approval does not guarantee final in-game use, image use is randomized within the game.</li>
   </ul>
@@ -95,7 +105,7 @@
 <section class="final-cta">
   <div>
     <p class="eyebrow">Ready to Create</p>
-    <h2>Your Squig belongs somewhere in Ugly City.</h2>
+    <h2>Build the next Squig Survival scene.</h2>
   </div>
   <div class="actions">
     <% if (!user) { %>
