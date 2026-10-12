@@ -412,6 +412,7 @@ function createApp() {
         selectedMilestone,
         submitted: req.query.submitted === "1",
         submissions,
+        deathRacePrompts: require("./deathRacePrompts").PROMPTS,
       });
     } catch (error) {
       next(error);
