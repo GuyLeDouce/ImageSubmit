@@ -32,6 +32,24 @@ The first redesign was functional and clean, but its huge stacked heading, small
 
 When iterating later, **do not solve "needs personality" by adding visual noise**. Squigs' own artwork, confident type, contrast and useful interactive detail should provide the personality.
 
+## Welcoming motion and gallery repair (visual pass 3)
+
+- Creator profile/archive cards now contain each image inside a dedicated square media frame with absolute-positioned `object-fit: contain` art. Status, date, title and the expandable details sit on an opaque separate card body; artwork cannot overlap them.
+- The creator gallery initially shows 18 images and uses a lightweight "See more creations" control for longer collections. Approval status filters retain the same source data and their working state. The original full archive still renders without JavaScript.
+- The homepage's featured creator image reel has clickable thumbnails, previous/next/pause controls and a gentle 7.5-second automatic transition. It pauses on hover, keyboard focus, hidden tabs and the user's reduced-motion preference.
+- The creator gallery has an accessible artwork viewer with close, Escape and arrow-key navigation. Normal image links still work when JavaScript dialogs are unsupported.
+- A few page sections enter softly when scrolled into view, and era art/cards/buttons respond to hover without constant wiggles or visual clutter.
+- Copy is warmer and simpler, and imagery is still the focus. Motion should always reinforce navigation, never prevent it.
+
+### Official era cover artwork
+
+The exact original images were supplied as direct Imgur URLs and are wired into the homepage's era cards:
+
+- Squigwreck -> `https://i.imgur.com/amVLHM9.png`
+- Rise of Ugly City -> `https://i.imgur.com/HHV8GmI.png`
+
+These URLs are rendered directly in EJS so the official art appears even without JavaScript; the artwork remains fully visible (`object-fit: contain`). If an external image fails to load, the optional JavaScript enhancement restores an approved community example or a readable era title. The community gallery still uses submitted artwork rather than these official promotional covers. External Imgur reachability could not be independently tested in the working environment; verify the final page in a browser before merging. If long-term hosting changes, prefer a durable first-party `public/` asset while keeping the same proportions.
+
 ## Safety and compatibility
 No changes to routes, Discord OAuth, sessions, CSRF, PostgreSQL schema, S3/storage, `$CHARM` logic, Gauntlet image insertion, or era identifiers. No frontend frameworks or runtime dependencies were added. Submitted images remain subject to existing validation and the existing 10-file maximum.
 
