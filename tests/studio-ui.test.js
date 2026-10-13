@@ -164,6 +164,8 @@ test("friendly motion, filtering and artwork viewer remain progressive enhanceme
   assert.match(html, /data-feature-next/);
   assert.match(html, /data-feature-pause/);
   assert.match(html, /data-reveal/);
+  assert.match(html, /data-era-world="death_race"/);
+  assert.match(html, /data-era-world="ugly_city"/);
   const js = fs.readFileSync(path.join(root, "public", "studio.js"), "utf8");
   assert.match(js, /reducedMotion/);
   assert.match(js, /7500/);
@@ -171,6 +173,9 @@ test("friendly motion, filtering and artwork viewer remain progressive enhanceme
   assert.match(js, /pageSize = 18/);
   assert.match(js, /HTMLDialogElement/);
   assert.match(js, /visibleImageLinks/);
+  assert.match(js, /officialEraImages/);
+  assert.match(js, /\/era-artwork\/squigwreck\.png/);
+  assert.match(js, /\/era-artwork\/ugly-city\.png/);
   const css = fs.readFileSync(path.join(root, "public", "styles.css"), "utf8");
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
 });
