@@ -516,11 +516,11 @@
   <% if (reviewTotalPages > 1) { %>
     <nav class="admin-pagination" aria-label="Review pages">
       <% if (reviewPage > 1) { %>
-        <a href="/admin?status=<%= reviewStatus %>&page=<%= reviewPage - 1 %>">&larr; Previous</a>
+        <a href="/admin?status=<%= reviewStatus %>&amp;page=<%= reviewPage - 1 %>">&larr; Previous</a>
       <% } %>
       <span>Page <%= reviewPage %> of <%= reviewTotalPages %></span>
       <% if (reviewPage < reviewTotalPages) { %>
-        <a href="/admin?status=<%= reviewStatus %>&page=<%= reviewPage + 1 %>">Next &rarr;</a>
+        <a href="/admin?status=<%= reviewStatus %>&amp;page=<%= reviewPage + 1 %>">Next &rarr;</a>
       <% } %>
     </nav>
   <% } %>
