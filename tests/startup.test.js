@@ -102,6 +102,7 @@ test("startup schema verification succeeds with a non-DDL role and fails safely 
     }
   );
   await missingTableDb.pool.end();
+  await pool.query(`DROP OWNED BY ${role}`);
   await pool.query(`DROP ROLE ${role}`);
   await pool.end();
 });
