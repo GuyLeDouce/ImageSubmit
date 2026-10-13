@@ -41,14 +41,14 @@ When iterating later, **do not solve "needs personality" by adding visual noise*
 - A few page sections enter softly when scrolled into view, and era art/cards/buttons respond to hover without constant wiggles or visual clutter.
 - Copy is warmer and simpler, and imagery is still the focus. Motion should always reinforce navigation, never prevent it.
 
-### Official era artwork awaiting original files
+### Official era cover artwork
 
-Two specific user-supplied images were selected as permanent cover art:
+The exact original images were supplied as direct Imgur URLs and are wired into the homepage's era cards:
 
-- Squigwreck -> `public/era-artwork/squigwreck.png`
-- Rise of Ugly City -> `public/era-artwork/ugly-city.png`
+- Squigwreck -> `https://i.imgur.com/amVLHM9.png`
+- Rise of Ugly City -> `https://i.imgur.com/HHV8GmI.png`
 
-These exact original image files have not been committed because the current image messages do not expose mountable raw bytes to the GitHub editing workflow. The homepage has a progressive-image fallback: while either file is missing, the existing approved example (or text title) remains visible. Once the original full-resolution assets are committed under the paths above, the dedicated art automatically replaces the example on each card. **Do not fabricate, recreate or crop those supplied images.** If only public direct image links are available, add them properly in the media integration rather than guessing URLs.
+These URLs are rendered directly in EJS so the official art appears even without JavaScript; the artwork remains fully visible (`object-fit: contain`). If an external image fails to load, the optional JavaScript enhancement restores an approved community example or a readable era title. The community gallery still uses submitted artwork rather than these official promotional covers. External Imgur reachability could not be independently tested in the working environment; verify the final page in a browser before merging. If long-term hosting changes, prefer a durable first-party `public/` asset while keeping the same proportions.
 
 ## Safety and compatibility
 No changes to routes, Discord OAuth, sessions, CSRF, PostgreSQL schema, S3/storage, `$CHARM` logic, Gauntlet image insertion, or era identifiers. No frontend frameworks or runtime dependencies were added. Submitted images remain subject to existing validation and the existing 10-file maximum.
