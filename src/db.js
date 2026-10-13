@@ -204,7 +204,7 @@ async function listPendingSubmissions() {
   return result.rows;
 }
 
-async function listApprovedSubmissions() {
+async function listApprovedSubmissions(limit = null) {
   const result = await pool.query(`
     SELECT
       id,
@@ -235,7 +235,8 @@ async function listApprovedSubmissions() {
     FROM squig_survival_image_submissions
     WHERE status = 'approved'
     ORDER BY reviewed_at DESC NULLS LAST, submitted_at DESC
-  `);
+    LIMIT $1
+  `, [limit]);
 
   return result.rows;
 }
@@ -1079,6 +1080,53 @@ async function unapproveSubmission({ submissionId, reviewedBy, reason, expectedR
   }
 }
 
+// Paginated review queries only accept trusted sort expressions and status.
+// Do not render every archived image and repair form on a single request.
+const MODERATION_STATUSES = new Set(["pending", "approved", "declined"]);
+const MODERATION_PAGE_SIZE = 24;
+
+async function countModerationSubmissions() {
+  const result = await pool.query(`
+    SELECT status, COUNT(*)::integer AS total
+    FROM squig_survival_image_submissions
+    WHERE status IN ('pending', 'approved', 'declined')
+    GROUP BY status
+  `);
+  const totals = { pending: 0, approved: 0, declined: 0 };
+  for (const row of result.rows) {
+    if (MODERATION_STATUSES.has(row.status)) totals[row.status] = Number(row.total) || 0;
+  }
+  return totals;
+}
+
+async function listModerationPage({ status = "pending", page = 1 } = {}) {
+  if (!MODERATION_STATUSES.has(status)) throw new Error("Invalid review status.");
+  if (!Number.isSafeInteger(page) || page < 1) throw new Error("Invalid review page.");
+
+  const offset = (page - 1) * MODERATION_PAGE_SIZE;
+  if (!Number.isSafeInteger(offset)) throw new Error("Invalid review offset.");
+
+  const orderBy = status === "pending"
+    ? "submitted_at ASC, id ASC"
+    : "reviewed_at DESC NULLS LAST, submitted_at DESC, id DESC";
+
+  const result = await pool.query(`
+    SELECT
+      id, discord_user_id, discord_username, discord_display_name,
+      era_key, prompt_text, nft_used_type, nft_used_text, image_url,
+      storage_key, mime_type, size_bytes, status, reward_points,
+      submitted_at, reviewed_at, reviewed_by, decline_reason, row_version,
+      milestone_key, milestone_number, milestone_label, milestone_district,
+      contains_squig_confirmed, other_collections_text
+    FROM squig_survival_image_submissions
+    WHERE status = $1
+    ORDER BY ${orderBy}
+    LIMIT $2 OFFSET $3
+  `, [status, MODERATION_PAGE_SIZE, offset]);
+
+  return result.rows;
+}
+
 module.exports = {
   pool,
   initDb,
@@ -1087,6 +1135,9 @@ module.exports = {
   listApprovedSubmissions,
   listDeclinedSubmissions,
   listSubmissionsForUser,
+  countModerationSubmissions,
+  listModerationPage,
+  MODERATION_PAGE_SIZE,
   approveSubmission,
   declineSubmission,
   updateApprovedSubmission,
