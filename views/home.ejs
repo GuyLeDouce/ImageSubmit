@@ -4,6 +4,7 @@
   const examples = Array.isArray(approvedExamples) ? approvedExamples : [];
   const featured = examples[0] || null;
   const additionalExamples = examples.slice(1, 5);
+  const eraLabels = Object.fromEntries(eras.map((era) => [era.key, era.label]));
 %>
 
 <section class="landing-hero" aria-labelledby="factory-title">
@@ -40,8 +41,8 @@
           <img src="<%= featured.image_url %>" alt="A Squig Survival scene approved by the community review team" />
         </a>
         <div class="feature-art__caption">
-          <strong><%= featured.milestone_label || featured.milestone_district || featured.era_key %></strong>
-          <span>Approved creator art</span>
+          <strong><%= featured.milestone_label || featured.milestone_district || eraLabels[featured.era_key] || "Squig Survival" %></strong>
+          <span>Approved creator artwork</span>
         </div>
       <% } else { %>
         <div class="feature-art__empty">
@@ -58,7 +59,7 @@
 <section class="creator-section" id="eras" aria-labelledby="eras-heading">
   <div class="section-heading era-section-heading">
     <div>
-      <p class="eyebrow">Two very different ways to survive</p>
+      <p class="eyebrow"><%= eras.length %> open <%= eras.length === 1 ? "era" : "eras" %> / Endless possibilities</p>
       <h2 id="eras-heading">Pick your next disaster.</h2>
     </div>
     <p>Pick a world. Bring your Squig. Make something worth surviving.</p>
@@ -70,7 +71,8 @@
       <% eras.forEach((era) => {
         const isRace = era.key === "death_race";
         const isCity = era.key === "ugly_city";
-        const eraExample = examples.find((example) => example !== featured && example.era_key === era.key)
+        const eraExample = examples.find((example) => example !== featured && !additionalExamples.includes(example) && example.era_key === era.key)
+          || examples.find((example) => example !== featured && example.era_key === era.key)
           || examples.find((example) => example.era_key === era.key);
         const tagline = isRace
           ? "An armored death race. One finish line. Anything goes."
@@ -119,7 +121,7 @@
           <a href="<%= example.image_url %>" target="_blank" rel="noreferrer" aria-label="Open this approved creator image">
             <img src="<%= example.image_url %>" alt="Approved Squig Survival creator scene" loading="lazy" />
           </a>
-          <figcaption><%= example.milestone_label || example.milestone_district || example.era_key %></figcaption>
+          <figcaption><%= example.milestone_label || example.milestone_district || eraLabels[example.era_key] || "Squig Survival" %></figcaption>
         </figure>
       <% }) %>
     </div>
