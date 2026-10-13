@@ -6,161 +6,150 @@
   const exampleCreations = Array.isArray(approvedExamples) ? approvedExamples : [];
   const spotlightCreations = recentCreations.length ? recentCreations : exampleCreations;
   const isExampleSpotlight = !recentCreations.length;
-  const loopingSpotlightCreations = spotlightCreations.length > 1 ? spotlightCreations.concat(spotlightCreations) : spotlightCreations;
-  const statusLabels = {
-    pending: "Awaiting Approval",
-    approved: "Approved",
-    declined: "Declined",
-  };
+  const statusLabels = { pending: "Awaiting approval", approved: "Approved", declined: "Declined" };
+  const creatorAvatar = user.avatar
+    ? `https://cdn.discordapp.com/avatars/${encodeURIComponent(user.id)}/${encodeURIComponent(user.avatar)}.png?size=128`
+    : null;
 %>
 
 <section class="stack-gap profile-page">
   <header class="profile-hero">
     <div class="profile-identity">
-      <div class="profile-avatar" aria-hidden="true">
-        <%= (user.displayName || user.username || "?").slice(0, 1).toUpperCase() %>
+      <div class="profile-avatar" aria-label="Creator avatar">
+        <% if (creatorAvatar) { %>
+          <img src="<%= creatorAvatar %>" alt="" referrerpolicy="no-referrer" />
+        <% } else { %>
+          <span><%= (user.displayName || user.username || "?").slice(0, 1).toUpperCase() %></span>
+        <% } %>
       </div>
       <div>
-        <p class="eyebrow">Creator Profile</p>
+        <p class="breadcrumb"><a href="/">Image Factory</a><span>/</span> My Creations</p>
+        <p class="eyebrow">Your creator studio</p>
         <h1><%= user.displayName || user.username %></h1>
-        <p class="lead">Your Ugly Creator dashboard.</p>
+        <p class="lead">All your Survival artwork, all in one place. Stay Ugly.</p>
       </div>
     </div>
+    <a class="button" href="/submit">Create something new &rarr;</a>
   </header>
 
-  <section class="profile-stats" aria-label="Submission totals">
+  <section class="profile-stats" aria-label="Your submission totals">
     <article class="profile-stat profile-stat--total">
-      <span>Total creations</span>
+      <span>Total created</span>
       <strong><%= stats.total %></strong>
-      <p>Images submitted through the creator portal.</p>
+      <p>Images submitted to the factory</p>
     </article>
     <article class="profile-stat profile-stat--approved">
       <span>Approved</span>
       <strong><%= stats.approved %></strong>
-      <p>Eligible for the Squig Survival image pool.</p>
+      <p>Eligible for the game image pool</p>
     </article>
     <article class="profile-stat profile-stat--pending">
-      <span>Pending</span>
+      <span>In review</span>
       <strong><%= stats.pending %></strong>
-      <p>Waiting for admin review.</p>
+      <p>Waiting for the team's decision</p>
     </article>
     <article class="profile-stat profile-stat--declined">
       <span>Declined</span>
       <strong><%= stats.declined %></strong>
-      <p>Reviewed but not accepted.</p>
+      <p>Not accepted for the game pool</p>
     </article>
   </section>
 
-  <section class="profile-feature-grid">
-    <article class="profile-feature-card profile-feature-card--latest profile-feature-card--wide">
+  <section class="profile-feature-grid" aria-labelledby="latest-heading">
+    <article class="profile-feature-card">
       <div class="profile-latest-header">
         <div>
-          <p class="eyebrow"><%= isExampleSpotlight ? "Approved Creator Examples" : "Recent Creations" %></p>
-          <h2><%= isExampleSpotlight ? "See what creators are building" : "Your latest creations" %></h2>
+          <p class="eyebrow"><%= isExampleSpotlight ? "Community inspiration" : "Fresh off the press" %></p>
+          <h2 id="latest-heading"><%= isExampleSpotlight ? "See what others are building." : "Your latest creations." %></h2>
         </div>
         <% if (spotlightCreations.length) { %>
-          <span><%= isExampleSpotlight ? "Main page examples" : `${spotlightCreations.length} recent ${spotlightCreations.length === 1 ? "image" : "images"}` %></span>
+          <span><%= isExampleSpotlight ? "Approved creator work" : `${spotlightCreations.length} recent ${spotlightCreations.length === 1 ? "image" : "images"}` %></span>
         <% } %>
       </div>
 
       <% if (spotlightCreations.length) { %>
-        <div class="profile-creation-window">
-          <div class="profile-creation-track <%= spotlightCreations.length === 1 ? 'profile-creation-track--single' : '' %>">
-            <% loopingSpotlightCreations.forEach((creation) => { %>
-              <figure class="profile-creation-card">
-                <a href="<%= creation.image_url %>" target="_blank" rel="noreferrer" class="profile-latest-media">
-                  <img src="<%= creation.image_url %>" alt="<%= isExampleSpotlight ? 'Approved creator example' : 'Submitted image ' + creation.id %>" loading="lazy" />
-                </a>
-                <figcaption class="profile-latest-meta">
-                  <% if (isExampleSpotlight) { %>
-                    <span class="submission-status submission-status--approved">Approved example</span>
-                  <% } else { %>
-                    <span class="submission-status submission-status--<%= creation.status %>"><%= statusLabels[creation.status] || creation.status %></span>
-                  <% } %>
-                  <strong><%= creation.milestone_label || creation.milestone_key || creation.milestone_district || eraLabels[creation.era_key] || creation.era_key %></strong>
-                  <% if (!isExampleSpotlight && creation.submitted_at) { %>
-                    <small><%= new Date(creation.submitted_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) %></small>
-                  <% } else { %>
-                    <small><%= creation.milestone_district || eraLabels[creation.era_key] || creation.era_key %></small>
-                  <% } %>
-                </figcaption>
-              </figure>
-            <% }) %>
-          </div>
+        <div class="profile-creation-grid">
+          <% spotlightCreations.forEach((creation) => { %>
+            <figure class="profile-creation-card">
+              <a href="<%= creation.image_url %>" target="_blank" rel="noreferrer" class="profile-latest-media" aria-label="Open this creation at full size">
+                <img src="<%= creation.image_url %>" alt="<%= isExampleSpotlight ? 'Approved creator example' : 'Submission ' + creation.id %>" loading="lazy" />
+              </a>
+              <figcaption class="profile-latest-meta">
+                <span class="submission-status submission-status--<%= isExampleSpotlight ? 'approved' : creation.status %>">
+                  <%= isExampleSpotlight ? "Approved example" : statusLabels[creation.status] || creation.status %>
+                </span>
+                <strong><%= creation.milestone_label || creation.milestone_key || creation.milestone_district || eraLabels[creation.era_key] || creation.era_key %></strong>
+                <% if (!isExampleSpotlight && creation.submitted_at) { %>
+                  <small><%= new Date(creation.submitted_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) %></small>
+                <% } else { %>
+                  <small><%= creation.milestone_district || eraLabels[creation.era_key] || creation.era_key %></small>
+                <% } %>
+              </figcaption>
+            </figure>
+          <% }) %>
         </div>
       <% } else { %>
-        <div class="profile-empty-art">
-          <span>NO IMAGES YET</span>
-        </div>
-        <p>No recent creations or approved examples are available yet.</p>
+        <div class="profile-empty-art">Nothing here yet. You could change that.</div>
       <% } %>
     </article>
-
-    <div class="profile-feature-actions">
-      <a class="button" href="/submit">Submit New Image</a>
-    </div>
   </section>
 
-  <section class="stack-gap profile-gallery">
+  <section class="stack-gap profile-gallery" aria-labelledby="archive-heading">
     <div class="submission-history__header">
-      <p class="eyebrow">Creation Archive</p>
-      <h2>Everything you have submitted</h2>
-      <p class="muted">Approved images become eligible for the Squig Survival image pool. Pending images are still waiting for admin review.</p>
+      <p class="eyebrow">Your complete archive</p>
+      <h2 id="archive-heading">Every creation. Every era.</h2>
+      <p class="muted">Browse your submitted images and see where each one stands.</p>
     </div>
 
     <% if (!submissions.length) { %>
       <div class="panel empty-state">
-        No creations yet. Your next Survival scene starts here.
+        <p>No creations yet. <a href="/submit">Submit your first Squig scene</a>.</p>
       </div>
     <% } else { %>
+      <div class="profile-filterbar" role="group" aria-label="Filter creations by approval status">
+        <button type="button" class="profile-filter" data-gallery-filter="all" aria-pressed="true">All (<%= stats.total %>)</button>
+        <button type="button" class="profile-filter" data-gallery-filter="approved" aria-pressed="false">Approved (<%= stats.approved %>)</button>
+        <button type="button" class="profile-filter" data-gallery-filter="pending" aria-pressed="false">In review (<%= stats.pending %>)</button>
+        <button type="button" class="profile-filter" data-gallery-filter="declined" aria-pressed="false">Declined (<%= stats.declined %>)</button>
+      </div>
       <div class="submission-grid profile-submission-grid">
         <% submissions.forEach((submission) => { %>
-          <article class="submission-tile submission-tile--<%= submission.status %>">
-            <a href="<%= submission.image_url %>" target="_blank" rel="noreferrer" class="submission-tile__media">
-              <img src="<%= submission.image_url %>" alt="Submitted image <%= submission.id %>" loading="lazy" />
+          <article class="submission-tile submission-tile--<%= submission.status %>" data-gallery-status="<%= submission.status %>">
+            <a href="<%= submission.image_url %>" target="_blank" rel="noreferrer" class="submission-tile__media" aria-label="Open submitted image">
+              <img src="<%= submission.image_url %>" alt="Submitted creation <%= submission.id %>" loading="lazy" />
             </a>
             <div class="submission-tile__body">
               <div class="submission-tile__topline">
-                <span class="submission-status submission-status--<%= submission.status %>">
-                  <%= statusLabels[submission.status] || submission.status %>
-                </span>
-                <span class="submission-tile__date">
+                <span class="submission-status submission-status--<%= submission.status %>"><%= statusLabels[submission.status] || submission.status %></span>
+                <time class="submission-tile__date" datetime="<%= new Date(submission.submitted_at).toISOString() %>">
                   <%= new Date(submission.submitted_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) %>
-                </span>
+                </time>
               </div>
-
-              <dl class="submission-tile__meta">
-                <div>
-                  <dt>Era</dt>
-                  <dd><%= eraLabels[submission.era_key] || submission.era_key %></dd>
-                </div>
-                <div>
-                  <dt>Milestone</dt>
-                  <dd><%= submission.milestone_label || submission.milestone_key || "Not set" %></dd>
-                </div>
-                <div>
-                  <dt>Reward</dt>
-                  <dd><%= submission.reward_points || 100 %> $CHARM</dd>
-                </div>
-                <% if (submission.status !== "pending") { %>
-                  <div>
-                    <dt>Reviewed</dt>
-                    <dd>
-                      <%= submission.reviewed_at ? new Date(submission.reviewed_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "Not available" %>
-                    </dd>
-                  </div>
-                <% } %>
-                <% if (submission.status === "declined" && submission.decline_reason) { %>
-                  <div class="decline-reason">
-                    <dt>Reason</dt>
-                    <dd><%= submission.decline_reason %></dd>
-                  </div>
-                <% } %>
-              </dl>
+              <strong class="submission-tile__summary"><%= submission.milestone_label || eraLabels[submission.era_key] || submission.era_key %></strong>
+              <details class="submission-tile__details">
+                <summary>Submission details</summary>
+                <dl class="submission-tile__meta">
+                  <div><dt>Era</dt><dd><%= eraLabels[submission.era_key] || submission.era_key %></dd></div>
+                  <% if (submission.milestone_label || submission.milestone_key) { %>
+                    <div><dt>Milestone</dt><dd><%= submission.milestone_label || submission.milestone_key %></dd></div>
+                  <% } %>
+                  <div><dt>Reward</dt><dd><%= submission.reward_points || 100 %> $CHARM</dd></div>
+                  <% if (submission.status !== "pending") { %>
+                    <div><dt>Reviewed</dt><dd><%= submission.reviewed_at ? new Date(submission.reviewed_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "Not available" %></dd></div>
+                  <% } %>
+                  <% if (submission.status === "declined" && submission.decline_reason) { %>
+                    <div class="decline-reason"><dt>Reason</dt><dd><%= submission.decline_reason %></dd></div>
+                  <% } %>
+                  <% if (submission.prompt_text) { %>
+                    <div><dt>Prompt</dt><dd><%= submission.prompt_text %></dd></div>
+                  <% } %>
+                </dl>
+              </details>
             </div>
           </article>
         <% }) %>
       </div>
+      <p class="profile-empty-filter" data-gallery-empty hidden>No images match this filter.</p>
     <% } %>
   </section>
 </section>
