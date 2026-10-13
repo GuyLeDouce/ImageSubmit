@@ -80,7 +80,7 @@ test("homepage without artwork gives creators a clear entry point", async () => 
     currentPath: "/", user: null, eras, approvedExamples: [],
   });
   assert.match(html, /Your Squig belongs here/);
-  assert.match(html, /Enter the Image Factory/);
+  assert.match(html, /Start creating/);
   assert.doesNotMatch(html, /class="creator-wall__grid"/);
 });
 
