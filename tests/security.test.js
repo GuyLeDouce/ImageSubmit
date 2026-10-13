@@ -41,7 +41,9 @@ function loadApp(nodeEnv = "test") {
   for (const key of ["../src/app", "../src/db", "../src/config", "../src/errors"]) {
     delete require.cache[require.resolve(key)];
   }
-  return require("../src/app").createApp();
+  const app = require("../src/app").createApp();
+  app.__testDbPool = require("../src/db").pool;
+  return app;
 }
 
 function runMigrate() {
@@ -139,7 +141,8 @@ test("security headers are present on actual responses", { skip: !process.env.TE
   assert.equal(response.headers["referrer-policy"], "strict-origin-when-cross-origin");
   assert.equal(response.headers["x-frame-options"], "DENY");
   assert.equal(response.headers["x-powered-by"], undefined);
-  server.close();
+  await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+  await app.__testDbPool.end();
   await pool.end();
 });
 
@@ -160,7 +163,8 @@ test("production session cookie is secure and httpOnly", { skip: !process.env.TE
   assert.match(setCookie, /HttpOnly/);
   assert.match(setCookie, /Secure/);
   assert.match(setCookie, /SameSite=Lax/);
-  server.close();
+  await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+  await app.__testDbPool.end();
   await pool.end();
 });
 
@@ -233,7 +237,8 @@ test("CSRF and Origin protection covers state-changing form routes", { skip: !pr
     const valid = await postForm(baseUrl, cookie, route.path, { ...route.values, _csrf: token });
     assert.notEqual(valid.statusCode, 403, `${route.path} valid token`);
 
-    server.close();
+    await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+  await app.__testDbPool.end();
     await pool.end();
   }
 });
@@ -248,7 +253,8 @@ test("OAuth and health GET routes are not blocked by CSRF", { skip: !process.env
   assert.equal(live.statusCode, 200);
   assert.equal(ready.statusCode, 200);
   assert.equal(oauth.statusCode, 302);
-  server.close();
+  await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+  await app.__testDbPool.end();
   await pool.end();
 });
 
@@ -290,6 +296,7 @@ test("invalid-CSRF multipart upload is rejected before rows or storage writes", 
   assert.equal(afterRows.rows[0].count, beforeRows.rows[0].count);
   assert.equal(afterAudit.rows[0].count, beforeAudit.rows[0].count);
   assert.deepEqual(afterFiles, beforeFiles);
-  server.close();
+  await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+  await app.__testDbPool.end();
   await pool.end();
 });
