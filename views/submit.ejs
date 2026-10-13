@@ -211,7 +211,7 @@
           <div class="submission-grid">
             <% group.items.forEach((submission) => { %>
               <article class="submission-tile submission-tile--<%= submission.status %>">
-                <a class="submission-tile__media" href="<%= submission.image_url %>" target="_blank" rel="noreferrer" aria-label="Open submitted image">
+                <a class="submission-tile__media" href="<%= submission.image_url %>" target="_blank" rel="noreferrer" data-artwork-view aria-label="Open submitted image">
                   <img src="<%= submission.image_url %>" alt="Submitted creator image <%= submission.id %>" loading="lazy" />
                 </a>
                 <div class="submission-tile__body">
@@ -223,7 +223,7 @@
                   </div>
                   <strong class="submission-tile__summary"><%= submission.milestone_label || eraLabels[submission.era_key] || submission.era_key %></strong>
                   <details class="submission-tile__details">
-                    <summary>Submission details</summary>
+                    <summary>View details</summary>
                     <dl class="submission-tile__meta">
                       <div><dt>Era</dt><dd><%= eraLabels[submission.era_key] || submission.era_key %></dd></div>
                       <% if (submission.milestone_label || submission.milestone_key) { %>
