@@ -11,10 +11,10 @@
 <section class="stack-gap admin-page">
   <header class="dashboard-hero admin-hero">
     <div>
-      <p class="eyebrow">Allowlisted Admin Console</p>
-      <h1>Admin Review</h1>
+      <p class="eyebrow">Ugly Labs / Moderation</p>
+      <h1>Review the factory.</h1>
       <p class="lead">
-        Approve only images that clearly include at least 1 Squig, fit the selected milestone, are appropriate for the project, and are not gore, explicit content, hateful content, or unrelated spam.
+        Give every creation a fair Squig check. Approve artwork with a clearly visible Squig that fits its era and chapter. Decline gore, explicit or hateful content, unrelated spam, or anything unsuitable for the project.
       </p>
     </div>
     <div class="admin-stats" aria-label="Admin queue totals">
@@ -22,6 +22,11 @@
       <div><span>Approved</span><strong><%= approvedSubmissions.length %></strong></div>
       <div><span>Declined</span><strong><%= declinedSubmissions.length %></strong></div>
     </div>
+      <nav class="actions" aria-label="Jump to review queue">
+        <a class="mini-link" href="#pending-review">Pending</a>
+        <a class="mini-link" href="#approved-review">Approved</a>
+        <a class="mini-link" href="#declined-review">Declined</a>
+      </nav>
     <div class="admin-hero-actions">
       <button type="button" class="button secondary" data-gif-button>GIF</button>
       <span class="field-note" data-gif-status>
@@ -30,11 +35,11 @@
     </div>
   </header>
 
-  <section class="stack-gap review-section">
+  <section class="stack-gap review-section" id="pending-review" aria-labelledby="pending-review-heading">
     <div class="section-title-row">
       <div>
         <p class="eyebrow">Pending Queue</p>
-        <h2>Needs a human Squig check</h2>
+        <h2 id="pending-review-heading">Ready for your review</h2>
       </div>
       <span class="submission-count"><%= submissions.length %></span>
     </div>
@@ -233,11 +238,11 @@
     <% } %>
   </section>
 
-  <section class="stack-gap review-section">
+  <section class="stack-gap review-section" id="approved-review" aria-labelledby="approved-review-heading">
     <div class="section-title-row">
       <div>
         <p class="eyebrow">Approved Library</p>
-        <h2>Live-pool images and repair tools</h2>
+        <h2 id="approved-review-heading">Approved creator artwork</h2>
         <p class="muted">Approved entries remain visible here so admins can review and edit reward/account details later.</p>
       </div>
       <span class="submission-count"><%= approvedSubmissions.length %></span>
@@ -368,11 +373,11 @@
     <% } %>
   </section>
 
-  <section class="stack-gap review-section">
+  <section class="stack-gap review-section" id="declined-review" aria-labelledby="declined-review-heading">
     <div class="section-title-row">
       <div>
         <p class="eyebrow">Declined Library</p>
-        <h2>Declined images and repair tools</h2>
+        <h2 id="declined-review-heading">Declined creator artwork</h2>
         <p class="muted">Declined entries remain available here so admins can repair account, era, reward, and milestone metadata without placing them in the live pool.</p>
       </div>
       <span class="submission-count"><%= declinedSubmissions.length %></span>
