@@ -182,19 +182,39 @@ test("friendly motion, filtering and artwork viewer remain progressive enhanceme
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
 });
 
-test("admin still exposes all moderation and repair actions", async () => {
-  const html = await render("admin.ejs", {
+test("moderation tabs load one bounded status while keeping all repair actions", async () => {
+  const commonAdmin = {
     currentPath: "/admin", isAdmin: true, eras,
     adminRepairEras: eras, approvalEras: eras,
     milestones: [{ ...milestone, eraKey: "ugly_city" }],
-    submissions: [sample], approvedSubmissions: [{ ...sample, status: "approved" }],
+    reviewCounts: { pending: 1, approved: 45, declined: 3 },
+    reviewPage: 1, reviewTotalPages: 1, reviewPageSize: 24,
+    submissions: [sample],
+    approvedSubmissions: [{ ...sample, status: "approved" }],
     declinedSubmissions: [{ ...sample, status: "declined" }],
+  };
+  const pending = await render("admin.ejs", { ...commonAdmin, reviewStatus: "pending" });
+  assert.match(pending, /\/admin\/submissions\/9\/approve/);
+  assert.match(pending, /\/admin\/submissions\/9\/decline/);
+  assert.match(pending, /data-review-toggle="edit"/);
+  assert.doesNotMatch(pending, /\/admin\/submissions\/9\/update-approved/);
+
+  const approved = await render("admin.ejs", { ...commonAdmin, reviewStatus: "approved" });
+  assert.match(approved, /\/admin\/submissions\/9\/update-approved/);
+  assert.match(approved, /\/admin\/submissions\/9\/unapprove/);
+  assert.doesNotMatch(approved, /\/admin\/submissions\/9\/update-declined/);
+
+  const declined = await render("admin.ejs", { ...commonAdmin, reviewStatus: "declined" });
+  assert.match(declined, /\/admin\/submissions\/9\/update-declined/);
+  assert.doesNotMatch(declined, /\/admin\/submissions\/9\/approve"/);
+
+  const page = await render("admin.ejs", {
+    ...commonAdmin, reviewStatus: "approved", reviewPage: 2, reviewTotalPages: 3
   });
-  for (const action of ["approve", "decline", "update-approved", "update-declined", "unapprove"]) {
-    assert.ok(html.includes("/admin/submissions/9/" + action), action + " must remain available");
-  }
-  assert.match(html, /data-gif-button/);
-  assert.match(html, /data-review-toggle="edit"/);
+  assert.match(page, /\/admin\?status=approved&amp;page=1/);
+  assert.match(page, /\/admin\?status=approved&amp;page=3/);
+  assert.match(page, /Page 2 of 3/);
+  assert.doesNotMatch(page, /data-gif-button|data-gif-source|image-proxy/);
 });
 
 test("art galleries display the complete image and UI enhancements preserve native forms", () => {
@@ -205,4 +225,8 @@ test("art galleries display the complete image and UI enhancements preserve nati
   assert.match(studio, /URL\.revokeObjectURL/);
   assert.match(studio, /data-gallery-filter/);
   assert.doesNotMatch(studio, /fetch\s*\(\s*["']\/submit/);
+  const adminJs = fs.readFileSync(path.join(root, "public", "admin.js"), "utf8");
+  const appJs = fs.readFileSync(path.join(root, "src", "app.js"), "utf8");
+  assert.doesNotMatch(adminJs, /buildAnimatedGif|canvas\.getImageData|encodeLiteralLzw/);
+  assert.doesNotMatch(appJs, /\/admin\/image-proxy/);
 });
