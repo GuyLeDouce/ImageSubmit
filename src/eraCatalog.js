@@ -17,8 +17,8 @@ module.exports = [
   },
   {
     key: "death_race",
-    label: "Death Race",
-    description: "One or more Squigs in a wild post-apocalyptic death race. Any approved image can appear at any milestone. No milestone assignment needed.",
+    label: "Squigwreck",
+    description: "Squigwreck is an armored street-racing Survival era. Create scenes with one or more Squigs; approved art can appear at any milestone without milestone matching.",
     acceptingSubmissions: true,
     milestones: [],
   },
