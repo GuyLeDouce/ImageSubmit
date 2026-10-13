@@ -19,6 +19,19 @@ Image Factory is a place to make and submit **Squig Survival artwork**, not an A
 4. Use 2-column desktop grids only when they help; stack on small screens. Preserve readable form labels, visible focus, skip link and reduced-motion support.
 5. Keep moderation information obvious, so an admin can decide quickly and safely.
 
+## Art-first homepage direction (visual pass 2)
+
+The first redesign was functional and clean, but its huge stacked heading, small era images, repeated action panels and flat pastel surfaces still felt generic. The homepage now has a more distinct Squigs personality without compromising the clean 2D cartoon-art philosophy:
+
+- **Hero:** Dark ink-green stage, very short "MAKE IT. UGLY." headline and a genuinely large approved community image, with no distracting background signs or decorative clip art.
+- **Worlds:** Each era gets an illustrated split card. The artwork is significantly larger and stays uncropped, the colours are limited to flat sky blue / warm orange, and the entire card is a clickable era entry.
+- **Creator wall:** When there are at least two approved examples, show additional real community creations in a straightforward gallery instead of small decorative thumbnail tiles.
+- **Lower page:** Replace repeated boxed instructions, repeated CTAs and a full-page list of rules with one concise three-step rail and accessible expandable creator rules.
+- **Source integrity:** Friendly era names replace raw database identifiers such as `death_race` in captions; empty galleries retain an intentional fallback.
+- **Responsive:** Desktop hero and split era cards stack thoughtfully on smaller screens; no artwork is cropped simply to fill a card.
+
+When iterating later, **do not solve "needs personality" by adding visual noise**. Squigs' own artwork, confident type, contrast and useful interactive detail should provide the personality.
+
 ## Safety and compatibility
 No changes to routes, Discord OAuth, sessions, CSRF, PostgreSQL schema, S3/storage, `$CHARM` logic, Gauntlet image insertion, or era identifiers. No frontend frameworks or runtime dependencies were added. Submitted images remain subject to existing validation and the existing 10-file maximum.
 
