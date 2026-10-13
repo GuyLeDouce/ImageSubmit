@@ -39,7 +39,9 @@ function loadApp(databaseUrl) {
   for (const key of ["../src/app", "../src/db", "../src/config", "../src/errors"]) {
     delete require.cache[require.resolve(key)];
   }
-  return require("../src/app").createApp();
+  const app = require("../src/app").createApp();
+  app.__testDbPool = require("../src/db").pool;
+  return app;
 }
 
 function runMigrate() {
@@ -73,7 +75,8 @@ test("health endpoints return safe statuses when PostgreSQL is healthy", { skip:
   assert.deepEqual(JSON.parse(live.body).status, "ok");
   assert.equal(ready.statusCode, 200);
   assert.deepEqual(JSON.parse(ready.body).status, "ready");
-  server.close();
+  await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+  await app.__testDbPool.end();
   await pool.end();
 });
 
@@ -85,5 +88,6 @@ test("readiness returns 503 without exposing database details when PostgreSQL is
   assert.equal(live.statusCode, 200);
   assert.equal(ready.statusCode, 503);
   assert.doesNotMatch(ready.body, /postgresql:\/\/|test_password|SELECT 1|ECONNREFUSED/i);
-  server.close();
+  await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+  await app.__testDbPool.end();
 });
