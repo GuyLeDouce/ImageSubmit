@@ -222,7 +222,7 @@ test("CSRF and Origin protection covers state-changing form routes", { skip: !pr
 
     const missing = await postForm(baseUrl, cookie, route.path, route.values);
     assert.equal(missing.statusCode, 403, `${route.path} missing token`);
-    assert.doesNotMatch(missing.body, token);
+    assert.equal(missing.body.includes(token), false, "CSRF token must not leak in blocked response");
 
     const invalid = await postForm(baseUrl, cookie, route.path, { ...route.values, _csrf: "bad-token" });
     assert.equal(invalid.statusCode, 403, `${route.path} invalid token`);
