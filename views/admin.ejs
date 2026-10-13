@@ -17,31 +17,42 @@
         Give every creation a fair Squig check. Approve artwork with a clearly visible Squig that fits its era and chapter. Decline gore, explicit or hateful content, unrelated spam, or anything unsuitable for the project.
       </p>
     </div>
-    <div class="admin-stats" aria-label="Admin queue totals">
-      <div><span>Pending</span><strong><%= submissions.length %></strong></div>
-      <div><span>Approved</span><strong><%= approvedSubmissions.length %></strong></div>
-      <div><span>Declined</span><strong><%= declinedSubmissions.length %></strong></div>
-    </div>
-      <nav class="actions" aria-label="Jump to review queue">
-        <a class="mini-link" href="#pending-review">Pending</a>
-        <a class="mini-link" href="#approved-review">Approved</a>
-        <a class="mini-link" href="#declined-review">Declined</a>
-      </nav>
-    <div class="admin-hero-actions">
-      <button type="button" class="button secondary" data-gif-button>GIF</button>
-      <span class="field-note" data-gif-status>
-        Downloads 10 random images from the latest 50 approved creations.
-      </span>
+    <div class="admin-stats" aria-label="Review queue totals">
+      <div><span>Pending</span><strong><%= reviewCounts.pending %></strong></div>
+      <div><span>Approved</span><strong><%= reviewCounts.approved %></strong></div>
+      <div><span>Declined</span><strong><%= reviewCounts.declined %></strong></div>
     </div>
   </header>
 
+  <nav class="admin-tabs" aria-label="Review queue">
+    <% for (const tab of [
+      { key: "pending", label: "Pending", count: reviewCounts.pending },
+      { key: "approved", label: "Approved", count: reviewCounts.approved },
+      { key: "declined", label: "Declined", count: reviewCounts.declined }
+    ]) { %>
+      <a
+        href="/admin?status=<%= tab.key %>"
+        class="admin-tab <%= reviewStatus === tab.key ? 'admin-tab--active' : '' %>"
+        <%- reviewStatus === tab.key ? 'aria-current="page"' : '' %>
+      >
+        <%= tab.label %> <span><%= tab.count %></span>
+      </a>
+    <% } %>
+  </nav>
+
+  <p class="admin-page-summary" aria-live="polite">
+    Showing <%= Math.min((reviewPage - 1) * reviewPageSize + 1, reviewCounts[reviewStatus]) %>–<%= Math.min(reviewPage * reviewPageSize, reviewCounts[reviewStatus]) %>
+    of <%= reviewCounts[reviewStatus] %> <%= reviewStatus %> creations.
+    <% if (reviewTotalPages > 1) { %>Page <%= reviewPage %> of <%= reviewTotalPages %>.<% } %>
+  </p>
+  <% if (reviewStatus === "pending") { %>
   <section class="stack-gap review-section" id="pending-review" aria-labelledby="pending-review-heading">
     <div class="section-title-row">
       <div>
         <p class="eyebrow">Pending Queue</p>
         <h2 id="pending-review-heading">Ready for your review</h2>
       </div>
-      <span class="submission-count"><%= submissions.length %></span>
+      <span class="submission-count"><%= reviewCounts.pending %></span>
     </div>
 
     <% if (!submissions.length) { %>
@@ -53,12 +64,12 @@
         <% submissions.forEach((submission) => { %>
           <details class="approved-library-item approved-library-item--pending">
             <summary aria-label="Review pending submission <%= submission.id %>">
-              <img src="<%= submission.image_url %>" alt="Pending submission <%= submission.id %> preview" loading="lazy" />
+              <img src="<%= submission.image_url %>" alt="Pending submission <%= submission.id %> preview" loading="lazy" decoding="async" />
             </summary>
 
             <div class="approved-library-detail admin-review-detail">
               <a href="<%= submission.image_url %>" target="_blank" rel="noreferrer" class="admin-review-full-image">
-                <img src="<%= submission.image_url %>" alt="Pending submission <%= submission.id %> full view" loading="lazy" />
+                <img src="<%= submission.image_url %>" alt="Pending submission <%= submission.id %> full view" loading="lazy" decoding="async" />
               </a>
 
               <div class="submission-body__header">
@@ -238,6 +249,9 @@
     <% } %>
   </section>
 
+  <% } %>
+
+  <% if (reviewStatus === "approved") { %>
   <section class="stack-gap review-section" id="approved-review" aria-labelledby="approved-review-heading">
     <div class="section-title-row">
       <div>
@@ -245,7 +259,7 @@
         <h2 id="approved-review-heading">Approved creator artwork</h2>
         <p class="muted">Approved entries remain visible here so admins can review and edit reward/account details later.</p>
       </div>
-      <span class="submission-count"><%= approvedSubmissions.length %></span>
+      <span class="submission-count"><%= reviewCounts.approved %></span>
     </div>
 
     <% if (!approvedSubmissions.length) { %>
@@ -257,10 +271,10 @@
         <% approvedSubmissions.forEach((submission) => { %>
           <details class="approved-library-item">
             <summary aria-label="Edit approved submission <%= submission.id %>">
-              <img src="<%= submission.image_url %>" alt="Approved submission <%= submission.id %> preview" loading="lazy" />
+              <img src="<%= submission.image_url %>" alt="Approved submission <%= submission.id %> preview" loading="lazy" decoding="async" />
             </summary>
 
-            <div class="approved-library-detail" data-gif-source="<%= submission.image_url %>">
+            <div class="approved-library-detail">
               <div class="submission-body__header">
                 <div>
                   <p class="eyebrow">Approved #<%= submission.id %></p>
@@ -373,6 +387,9 @@
     <% } %>
   </section>
 
+  <% } %>
+
+  <% if (reviewStatus === "declined") { %>
   <section class="stack-gap review-section" id="declined-review" aria-labelledby="declined-review-heading">
     <div class="section-title-row">
       <div>
@@ -380,7 +397,7 @@
         <h2 id="declined-review-heading">Declined creator artwork</h2>
         <p class="muted">Declined entries remain available here so admins can repair account, era, reward, and milestone metadata without placing them in the live pool.</p>
       </div>
-      <span class="submission-count"><%= declinedSubmissions.length %></span>
+      <span class="submission-count"><%= reviewCounts.declined %></span>
     </div>
 
     <% if (!declinedSubmissions.length) { %>
@@ -392,7 +409,7 @@
         <% declinedSubmissions.forEach((submission) => { %>
           <details class="approved-library-item approved-library-item--declined">
             <summary aria-label="Edit declined submission <%= submission.id %>">
-              <img src="<%= submission.image_url %>" alt="Declined submission <%= submission.id %> preview" loading="lazy" />
+              <img src="<%= submission.image_url %>" alt="Declined submission <%= submission.id %> preview" loading="lazy" decoding="async" />
             </summary>
 
             <div class="approved-library-detail">
@@ -494,6 +511,19 @@
       </div>
     <% } %>
   </section>
+  <% } %>
+
+  <% if (reviewTotalPages > 1) { %>
+    <nav class="admin-pagination" aria-label="Review pages">
+      <% if (reviewPage > 1) { %>
+        <a href="/admin?status=<%= reviewStatus %>&page=<%= reviewPage - 1 %>">&larr; Previous</a>
+      <% } %>
+      <span>Page <%= reviewPage %> of <%= reviewTotalPages %></span>
+      <% if (reviewPage < reviewTotalPages) { %>
+        <a href="/admin?status=<%= reviewStatus %>&page=<%= reviewPage + 1 %>">Next &rarr;</a>
+      <% } %>
+    </nav>
+  <% } %>
 </section>
 
 <script src="/admin.js" defer></script>
