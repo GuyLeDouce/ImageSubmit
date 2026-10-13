@@ -36,6 +36,7 @@ async function initDb() {
   for (const tableName of [
     "squig_survival_image_submissions",
     "squig_survival_image_approval_notifications",
+    "squig_survival_image_moderation_audit",
     config.sessionTable,
   ]) {
     const tableCheck = await pool.query("SELECT to_regclass($1) AS table_name", [tableName]);
@@ -44,71 +45,41 @@ async function initDb() {
     }
   }
 
-  await ensureRuntimeSchema();
+  await verifyRuntimeSchema();
   log("Database reachable and required tables present.");
 }
 
-async function ensureRuntimeSchema() {
-  await pool.query(`
-    ALTER TABLE squig_survival_image_submissions
-      ADD COLUMN IF NOT EXISTS decline_reason TEXT,
-      ADD COLUMN IF NOT EXISTS row_version INTEGER NOT NULL DEFAULT 1,
-      ADD COLUMN IF NOT EXISTS content_hash TEXT,
-      ADD COLUMN IF NOT EXISTS live_image_id TEXT,
-      ADD COLUMN IF NOT EXISTS milestone_key TEXT,
-      ADD COLUMN IF NOT EXISTS milestone_number INTEGER,
-      ADD COLUMN IF NOT EXISTS milestone_label TEXT,
-      ADD COLUMN IF NOT EXISTS milestone_district TEXT,
-      ADD COLUMN IF NOT EXISTS contains_squig_confirmed BOOLEAN NOT NULL DEFAULT false,
-      ADD COLUMN IF NOT EXISTS other_collections_text TEXT
-  `);
-
-  await pool.query(`
-    ALTER TABLE squig_survival_image_approval_notifications
-      ADD COLUMN IF NOT EXISTS prompt_text TEXT
-  `);
-
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS squig_survival_image_moderation_audit (
-      id BIGSERIAL PRIMARY KEY,
-      submission_id BIGINT,
-      action TEXT NOT NULL,
-      actor_discord_id TEXT,
-      actor_display_snapshot TEXT,
-      before_json JSONB,
-      after_json JSONB,
-      request_id TEXT,
-      reason TEXT,
-      outcome TEXT NOT NULL DEFAULT 'success',
-      live_image_ref TEXT,
-      notification_ref BIGINT,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-    )
-  `);
-
-  await pool.query(`
-    CREATE INDEX IF NOT EXISTS idx_squig_survival_image_moderation_audit_submission
-      ON squig_survival_image_moderation_audit (submission_id, created_at DESC)
-  `);
-
-  await pool.query(`
-    CREATE INDEX IF NOT EXISTS idx_squig_survival_image_submissions_milestone
-      ON squig_survival_image_submissions (milestone_key, submitted_at DESC)
-  `);
-
-  await pool.query(`
-    ALTER TABLE ${config.liveImageTable}
-      ADD COLUMN IF NOT EXISTS prompt_text TEXT,
-      ADD COLUMN IF NOT EXISTS milestone_key TEXT,
-      ADD COLUMN IF NOT EXISTS milestone_number INTEGER,
-      ADD COLUMN IF NOT EXISTS milestone_label TEXT,
-      ADD COLUMN IF NOT EXISTS milestone_district TEXT
-  `);
-
-  await pool.query(`
-    CREATE INDEX IF NOT EXISTS idx_squig_survival_images_milestone
-      ON ${config.liveImageTable} (milestone_key, created_at DESC)
-  `);
+// All schema changes happen in the ledgered migrations invoked before startup.
+// Checking columns with catalog SELECTs avoids DDL locks and permits a read-only
+// schema role for the running app.
+async function verifyRuntimeSchema() {
+  const requirements = [
+    ["squig_survival_image_submissions", [
+      "decline_reason", "row_version", "content_hash", "live_image_id",
+      "milestone_key", "milestone_number", "milestone_label",
+      "milestone_district", "contains_squig_confirmed", "other_collections_text"
+    ]],
+    ["squig_survival_image_approval_notifications", ["prompt_text"]],
+    [config.liveImageTable, [
+      "prompt_text", "milestone_key", "milestone_number",
+      "milestone_label", "milestone_district"
+    ]]
+  ];
+  for (const [tableName, columns] of requirements) {
+    const result = await pool.query(`
+      SELECT attname FROM pg_attribute
+      WHERE attrelid = to_regclass($1)
+        AND attnum > 0
+        AND NOT attisdropped
+    `, [tableName]);
+    const present = new Set(result.rows.map((row) => row.attname));
+    const missing = columns.filter((column) => !present.has(column));
+    if (missing.length) {
+      throw new SafeStartupError(
+        `Required table '${tableName}' is missing column(s): ${missing.join(", ")}. Apply reviewed database migrations before starting.`
+      );
+    }
+  }
 }
 
 function maybeInjectFailure(input, point) {
@@ -204,7 +175,7 @@ async function listPendingSubmissions() {
   return result.rows;
 }
 
-async function listApprovedSubmissions() {
+async function listApprovedSubmissions(limit = null) {
   const result = await pool.query(`
     SELECT
       id,
@@ -235,7 +206,8 @@ async function listApprovedSubmissions() {
     FROM squig_survival_image_submissions
     WHERE status = 'approved'
     ORDER BY reviewed_at DESC NULLS LAST, submitted_at DESC
-  `);
+    LIMIT $1
+  `, [limit]);
 
   return result.rows;
 }
@@ -1079,6 +1051,53 @@ async function unapproveSubmission({ submissionId, reviewedBy, reason, expectedR
   }
 }
 
+// Paginated review queries only accept trusted sort expressions and status.
+// Do not render every archived image and repair form on a single request.
+const MODERATION_STATUSES = new Set(["pending", "approved", "declined"]);
+const MODERATION_PAGE_SIZE = 24;
+
+async function countModerationSubmissions() {
+  const result = await pool.query(`
+    SELECT status, COUNT(*)::integer AS total
+    FROM squig_survival_image_submissions
+    WHERE status IN ('pending', 'approved', 'declined')
+    GROUP BY status
+  `);
+  const totals = { pending: 0, approved: 0, declined: 0 };
+  for (const row of result.rows) {
+    if (MODERATION_STATUSES.has(row.status)) totals[row.status] = Number(row.total) || 0;
+  }
+  return totals;
+}
+
+async function listModerationPage({ status = "pending", page = 1 } = {}) {
+  if (!MODERATION_STATUSES.has(status)) throw new Error("Invalid review status.");
+  if (!Number.isSafeInteger(page) || page < 1) throw new Error("Invalid review page.");
+
+  const offset = (page - 1) * MODERATION_PAGE_SIZE;
+  if (!Number.isSafeInteger(offset)) throw new Error("Invalid review offset.");
+
+  const orderBy = status === "pending"
+    ? "submitted_at ASC, id ASC"
+    : "reviewed_at DESC NULLS LAST, submitted_at DESC, id DESC";
+
+  const result = await pool.query(`
+    SELECT
+      id, discord_user_id, discord_username, discord_display_name,
+      era_key, prompt_text, nft_used_type, nft_used_text, image_url,
+      storage_key, mime_type, size_bytes, status, reward_points,
+      submitted_at, reviewed_at, reviewed_by, decline_reason, row_version,
+      milestone_key, milestone_number, milestone_label, milestone_district,
+      contains_squig_confirmed, other_collections_text
+    FROM squig_survival_image_submissions
+    WHERE status = $1
+    ORDER BY ${orderBy}
+    LIMIT $2 OFFSET $3
+  `, [status, MODERATION_PAGE_SIZE, offset]);
+
+  return result.rows;
+}
+
 module.exports = {
   pool,
   initDb,
@@ -1087,6 +1106,9 @@ module.exports = {
   listApprovedSubmissions,
   listDeclinedSubmissions,
   listSubmissionsForUser,
+  countModerationSubmissions,
+  listModerationPage,
+  MODERATION_PAGE_SIZE,
   approveSubmission,
   declineSubmission,
   updateApprovedSubmission,

@@ -39,12 +39,11 @@ test("approval insert preserves bot-facing live table columns", () => {
   assert.match(dbSource, /ROLLBACK/);
 });
 
-test("startup database initialization runs only additive schema repair", () => {
-  const initDbBody = dbSource.match(/async function initDb\(\) \{([\s\S]*?)\n\}/)?.[1] || "";
-  assert.match(initDbBody, /ensureRuntimeSchema\(\)/);
-  const repairBody = dbSource.match(/async function ensureRuntimeSchema\(\) \{([\s\S]*?)\n\}/)?.[1] || "";
-  assert.match(repairBody, /ADD COLUMN IF NOT EXISTS decline_reason/);
-  assert.match(repairBody, /ADD COLUMN IF NOT EXISTS row_version/);
-  assert.match(repairBody, /CREATE TABLE IF NOT EXISTS squig_survival_image_moderation_audit/);
-  assert.doesNotMatch(repairBody, /\bDROP\b|\bTRUNCATE\b|\bDELETE\b/i);
+test("startup verifies schema without issuing DDL or modifying live data", () => {
+  const initBody = dbSource.match(/async function initDb\(\) \{([\s\S]*?)\n\}/)?.[1] || "";
+  const verifyBody = dbSource.match(/async function verifyRuntimeSchema\(\) \{([\s\S]*?)\n\}/)?.[1] || "";
+  assert.match(initBody, /verifyRuntimeSchema\(\)/);
+  assert.match(verifyBody, /pg_attribute/);
+  assert.match(verifyBody, /to_regclass\(\$1\)/);
+  assert.doesNotMatch(initBody + verifyBody, /ALTER TABLE|CREATE INDEX|CREATE TABLE|TRUNCATE|DELETE FROM/i);
 });

@@ -30,12 +30,19 @@ const pending = {
   nft_used_type: "squigs", contains_squig_confirmed: true, image_url: "https://example.test/image.png",
   submitted_at: new Date(), status: "pending", reward_points: 100,
 };
-const calls = { uploads: [], approvals: [], repairs: [], files: [] };
+const calls = { uploads: [], approvals: [], repairs: [], files: [], reviewPages: [], exampleLimits: [] };
 const dbStub = {
   pool: realDb.pool,
-  listApprovedSubmissions: async () => [{ ...pending, status: "approved" }],
-  listPendingSubmissions: async () => [pending],
-  listDeclinedSubmissions: async () => [{ ...pending, status: "declined" }],
+  listApprovedSubmissions: async (limit) => {
+    calls.exampleLimits.push(limit);
+    return [{ ...pending, status: "approved" }];
+  },
+  countModerationSubmissions: async () => ({ pending: 1, approved: 1, declined: 1 }),
+  listModerationPage: async ({ status, page }) => {
+    calls.reviewPages.push({ status, page });
+    return [status === "pending" ? pending : { ...pending, status }];
+  },
+  MODERATION_PAGE_SIZE: 24,
   listSubmissionsForUser: async () => [pending, { ...pending, id: 8, era_key: "ugly_city", status: "approved" }],
   createPendingSubmission: async (input) => calls.uploads.push(input),
   approveSubmission: async (input) => calls.approvals.push(input),
@@ -121,6 +128,19 @@ test("HTTP submission, moderation, and history support a second era", async () =
     const admin = await get("/admin");
     assert.equal(admin.statusCode, 200);
     assert.match(admin.body, /data-era="space_test" selected/);
+    assert.match(admin.body, /href="\/admin\?status=approved"/);
+    assert.doesNotMatch(admin.body, /data-gif-button/);
+    assert.deepEqual(calls.reviewPages.at(-1), { status: "pending", page: 1 });
+    const approvedQueue = await get("/admin?status=approved");
+    assert.equal(approvedQueue.statusCode, 200);
+    assert.match(approvedQueue.body, /\/admin\/submissions\/7\/update-approved/);
+    assert.doesNotMatch(approvedQueue.body, /\/admin\/submissions\/7\/approve"/);
+    assert.deepEqual(calls.reviewPages.at(-1), { status: "approved", page: 1 });
+    const declinedQueue = await get("/admin?status=declined&page=99");
+    assert.equal(declinedQueue.statusCode, 200);
+    assert.match(declinedQueue.body, /\/admin\/submissions\/7\/update-declined/);
+    assert.deepEqual(calls.reviewPages.at(-1), { status: "declined", page: 1 });
+    assert.ok(calls.exampleLimits.includes(8), "homepage should request at most eight examples");
     assert.equal((await approve("space_test", "empty_lot")).statusCode, 302);
     assert.equal(calls.approvals.at(-1).overrideEraKey, "space_test");
     assert.equal(calls.approvals.at(-1).overrideMilestone.district, "Moon Base");
@@ -132,6 +152,31 @@ test("HTTP submission, moderation, and history support a second era", async () =
     assert.match(profile.body, /<dd>The Rise of Ugly City<\/dd>/);
   } finally {
     await new Promise((resolve) => server.close(resolve));
+  }
+});
+
+test("review SQL limits results and rejects invalid status/page values", async () => {
+  const originalQuery = realDb.pool.query;
+  const seen = [];
+  realDb.pool.query = async (sql, params) => {
+    seen.push({ sql, params });
+    if (sql.includes("GROUP BY status")) {
+      return { rows: [{ status: "approved", total: 40 }, { status: "pending", total: 2 }] };
+    }
+    return { rows: [pending] };
+  };
+  try {
+    assert.deepEqual(await realDb.countModerationSubmissions(), { pending: 2, approved: 40, declined: 0 });
+    const rows = await realDb.listModerationPage({ status: "approved", page: 2 });
+    assert.equal(rows.length, 1);
+    const query = seen.at(-1);
+    assert.match(query.sql, /ORDER BY reviewed_at DESC NULLS LAST/);
+    assert.match(query.sql, /LIMIT \$2 OFFSET \$3/);
+    assert.deepEqual(query.params, ["approved", 24, 24]);
+    await assert.rejects(() => realDb.listModerationPage({ status: "DROP TABLE", page: 1 }), /status/);
+    await assert.rejects(() => realDb.listModerationPage({ status: "pending", page: -1 }), /page/);
+  } finally {
+    realDb.pool.query = originalQuery;
   }
 });
 

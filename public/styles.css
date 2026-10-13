@@ -676,6 +676,45 @@ dd { margin: 0; color: var(--ink); font-size: .88rem; overflow-wrap: anywhere; }
   .studio-image-viewer__controls button { padding: 7px 8px; }
 }
 
+/* Bounded moderation lists keep review fast even as the archive grows. */
+.admin-tabs {
+  display: flex; align-items: stretch; flex-wrap: wrap; gap: 10px;
+  padding: 4px 0 0;
+}
+.admin-tab {
+  display: inline-flex; align-items: center; gap: 10px;
+  min-height: 45px; padding: 10px 16px; border: 1px solid #cbd8ce;
+  border-radius: 12px; background: #fffdf7; color: var(--ink);
+  font-size: .9rem; font-weight: 850; text-decoration: none;
+  transition: background .15s ease, border-color .15s ease;
+}
+.admin-tab:hover { background: var(--mint); border-color: #719d80; color: var(--ink); }
+.admin-tab--active { background: var(--mint); border: 2px solid #226c47; }
+.admin-tab span {
+  display: inline-grid; place-items: center; min-width: 27px; height: 27px;
+  padding: 0 7px; border-radius: 8px; background: rgba(31, 78, 49, .1);
+  font-size: .79rem;
+}
+.admin-page-summary { font-size: .88rem; color: #516b5a; }
+.admin-pagination {
+  display: flex; align-items: center; justify-content: center;
+  flex-wrap: wrap; gap: 14px; padding: 17px;
+  border: 1px solid var(--line-soft); border-radius: 14px; background: white;
+}
+.admin-pagination a {
+  min-height: 39px; display: inline-flex; align-items: center;
+  padding: 8px 15px; border-radius: 9px; background: var(--mint);
+  color: var(--ink); font-weight: 850; text-decoration: none;
+}
+.admin-pagination a:hover { background: #bbebcd; }
+.admin-pagination span { color: #516b5a; font-size: .87rem; font-weight: 800; }
+.approved-library-item > summary img { content-visibility: auto; }
+@media (max-width: 640px) {
+  .admin-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .admin-tab { min-width: 0; padding: 7px 8px; gap: 5px; font-size: .76rem; justify-content: center; }
+  .admin-tab span { min-width: 24px; }
+}
+
 /* Moderation interface stays conservative and fast to scan. */
 .admin-page { gap: 26px; }
 .admin-hero { align-items: flex-start; }

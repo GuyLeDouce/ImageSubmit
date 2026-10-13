@@ -1,271 +1,44 @@
+"use strict";
+
+// Keep the review controls lightweight. GIF creation and its image proxy
+// were removed: they used large image buffers and blocked the browser.
 (() => {
+  function syncMilestones(eraSelect) {
+    const form = eraSelect.closest("form");
+    const field = form?.querySelector("[data-milestone-repair-field]");
+    const select = field?.querySelector("select");
+    if (!field || !select) return;
+
+    let available = 0;
+    for (const option of select.options) {
+      if (!option.value) continue;
+      const matches = option.dataset.era === eraSelect.value;
+      option.hidden = !matches;
+      option.disabled = !matches;
+      if (matches) available += 1;
+      if (!matches && option.selected) select.value = "";
+    }
+    field.hidden = available === 0;
+    select.required = available > 0 && field.hasAttribute("data-required-milestone");
+  }
+
   document.querySelectorAll("[data-era-repair-select]").forEach((select) => {
-    const form = select.closest("form");
-    const milestoneField = form?.querySelector("[data-milestone-repair-field]");
-    if (!milestoneField) return;
-
-    const syncMilestoneVisibility = () => {
-      const milestoneSelect = milestoneField.querySelector("select");
-      let available = 0;
-      for (const option of milestoneSelect.options) {
-        if (!option.value) continue;
-        const matches = option.dataset.era === select.value;
-        option.hidden = !matches;
-        option.disabled = !matches;
-        if (matches) available += 1;
-        if (!matches && option.selected) milestoneSelect.value = "";
-      }
-      milestoneField.hidden = available === 0;
-      milestoneSelect.required = available > 0 && milestoneField.hasAttribute("data-required-milestone");
-    };
-
-    select.addEventListener("change", syncMilestoneVisibility);
-    syncMilestoneVisibility();
+    select.addEventListener("change", () => syncMilestones(select));
+    syncMilestones(select);
   });
 
-  document.querySelectorAll("[data-review-toggle]").forEach((button) => {
-    button.addEventListener("click", () => {
-      const detail = button.closest(".admin-review-detail");
-      const panelName = button.getAttribute("data-review-toggle");
-      const panel = detail?.querySelector(`[data-review-panel="${panelName}"]`);
-      if (!panel) return;
-
-      const shouldOpen = panel.classList.contains("is-hidden");
-      detail.querySelectorAll("[data-review-panel]").forEach((candidate) => {
-        candidate.classList.add("is-hidden");
-      });
-      if (shouldOpen) panel.classList.remove("is-hidden");
+  // Event delegation means one listener rather than several per submission.
+  document.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-review-toggle]");
+    if (!button) return;
+    const detail = button.closest(".admin-review-detail");
+    const name = button.dataset.reviewToggle;
+    const panel = detail?.querySelector(`[data-review-panel="${name}"]`);
+    if (!panel) return;
+    const open = panel.classList.contains("is-hidden");
+    detail.querySelectorAll("[data-review-panel]").forEach((item) => {
+      item.classList.add("is-hidden");
     });
+    if (open) panel.classList.remove("is-hidden");
   });
-
-  const gifButton = document.querySelector("[data-gif-button]");
-  const gifStatus = document.querySelector("[data-gif-status]");
-  if (!gifButton || !gifStatus) return;
-
-  const gifSources = Array.from(document.querySelectorAll("[data-gif-source]"))
-    .slice(0, 50)
-    .map((element) => element.getAttribute("data-gif-source"))
-    .filter(Boolean);
-
-  gifButton.disabled = gifSources.length === 0;
-  if (!gifSources.length) {
-    gifStatus.textContent = "No approved creations are available for a GIF yet.";
-    return;
-  }
-
-  gifButton.addEventListener("click", async () => {
-    const previousLabel = gifButton.textContent;
-    gifButton.disabled = true;
-    gifButton.textContent = "Building...";
-    gifStatus.textContent = "Building GIF from random approved creations.";
-
-    try {
-      const gifResult = await buildAnimatedGif(shuffle(gifSources), {
-        width: 512,
-        height: 512,
-        delayCs: 250,
-        maxFrames: 10,
-      });
-      const objectUrl = URL.createObjectURL(gifResult.blob);
-      const anchor = document.createElement("a");
-      anchor.href = objectUrl;
-      anchor.download = `squig-survival-${new Date().toISOString().slice(0, 10)}.gif`;
-      document.body.append(anchor);
-      anchor.click();
-      anchor.remove();
-      setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
-      const skippedText = gifResult.skipped ? ` Skipped ${gifResult.skipped} image${gifResult.skipped === 1 ? "" : "s"} that could not load.` : "";
-      gifStatus.textContent = `Downloaded GIF with ${gifResult.frameCount} random creation${gifResult.frameCount === 1 ? "" : "s"}.${skippedText}`;
-    } catch (error) {
-      gifStatus.textContent = error?.message || "Could not build the GIF.";
-    } finally {
-      gifButton.disabled = false;
-      gifButton.textContent = previousLabel;
-    }
-  });
-
-  function shuffle(values) {
-    const copy = values.slice();
-    for (let index = copy.length - 1; index > 0; index -= 1) {
-      const swapIndex = Math.floor(Math.random() * (index + 1));
-      [copy[index], copy[swapIndex]] = [copy[swapIndex], copy[index]];
-    }
-    return copy;
-  }
-
-  async function buildAnimatedGif(urls, options) {
-    const canvas = document.createElement("canvas");
-    canvas.width = options.width;
-    canvas.height = options.height;
-    const context = canvas.getContext("2d", { willReadFrequently: true });
-    const frames = [];
-    let skipped = 0;
-
-    for (const url of urls) {
-      try {
-        const image = await loadImage(toGifLoadUrl(url));
-        drawContainedImage(context, image, options.width, options.height);
-        const imageData = context.getImageData(0, 0, options.width, options.height);
-        frames.push(imageDataToPaletteIndexes(imageData));
-      } catch (error) {
-        skipped += 1;
-      }
-
-      if (frames.length >= options.maxFrames) {
-        break;
-      }
-    }
-
-    if (!frames.length) {
-      throw new Error("Could not load any approved images for the GIF.");
-    }
-
-    return {
-      blob: new Blob([encodeGif(frames, options.width, options.height, options.delayCs)], {
-        type: "image/gif",
-      }),
-      frameCount: frames.length,
-      skipped,
-    };
-  }
-
-  function toGifLoadUrl(url) {
-    if (url.startsWith("/") && !url.startsWith("//")) return url;
-
-    const parsed = new URL(url, window.location.origin);
-    if (parsed.origin === window.location.origin) {
-      return `${parsed.pathname}${parsed.search}${parsed.hash}`;
-    }
-
-    return `/admin/image-proxy?url=${encodeURIComponent(parsed.href)}`;
-  }
-
-  function loadImage(url) {
-    return new Promise((resolve, reject) => {
-      const image = new Image();
-      image.onload = () => resolve(image);
-      image.onerror = () => reject(new Error("Could not load image."));
-      image.src = url;
-    });
-  }
-
-  function drawContainedImage(context, image, width, height) {
-    context.fillStyle = "#fff8e8";
-    context.fillRect(0, 0, width, height);
-
-    const imageWidth = image.naturalWidth || image.width;
-    const imageHeight = image.naturalHeight || image.height;
-    const scale = Math.min(width / imageWidth, height / imageHeight);
-    const drawWidth = Math.max(1, Math.round(imageWidth * scale));
-    const drawHeight = Math.max(1, Math.round(imageHeight * scale));
-    const drawX = Math.round((width - drawWidth) / 2);
-    const drawY = Math.round((height - drawHeight) / 2);
-    context.drawImage(image, drawX, drawY, drawWidth, drawHeight);
-  }
-
-  function imageDataToPaletteIndexes(imageData) {
-    const { data, width, height } = imageData;
-    const indexes = new Uint8Array(width * height);
-    for (let dataIndex = 0, pixelIndex = 0; dataIndex < data.length; dataIndex += 4, pixelIndex += 1) {
-      if (data[dataIndex + 3] < 128) {
-        indexes[pixelIndex] = 255;
-        continue;
-      }
-      indexes[pixelIndex] = ((data[dataIndex] >> 5) << 5) | ((data[dataIndex + 1] >> 5) << 2) | (data[dataIndex + 2] >> 6);
-    }
-    return indexes;
-  }
-
-  function encodeGif(frames, width, height, delayCs) {
-    const bytes = [];
-    writeAscii(bytes, "GIF89a");
-    writeWord(bytes, width);
-    writeWord(bytes, height);
-    bytes.push(0xf7, 255, 0);
-    writeGlobalPalette(bytes);
-    writeAscii(bytes, "\x21\xff\x0bNETSCAPE2.0\x03\x01\x00\x00\x00");
-
-    frames.forEach((frame) => {
-      writeAscii(bytes, "\x21\xf9\x04");
-      bytes.push(0x04);
-      writeWord(bytes, delayCs);
-      bytes.push(0, 0);
-      bytes.push(0x2c);
-      writeWord(bytes, 0);
-      writeWord(bytes, 0);
-      writeWord(bytes, width);
-      writeWord(bytes, height);
-      bytes.push(0);
-      bytes.push(8);
-      writeSubBlocks(bytes, encodeLiteralLzw(frame));
-    });
-
-    bytes.push(0x3b);
-    return new Uint8Array(bytes);
-  }
-
-  function writeGlobalPalette(bytes) {
-    for (let red = 0; red < 8; red += 1) {
-      for (let green = 0; green < 8; green += 1) {
-        for (let blue = 0; blue < 4; blue += 1) {
-          bytes.push(
-            Math.round((red * 255) / 7),
-            Math.round((green * 255) / 7),
-            Math.round((blue * 255) / 3)
-          );
-        }
-      }
-    }
-  }
-
-  function encodeLiteralLzw(indexes) {
-    const clearCode = 256;
-    const endCode = 257;
-    const codeSize = 9;
-    const output = [];
-    let bitBuffer = 0;
-    let bitCount = 0;
-    let sinceClear = 0;
-
-    const writeCode = (code) => {
-      bitBuffer |= code << bitCount;
-      bitCount += codeSize;
-      while (bitCount >= 8) {
-        output.push(bitBuffer & 0xff);
-        bitBuffer >>= 8;
-        bitCount -= 8;
-      }
-    };
-
-    writeCode(clearCode);
-    indexes.forEach((index) => {
-      if (sinceClear >= 240) {
-        writeCode(clearCode);
-        sinceClear = 0;
-      }
-      writeCode(index);
-      sinceClear += 1;
-    });
-    writeCode(endCode);
-    if (bitCount > 0) output.push(bitBuffer & 0xff);
-    return output;
-  }
-
-  function writeSubBlocks(bytes, data) {
-    for (let index = 0; index < data.length; index += 255) {
-      const chunk = data.slice(index, index + 255);
-      bytes.push(chunk.length, ...chunk);
-    }
-    bytes.push(0);
-  }
-
-  function writeWord(bytes, value) {
-    bytes.push(value & 0xff, (value >> 8) & 0xff);
-  }
-
-  function writeAscii(bytes, value) {
-    for (let index = 0; index < value.length; index += 1) {
-      bytes.push(value.charCodeAt(index) & 0xff);
-    }
-  }
 })();

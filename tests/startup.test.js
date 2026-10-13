@@ -59,6 +59,25 @@ test("startup schema verification succeeds with a non-DDL role and fails safely 
   const migration = runMigrate();
   assert.equal(migration.status, 0, migration.stderr || migration.stdout);
 
+  // The Gauntlet normally owns this live table. This disposable test
+  // database must supply it before checking the app's read-only startup.
+  await pool.query(`
+    CREATE TABLE squig_survival_images (
+      id BIGSERIAL PRIMARY KEY,
+      image_url TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      added_by TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      era_keys TEXT NOT NULL,
+      reward_points INTEGER NOT NULL DEFAULT 100,
+      prompt_text TEXT,
+      milestone_key TEXT,
+      milestone_number INTEGER,
+      milestone_label TEXT,
+      milestone_district TEXT
+    )
+  `);
+
   const role = `squigs_app_test_${Date.now()}`;
   const password = `pw_${Date.now()}`;
   await pool.query(`CREATE ROLE ${role} LOGIN PASSWORD '${password}'`);
@@ -83,6 +102,7 @@ test("startup schema verification succeeds with a non-DDL role and fails safely 
     }
   );
   await missingTableDb.pool.end();
+  await pool.query(`DROP OWNED BY ${role}`);
   await pool.query(`DROP ROLE ${role}`);
   await pool.end();
 });

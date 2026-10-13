@@ -96,10 +96,12 @@ Run reviewed SQL migrations against the same Postgres database before deploying,
 3. `migrations/003_ugly_city_metadata.sql`
 4. `migrations/004_repair_submission_schema_drift.sql`
 5. `migrations/005_force_resolved_schema_repair.sql`
+6. `migrations/006_moderation_pagination_indexes.sql`
 
 Migration 003 adds nullable milestone metadata to pending submissions and the live image table. The app still preserves the core live insert contract: `image_url`, `user_id`, `added_by`, `created_at`, `era_keys`, `reward_points`, and `prompt_text`.
 Migration 004 repeats the additive column/table guarantees from 002 and 003 for databases whose migration ledger was marked applied but whose schema drifted.
 Migration 005 repeats the repair against the exact relation names resolved by the app's active Postgres search path.
+Migration 006 adds indexes for bounded pending/approved/declined moderation queues without changing existing submissions.
 
 ## Checks
 
@@ -110,4 +112,4 @@ npm run check:mint
 
 Integration tests require a disposable PostgreSQL database in `TEST_DATABASE_URL`. The test harness refuses production-looking database names and never falls back to `DATABASE_URL`.
 
-Node.js 24 LTS is the target runtime for the rebuild. The current foundation still supports the existing Node 18+ baseline until the planned TypeScript/Express migration.
+Node.js 24 is required by `package.json` and `.node-version`. Railway should build and run on Node 24. If the deploy log still reports Node 18, check for an overriding `NIXPACKS_NODE_VERSION`, `RAILPACK_NODE_VERSION` or custom Docker/build configuration and set the runtime to 24.

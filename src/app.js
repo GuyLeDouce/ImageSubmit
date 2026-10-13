@@ -6,10 +6,11 @@ const {
   initDb,
   pool,
   createPendingSubmission,
-  listPendingSubmissions,
   listApprovedSubmissions,
-  listDeclinedSubmissions,
   listSubmissionsForUser,
+  countModerationSubmissions,
+  listModerationPage,
+  MODERATION_PAGE_SIZE,
   approveSubmission,
   declineSubmission,
   updateApprovedSubmission,
@@ -45,7 +46,6 @@ const { ConflictError } = require("./errors");
 
 const OAUTH_STATE_COOKIE = "squig.oauth.state";
 const OAUTH_STATE_MAX_AGE_MS = 1000 * 60 * 10;
-const MAX_PROXY_IMAGE_BYTES = 20 * 1024 * 1024;
 
 function parseCookieHeader(header) {
   return String(header || "")
@@ -82,30 +82,6 @@ function parseImageUrl(rawValue) {
     // Fall through to the field-specific error below.
   }
   throw new Error("Image URL must be a valid http, https, or site-relative URL.");
-}
-
-function parseProxyImageUrl(rawValue) {
-  const value = String(rawValue || "").trim();
-  if (!value || value.length > 2048) throw new Error("Image URL is required.");
-  const parsed = new URL(value);
-  const isPrivate172 =
-    parsed.hostname.startsWith("172.") &&
-    Number(parsed.hostname.split(".")[1]) >= 16 &&
-    Number(parsed.hostname.split(".")[1]) <= 31;
-  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-    throw new Error("Only http and https image URLs can be proxied.");
-  }
-  if (
-    parsed.hostname === "localhost" ||
-    parsed.hostname === "::1" ||
-    parsed.hostname.startsWith("127.") ||
-    parsed.hostname.startsWith("10.") ||
-    isPrivate172 ||
-    parsed.hostname.startsWith("192.168.")
-  ) {
-    throw new Error("This image URL cannot be proxied.");
-  }
-  return parsed;
 }
 
 function createApp() {
@@ -299,7 +275,7 @@ function createApp() {
 
   app.get("/", async (req, res, next) => {
     try {
-      const approvedExamples = (await listApprovedSubmissions()).slice(0, 8);
+      const approvedExamples = await listApprovedSubmissions(8);
       res.render("home", {
         title: "Squig Survival Image Factory",
         eras: SURVIVAL_ERAS,
@@ -428,7 +404,7 @@ function createApp() {
       const submissions = await listSubmissionsForUser(req.session.user.id);
       const approvedExamples = submissions.length
         ? []
-        : (await listApprovedSubmissions()).slice(0, 8);
+        : await listApprovedSubmissions(8);
       const stats = submissions.reduce(
         (totals, submission) => {
           totals.total += 1;
@@ -500,81 +476,33 @@ function createApp() {
 
   app.get("/admin", requireAdmin, async (req, res, next) => {
     try {
-      const [pendingSubmissions, approvedSubmissions, declinedSubmissions] = await Promise.all([
-        listPendingSubmissions(),
-        listApprovedSubmissions(),
-        listDeclinedSubmissions(),
-      ]);
+      const started = Date.now();
+      const statuses = new Set(["pending", "approved", "declined"]);
+      const reviewStatus = statuses.has(req.query.status) ? req.query.status : "pending";
+      const rawPage = String(req.query.page || "1");
+      const requestedPage = /^[1-9][0-9]{0,5}$/.test(rawPage) ? Number(rawPage) : 1;
+      const reviewCounts = await countModerationSubmissions();
+      const reviewTotalPages = Math.max(1, Math.ceil(reviewCounts[reviewStatus] / MODERATION_PAGE_SIZE));
+      const reviewPage = Math.min(requestedPage, reviewTotalPages);
+      const rows = await listModerationPage({ status: reviewStatus, page: reviewPage });
       res.render("admin", {
         title: "Squig Survival Admin Review",
-        submissions: pendingSubmissions,
-        approvedSubmissions,
-        declinedSubmissions,
+        submissions: reviewStatus === "pending" ? rows : [],
+        approvedSubmissions: reviewStatus === "approved" ? rows : [],
+        declinedSubmissions: reviewStatus === "declined" ? rows : [],
+        reviewCounts,
+        reviewStatus,
+        reviewPage,
+        reviewTotalPages,
+        reviewPageSize: MODERATION_PAGE_SIZE,
         eras: SURVIVAL_ERAS,
         adminRepairEras: ADMIN_REPAIR_ERAS,
         approvalEras: ERA_CATALOG,
         milestones: ERA_CATALOG.flatMap((era) => era.milestones.map((milestone) => ({ ...milestone, eraKey: era.key }))),
       });
+      console.log(`[SUBMISSION-APP] Admin ${reviewStatus} page ${reviewPage}: ${rows.length} rows in ${Date.now() - started}ms`);
     } catch (error) {
       next(error);
-    }
-  });
-
-  app.get("/admin/image-proxy", requireAdmin, async (req, res, next) => {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15000);
-
-    try {
-      let imageUrl;
-      try {
-        imageUrl = parseProxyImageUrl(req.query.url);
-      } catch (error) {
-        return res.status(400).send(error.message || "Invalid image URL.");
-      }
-
-      const upstream = await fetch(imageUrl, {
-        redirect: "follow",
-        signal: controller.signal,
-        headers: {
-          accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
-          "user-agent": "SquigSurvivalAdminImageProxy/1.0",
-        },
-      });
-
-      if (!upstream.ok) {
-        return res.status(502).send("Image could not be loaded.");
-      }
-      try {
-        parseProxyImageUrl(upstream.url);
-      } catch (error) {
-        return res.status(400).send("Redirected image URL cannot be proxied.");
-      }
-
-      const contentType = upstream.headers.get("content-type") || "application/octet-stream";
-      if (!contentType.toLowerCase().startsWith("image/")) {
-        return res.status(415).send("URL did not return an image.");
-      }
-
-      const contentLength = Number(upstream.headers.get("content-length") || 0);
-      if (contentLength > MAX_PROXY_IMAGE_BYTES) {
-        return res.status(413).send("Image is too large.");
-      }
-
-      const imageBytes = Buffer.from(await upstream.arrayBuffer());
-      if (imageBytes.length > MAX_PROXY_IMAGE_BYTES) {
-        return res.status(413).send("Image is too large.");
-      }
-
-      res.setHeader("Cache-Control", "private, max-age=300");
-      res.setHeader("Content-Type", contentType);
-      res.send(imageBytes);
-    } catch (error) {
-      if (error?.name === "AbortError") {
-        return res.status(504).send("Image request timed out.");
-      }
-      next(error);
-    } finally {
-      clearTimeout(timeout);
     }
   });
 
@@ -676,7 +604,7 @@ function createApp() {
         requestId: req.id,
       });
       setFlash(req, "success", "Approved image updated.");
-      res.redirect("/admin");
+      res.redirect("/admin?status=approved");
     } catch (error) {
       next(error);
     }
@@ -710,7 +638,7 @@ function createApp() {
         requestId: req.id,
       });
       setFlash(req, "success", "Declined image updated.");
-      res.redirect("/admin");
+      res.redirect("/admin?status=declined");
     } catch (error) {
       next(error);
     }
@@ -734,7 +662,7 @@ function createApp() {
         requestId: req.id,
       });
       setFlash(req, "success", "Approved image was unapproved and removed from the live image table.");
-      res.redirect("/admin");
+      res.redirect("/admin?status=approved");
     } catch (error) {
       next(error);
     }
