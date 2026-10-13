@@ -55,6 +55,24 @@ async function prepareDb() {
   await resetDatabase(pool);
   const migration = runMigrate();
   assert.equal(migration.status, 0, migration.stderr || migration.stdout);
+  // The Gauntlet owns the live table in production. Supply its shape in this
+  // disposable test database before seeding reviewed image rows.
+  await pool.query(`
+    CREATE TABLE squig_survival_images (
+      id BIGSERIAL PRIMARY KEY,
+      image_url TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      added_by TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      era_keys TEXT NOT NULL,
+      reward_points INTEGER NOT NULL DEFAULT 100,
+      prompt_text TEXT,
+      milestone_key TEXT,
+      milestone_number INTEGER,
+      milestone_label TEXT,
+      milestone_district TEXT
+    )
+  `);
   await pool.query(`
     INSERT INTO squig_survival_images (image_url, user_id, added_by, created_at, era_keys, reward_points, prompt_text)
     VALUES ('https://cdn.example.test/approved.webp', '222222222222222222', 'mod', now(), 'airport', 100, 'prompt')
