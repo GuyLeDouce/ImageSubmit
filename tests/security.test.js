@@ -4,6 +4,18 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const { spawnSync } = require("node:child_process");
 
+// Test-only: keep genuine PostgreSQL sessions without a background pruning
+// timer, so the process can exit once the disposable test servers close.
+const originalPgSessionFactory = require("connect-pg-simple");
+require.cache[require.resolve("connect-pg-simple")].exports = (session) => {
+  const OriginalStore = originalPgSessionFactory(session);
+  return class SessionStoreWithoutTimer extends OriginalStore {
+    constructor(options) {
+      super({ ...options, pruneSessionInterval: false });
+    }
+  };
+};
+
 const { createTestPool, resetDatabase, getTestDatabaseUrl } = require("./helpers/pg");
 const { cookieHeader, extractCsrf, formBody, multipartBody, request, startServer } = require("./helpers/http");
 
