@@ -2,48 +2,75 @@
 
 <%
   const examples = Array.isArray(approvedExamples) ? approvedExamples : [];
-  const featured = examples[0] || null;
+  const heroSlides = examples.slice(0, 6);
+  const featured = heroSlides[0] || null;
   const additionalExamples = examples.slice(1, 5);
   const eraLabels = Object.fromEntries(eras.map((era) => [era.key, era.label]));
 %>
 
-<section class="landing-hero" aria-labelledby="factory-title">
+<section class="landing-hero" aria-labelledby="factory-title" data-reveal>
   <div class="landing-hero__copy">
-    <p class="eyebrow">Squig Survival Image Factory</p>
+    <p class="eyebrow">Welcome to the Squig Survival Image Factory</p>
     <h1 id="factory-title"><span>MAKE IT.</span><span class="hero-ugly">UGLY.</span></h1>
-    <p class="hero-punchline">You make the art. We throw it into Survival.</p>
+    <p class="hero-punchline">Got a Squig? Bring it to life.</p>
     <p class="lead">
-      Pick an era, create a scene with your Squig and send it in. Approved artwork
-      earns 100 $CHARM and gets a shot at appearing in the game.
+      Draw it, generate it, remix it — create your way! Pick a Survival world, share
+      your scene, and earn 100 $CHARM if your artwork gets approved.
     </p>
     <div class="landing-actions">
       <% if (!user) { %>
-        <a class="button" href="/auth/discord">Enter the Image Factory <span aria-hidden="true">&rarr;</span></a>
+        <a class="button" href="/auth/discord">Start creating <span aria-hidden="true">&rarr;</span></a>
       <% } else if (user.isGuildMember) { %>
         <a class="button" href="/submit">Enter the Image Factory <span aria-hidden="true">&rarr;</span></a>
       <% } else { %>
         <a class="button" href="<%= links.discord %>" target="_blank" rel="noreferrer">Join Ugly Labs Discord <span aria-hidden="true">&rarr;</span></a>
       <% } %>
-      <a class="text-cta" href="#eras">Find your era <span aria-hidden="true">&darr;</span></a>
+      <a class="text-cta" href="#eras">Explore the eras <span aria-hidden="true">&darr;</span></a>
     </div>
-    <p class="hero-footnote">Original Squigs. Original ideas. Stay Ugly.</p>
+    <p class="hero-footnote">Your Squig. Your imagination. Stay Ugly.</p>
   </div>
 
   <aside class="landing-hero__visual" aria-label="Featured community creator artwork">
-    <div class="feature-art">
+    <div class="feature-art" data-feature-gallery>
       <div class="feature-art__top">
         <span class="feature-art__signal" aria-hidden="true"></span>
         <strong>MADE BY THE COMMUNITY</strong>
-        <span class="feature-art__edition"><%= examples.length ? '01 / ' + String(examples.length).padStart(2, '0') : 'YOUR TURN NEXT' %></span>
+        <span class="feature-art__edition" data-feature-counter><%= heroSlides.length ? '01 / ' + String(heroSlides.length).padStart(2, '0') : 'YOUR TURN NEXT' %></span>
       </div>
       <% if (featured) { %>
-        <a class="feature-art__image" href="<%= featured.image_url %>" target="_blank" rel="noreferrer" aria-label="View featured creator artwork at full size">
-          <img src="<%= featured.image_url %>" alt="A Squig Survival scene approved by the community review team" />
+        <a class="feature-art__image" data-feature-link href="<%= featured.image_url %>" target="_blank" rel="noreferrer" aria-label="View featured creator artwork at full size">
+          <img data-feature-image src="<%= featured.image_url %>" alt="Featured approved Squig Survival creator scene" />
         </a>
         <div class="feature-art__caption">
-          <strong><%= featured.milestone_label || featured.milestone_district || eraLabels[featured.era_key] || "Squig Survival" %></strong>
+          <strong data-feature-caption><%= featured.milestone_label || featured.milestone_district || eraLabels[featured.era_key] || "Squig Survival" %></strong>
           <span>Approved creator artwork</span>
         </div>
+        <% if (heroSlides.length > 1) { %>
+          <div class="feature-art__picker" aria-label="Explore approved community creations">
+            <div class="feature-art__thumbs" aria-label="Choose a featured creation">
+              <% heroSlides.forEach((example, index) => { const slideTitle = example.milestone_label || example.milestone_district || eraLabels[example.era_key] || "Squig Survival"; %>
+                <a
+                  class="feature-art__thumb"
+                  href="<%= example.image_url %>"
+                  target="_blank"
+                  rel="noreferrer"
+                  data-feature-pick
+                  data-feature-src="<%= example.image_url %>"
+                  data-feature-title="<%= slideTitle %>"
+                  data-feature-index="<%= index %>"
+                  aria-label="Show creator artwork <%= index + 1 %>: <%= slideTitle %>"
+                  aria-current="<%= index === 0 ? 'true' : 'false' %>"
+                >
+                  <img src="<%= example.image_url %>" alt="" loading="lazy" />
+                </a>
+              <% }) %>
+            </div>
+            <div class="feature-art__arrows" aria-label="Featured image controls">
+              <button class="feature-art__arrow" type="button" data-feature-prev aria-label="Previous artwork">&larr;</button>
+              <button class="feature-art__arrow" type="button" data-feature-next aria-label="Next artwork">&rarr;</button>
+            </div>
+          </div>
+        <% } %>
       <% } else { %>
         <div class="feature-art__empty">
           <img src="/squigs-reloaded-logo.png" alt="" />
@@ -56,13 +83,13 @@
   </aside>
 </section>
 
-<section class="creator-section" id="eras" aria-labelledby="eras-heading">
+<section class="creator-section" id="eras" aria-labelledby="eras-heading" data-reveal>
   <div class="section-heading era-section-heading">
     <div>
       <p class="eyebrow"><%= eras.length %> open <%= eras.length === 1 ? "era" : "eras" %> / Endless possibilities</p>
-      <h2 id="eras-heading">Pick your next disaster.</h2>
+      <h2 id="eras-heading">Choose your next adventure.</h2>
     </div>
-    <p>Pick a world. Bring your Squig. Make something worth surviving.</p>
+    <p>Two worlds to explore. Endless ways to put your Squig in the story.</p>
   </div>
   <% if (!eras.length) { %>
     <div class="panel"><p>New submission windows are coming soon.</p></div>
@@ -91,7 +118,7 @@
               <h3><%= era.label %></h3>
               <p><%= tagline %></p>
             </div>
-            <span class="era-card__link">Enter this era <span aria-hidden="true">&nearr;</span></span>
+            <span class="era-card__link">Let's create <span aria-hidden="true">&nearr;</span></span>
           </div>
           <div class="era-card__visual">
             <% if (eraExample) { %>
@@ -107,11 +134,11 @@
 </section>
 
 <% if (additionalExamples.length) { %>
-  <section class="creator-wall creator-section" aria-labelledby="creator-wall-title">
+  <section class="creator-wall creator-section" aria-labelledby="creator-wall-title" data-reveal>
     <div class="section-heading creator-wall__heading">
       <div>
         <p class="eyebrow">Straight out of the Image Factory</p>
-        <h2 id="creator-wall-title">Look what the ugly fkrs made.</h2>
+        <h2 id="creator-wall-title">Look what our creators made.</h2>
       </div>
       <span class="creator-wall__meta">Real submissions. Real Squigs.</span>
     </div>
@@ -128,7 +155,7 @@
   </section>
 <% } %>
 
-<section class="how-rail" id="how-it-works" aria-labelledby="how-heading">
+<section class="how-rail" id="how-it-works" aria-labelledby="how-heading" data-reveal>
   <div class="how-rail__intro">
     <p class="eyebrow">It's that simple</p>
     <h2 id="how-heading">Your art. Their survival.</h2>
