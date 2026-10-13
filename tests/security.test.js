@@ -134,7 +134,8 @@ test("security headers are present on actual responses", { skip: !process.env.TE
   const pool = await prepareDb();
   const app = loadApp();
   const { server, baseUrl } = await startServer(app);
-  const response = await request(baseUrl, { path: "/health/live" });
+  const response = await authenticatedGet(baseUrl, "", "/admin");
+  assert.equal(response.statusCode, 200);
   assert.match(response.headers["content-security-policy"], /frame-ancestors 'none'/);
   assert.match(response.headers["content-security-policy"], /script-src 'self' 'nonce-/);
   assert.equal(response.headers["x-content-type-options"], "nosniff");
