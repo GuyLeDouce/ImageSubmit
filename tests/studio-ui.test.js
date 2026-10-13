@@ -173,9 +173,11 @@ test("friendly motion, filtering and artwork viewer remain progressive enhanceme
   assert.match(js, /pageSize = 18/);
   assert.match(js, /HTMLDialogElement/);
   assert.match(js, /visibleImageLinks/);
-  assert.match(js, /officialEraImages/);
-  assert.match(js, /\/era-artwork\/squigwreck\.png/);
-  assert.match(js, /\/era-artwork\/ugly-city\.png/);
+  assert.match(html, /src="https:\/\/i\.imgur\.com\/amVLHM9\.png"/);
+  assert.match(html, /src="https:\/\/i\.imgur\.com\/HHV8GmI\.png"/);
+  assert.match(html, /data-official-era-image/);
+  assert.match(js, /data-official-era-image/);
+  assert.match(js, /fallbackSrc/);
   const css = fs.readFileSync(path.join(root, "public", "styles.css"), "utf8");
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
 });
