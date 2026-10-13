@@ -25,10 +25,12 @@ const { parseMilestonesAllowed } = require("../src/config");
 test("starts with Ugly City as the first configured era", () => {
   assert.deepEqual(SURVIVAL_ERAS.map(({ key, label }) => ({ key, label })), [
     { key: "ugly_city", label: "The Rise of Ugly City" },
+    { key: "death_race", label: "Squigwreck" },
   ]);
   assert.equal(UGLY_CITY_ERA_KEY, "ugly_city");
   assert.deepEqual(getEraByKey("ugly_city"), SURVIVAL_ERAS[0]);
   assert.equal(getEraByKey("day_one"), null);
+  assert.equal(getEraByKey("death_race").label, "Squigwreck");
 });
 
 test("Ugly City requires Squigs internally and defaults to 100 CHARM", () => {
@@ -39,11 +41,12 @@ test("Ugly City requires Squigs internally and defaults to 100 CHARM", () => {
 });
 
 test("keeps legacy eras available only for admin repair", () => {
-  assert.deepEqual(SURVIVAL_ERAS.map((era) => era.key), ["ugly_city"]);
+  assert.deepEqual(SURVIVAL_ERAS.map((era) => era.key), ["ugly_city", "death_race"]);
   assert.deepEqual(
     ADMIN_REPAIR_ERAS.map((era) => era.key),
     [
       "ugly_city",
+      "death_race",
       "day_one",
       "office_squigs",
       "jobsite_squigs",
