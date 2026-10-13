@@ -188,31 +188,25 @@
     updateGallery();
   }
 
-  /* Use dedicated era artwork when the actual assets are present. Until those
-     files are available, the approved-image/fallback preview stays untouched. */
-  const officialEraImages = {
-    ugly_city: "/era-artwork/ugly-city.png",
-    death_race: "/era-artwork/squigwreck.png",
-  };
-  document.querySelectorAll("[data-era-world]").forEach((card) => {
-    const source = officialEraImages[card.dataset.eraWorld];
-    const visual = card.querySelector(".era-card__visual");
-    if (!source || !visual) return;
-    const preload = new Image();
-    preload.onload = () => {
-      const image = visual.querySelector("img");
-      if (image) {
-        image.src = source;
-      } else {
-        const fallback = visual.querySelector(".era-card__art-title");
-        if (fallback) fallback.remove();
-        const artwork = document.createElement("img");
-        artwork.src = source;
-        artwork.alt = "";
-        visual.appendChild(artwork);
+  /* Selected era covers are always rendered in HTML, including with JS off.
+     If an external host rejects the image, use an approved creation or a title. */
+  document.querySelectorAll("img[data-official-era-image]").forEach((image) => {
+    const onError = () => {
+      if (!image.dataset.fallbackUsed && image.dataset.fallbackSrc &&
+          image.dataset.fallbackSrc !== image.src) {
+        image.dataset.fallbackUsed = "true";
+        image.src = image.dataset.fallbackSrc;
+        return;
       }
+      const label = document.createElement("span");
+      label.className = "era-card__art-title";
+      label.textContent = image.dataset.eraLabel || "Squig Survival";
+      label.setAttribute("aria-hidden", "true");
+      image.replaceWith(label);
     };
-    preload.src = source;
+    image.addEventListener("error", onError);
+    // Covers failures from very fast/cached responses before this script starts.
+    if (image.complete && image.naturalWidth === 0) onError();
   });
 
   /* Community artwork showcase: gentle automatic changes with a pause button.
