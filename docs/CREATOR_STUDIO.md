@@ -9,7 +9,7 @@ Image Factory is a place to make and submit **Squig Survival artwork**, not an A
 - `views/submit.ejs` presents an ordered creative process: world, optional milestone/prompts, artwork, optional notes. The same `POST /submit`, CSRF token, multi-image `images` field, era key, milestone key, and 100 $CHARM messaging are preserved.
 - `public/studio.js` adds progressive enhancements: milestone descriptions, full-text prompt copy, drag/drop plus preview using local object URLs, and creator-gallery filters. It does not submit anything itself or change backend logic.
 - `views/profile.ejs` uses the existing Discord avatar where available, gallery-style thumbnails and local status filters.
-- `views/admin.ejs` retains the moderation and repair forms, plus its GIF tool, with cleaner queue navigation and larger image review.
+- `views/admin.ejs` retains approve/decline/edit/unapprove forms and a fast paginated review queue. GIF creation and its image proxy have been removed.
 - `views/partials/header.ejs` and `footer.ejs` provide responsive navigation and load one same-origin progressive-enhancement script.
 
 ## Visual principles
@@ -73,3 +73,9 @@ Before merging or promoting, manually verify:
 - A 16:9 sample is fully visible on phone and desktop; desktop navigation, mobile menu and keyboard focus all work.
 
 Do not deploy a visual-only design PR by altering environment variables or reconnecting the Gauntlet database.
+
+## Moderation performance (October 2026)
+
+The review page now displays only one of Pending, Approved, or Declined at a time, in database-backed pages of 24 images. Counts remain accurate across the full archive. The GIF button, browser encoder, and authenticated image proxy are removed. A new additive migration adds index support for paging; Node 24 is pinned for Railway.
+
+No approval logic, reward calculation, Discord authorization, Gauntlet pool behaviour, or existing submissions were changed. The landing page queries at most 8 approved examples.
