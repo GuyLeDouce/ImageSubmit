@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="csrf-token" content="<%= csrfToken %>" />
+    <meta name="theme-color" content="#f5f7f1" />
     <title><%= title %> | Squig Survival</title>
     <link rel="stylesheet" href="/styles.css" />
   </head>
@@ -12,99 +13,71 @@
     <div class="page-shell">
       <header class="topbar">
         <div class="topbar-brand">
-          <a
-            class="logo-button"
-            href="/"
-            aria-label="Squig Survival Image Factory home"
-          >
-            <img src="/squigs-reloaded-logo.png" alt="Squigs Reloaded logo" />
+          <a class="logo-button" href="/" aria-label="Image Factory home">
+            <img src="/squigs-reloaded-logo.png" alt="Squigs Reloaded" />
           </a>
           <div class="brand-copy">
-            <a class="brand-kicker" href="/">Squig Survival</a>
+            <a class="brand-kicker" href="/">Ugly Labs / Squig Survival</a>
             <a class="brand" href="/">Image Factory</a>
           </div>
         </div>
 
         <nav class="nav nav-desktop" aria-label="Primary navigation">
           <div class="nav-links">
-            <a class="buy-squigs-link" href="<%= links.openSea %>" target="_blank" rel="noreferrer">Buy Squigs</a>
-            <a href="<%= links.squigsHome %>" target="_blank" rel="noreferrer">Explore Reloaded</a>
+            <a href="/" <%- currentPath === '/' ? 'aria-current="page"' : '' %>>Studio</a>
             <% if (user) { %>
-              <a href="/profile">Profile</a>
-              <a href="/submit">Submit</a>
+              <a href="/submit" <%- currentPath.startsWith('/submit') ? 'aria-current="page"' : '' %>>Create</a>
+              <a href="/profile" <%- currentPath === '/profile' ? 'aria-current="page"' : '' %>>My Creations</a>
               <% if (isAdmin) { %>
-                <a href="/admin">Admin</a>
+                <a href="/admin" <%- currentPath === '/admin' ? 'aria-current="page"' : '' %>>Review</a>
               <% } %>
               <form action="/logout" method="post" class="inline-form">
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
                 <button type="submit" class="link-button">Log out</button>
               </form>
             <% } else { %>
-              <a href="/auth/discord">Login with Discord</a>
+              <a href="/auth/discord">Connect Discord</a>
             <% } %>
+            <a href="<%= links.squigsHome %>" target="_blank" rel="noreferrer">Explore Reloaded</a>
+            <a class="buy-squigs-link" href="<%= links.openSea %>" target="_blank" rel="noreferrer">Buy Squigs</a>
           </div>
-
-          <div class="social-links" aria-label="Squigs links">
-            <a
-              class="social-button"
-              href="<%= links.discord %>"
-              target="_blank"
-              rel="noreferrer"
-              aria-label="Open Squigs Discord"
-            >
-              <img src="/discord-logo.svg" alt="" aria-hidden="true" />
+          <div class="social-links" aria-label="Social links">
+            <a class="social-button" href="<%= links.discord %>" target="_blank" rel="noreferrer" aria-label="Open Squigs Discord">
+              <img src="/discord-logo.svg" alt="" />
             </a>
-            <a
-              class="social-button"
-              href="<%= links.x %>"
-              target="_blank"
-              rel="noreferrer"
-              aria-label="Open Squigs on X"
-            >
-              <img src="/x-logo.svg" alt="" aria-hidden="true" />
+            <a class="social-button" href="<%= links.x %>" target="_blank" rel="noreferrer" aria-label="Open Squigs on X">
+              <img src="/x-logo.svg" alt="" />
             </a>
           </div>
         </nav>
 
         <details class="mobile-nav">
-          <summary aria-label="Open navigation menu">Menu</summary>
-          <nav class="mobile-nav-panel" aria-label="Primary navigation">
+          <summary aria-label="Toggle primary navigation">Menu</summary>
+          <nav class="mobile-nav-panel" aria-label="Mobile navigation">
             <div class="nav-links">
-              <a class="buy-squigs-link" href="<%= links.openSea %>" target="_blank" rel="noreferrer">Buy Squigs</a>
-              <a href="<%= links.squigsHome %>" target="_blank" rel="noreferrer">Explore Reloaded</a>
+              <a href="/" <%- currentPath === '/' ? 'aria-current="page"' : '' %>>Studio</a>
               <% if (user) { %>
-                <a href="/profile">Profile</a>
-                <a href="/submit">Submit</a>
+                <a href="/submit" <%- currentPath.startsWith('/submit') ? 'aria-current="page"' : '' %>>Create</a>
+                <a href="/profile" <%- currentPath === '/profile' ? 'aria-current="page"' : '' %>>My Creations</a>
                 <% if (isAdmin) { %>
-                  <a href="/admin">Admin</a>
+                  <a href="/admin" <%- currentPath === '/admin' ? 'aria-current="page"' : '' %>>Review</a>
                 <% } %>
                 <form action="/logout" method="post" class="inline-form">
                   <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
                   <button type="submit" class="link-button">Log out</button>
                 </form>
               <% } else { %>
-                <a href="/auth/discord">Login with Discord</a>
+                <a href="/auth/discord">Connect Discord</a>
               <% } %>
+              <a href="<%= links.squigsHome %>" target="_blank" rel="noreferrer">Explore Reloaded</a>
+              <a class="buy-squigs-link" href="<%= links.openSea %>" target="_blank" rel="noreferrer">Buy Squigs</a>
             </div>
-
-            <div class="social-links" aria-label="Squigs links">
-              <a
-                class="social-button"
-                href="<%= links.discord %>"
-                target="_blank"
-                rel="noreferrer"
-                aria-label="Open Squigs Discord"
-              >
-                <img src="/discord-logo.svg" alt="" aria-hidden="true" />
+            <div class="social-links" aria-label="Social links">
+              <a class="social-button" href="<%= links.discord %>" target="_blank" rel="noreferrer" aria-label="Open Squigs Discord">
+                <img src="/discord-logo.svg" alt="" />
               </a>
-              <a
-                class="social-button"
-                href="<%= links.x %>"
-                target="_blank"
-                rel="noreferrer"
-                aria-label="Open Squigs on X"
-              >
-                <img src="/x-logo.svg" alt="" aria-hidden="true" />
+              <a class="social-button" href="<%= links.x %>" target="_blank" rel="noreferrer" aria-label="Open Squigs on X">
+                <img src="/x-logo.svg" alt="" />
               </a>
             </div>
           </nav>
@@ -112,7 +85,7 @@
       </header>
 
       <% if (flash) { %>
-        <div class="flash flash-<%= flash.type %>"><%= flash.message %></div>
+        <div class="flash flash-<%= flash.type %>" role="status"><%= flash.message %></div>
       <% } %>
 
       <main class="main-card" id="main-content">
