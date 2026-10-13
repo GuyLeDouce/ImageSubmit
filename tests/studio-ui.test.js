@@ -55,6 +55,35 @@ test("studio homepage keeps real-era links, approved art and Discord entry point
   assert.match(html, /src="\/studio\.js"/);
 });
 
+test("creator wall stays art-first and labels worlds by their readable names", async () => {
+  const scenes = [
+    { ...sample, id: 1, era_key: "ugly_city", image_url: "https://example.test/city1.png" },
+    { ...sample, id: 2, era_key: "death_race", milestone_label: null, milestone_district: null, image_url: "https://example.test/race2.png" },
+    { ...sample, id: 3, era_key: "death_race", milestone_label: null, milestone_district: null, image_url: "https://example.test/race3.png" },
+    { ...sample, id: 4, era_key: "death_race", milestone_label: null, milestone_district: null, image_url: "https://example.test/race4.png" },
+    { ...sample, id: 5, era_key: "death_race", milestone_label: null, milestone_district: null, image_url: "https://example.test/race5.png" },
+  ];
+  const html = await render("home.ejs", {
+    currentPath: "/", eras, approvedExamples: scenes,
+  });
+  assert.match(html, /MAKE IT\./);
+  assert.match(html, /UGLY\./);
+  assert.match(html, /Look what the ugly fkrs made/);
+  assert.match(html, /class="creator-wall__grid"/);
+  assert.equal((html.match(/class="creator-wall__item"/g) || []).length, 4);
+  assert.match(html, /<figcaption>Squigwreck<\/figcaption>/);
+  assert.doesNotMatch(html, /<figcaption>death_race<\/figcaption>/);
+});
+
+test("homepage without artwork gives creators a clear entry point", async () => {
+  const html = await render("home.ejs", {
+    currentPath: "/", user: null, eras, approvedExamples: [],
+  });
+  assert.match(html, /Your Squig belongs here/);
+  assert.match(html, /Enter the Image Factory/);
+  assert.doesNotMatch(html, /class="creator-wall__grid"/);
+});
+
 test("Ugly City creator form retains the original submission contract", async () => {
   const html = await render("submit.ejs", {
     currentPath: "/submit", eras, adminRepairEras: eras,
