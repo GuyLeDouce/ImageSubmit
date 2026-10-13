@@ -68,7 +68,7 @@ test("creator wall stays art-first and labels worlds by their readable names", a
   });
   assert.match(html, /MAKE IT\./);
   assert.match(html, /UGLY\./);
-  assert.match(html, /Look what the ugly fkrs made/);
+  assert.match(html, /Look what our creators made/);
   assert.match(html, /class="creator-wall__grid"/);
   assert.equal((html.match(/class="creator-wall__item"/g) || []).length, 4);
   assert.match(html, /<figcaption>Squigwreck<\/figcaption>/);
@@ -126,6 +126,53 @@ test("profile gallery preserves user history and status filters", async () => {
   assert.match(html, /data-gallery-status="pending"/);
   assert.match(html, /<dd>The Rise of Ugly City<\/dd>/);
   assert.match(html, /href="https:\/\/example\.test\/scene\.png"/);
+});
+
+test("gallery metadata stays in its own panel below uncropped artwork", async () => {
+  const html = await render("profile.ejs", {
+    currentPath: "/profile", adminRepairEras: eras, approvedExamples: [],
+    submissions: [sample], stats: { total: 1, approved: 0, pending: 1, declined: 0 },
+  });
+  const card = html.match(/<article class="submission-tile[\s\S]*?<\/article>/)?.[0] || "";
+  assert.match(card, /class="submission-tile__media"[^>]*data-artwork-view/);
+  assert.match(card, /<\/a>[\s\S]*?<div class="submission-tile__body">/);
+  assert.match(card, /<time class="submission-tile__date"/);
+  assert.match(card, /class="submission-tile__summary"/);
+  assert.match(card, /<summary>View details<\/summary>/);
+
+  const css = fs.readFileSync(path.join(root, "public", "styles.css"), "utf8");
+  const media = css.match(/\.submission-tile__media\s*\{[^}]*\}/)?.[0] || "";
+  const picture = css.match(/\.submission-tile__media img\s*\{[^}]*\}/)?.[0] || "";
+  assert.match(media, /overflow:\s*hidden/);
+  assert.match(media, /aspect-ratio:\s*1\s*\/\s*1/);
+  assert.match(picture, /position:\s*absolute/);
+  assert.match(picture, /object-fit:\s*contain/);
+  assert.match(css, /\.submission-tile__body\s*\{[^}]*background:\s*#fffdf9/);
+});
+
+test("friendly motion, filtering and artwork viewer remain progressive enhancements", async () => {
+  const examples = [
+    sample,
+    { ...sample, id: 10, era_key: "death_race", milestone_label: null, image_url: "https://example.test/race.png" },
+  ];
+  const html = await render("home.ejs", {
+    currentPath: "/", eras, approvedExamples: examples,
+  });
+  assert.match(html, /data-feature-gallery/);
+  assert.match(html, /data-feature-pick/);
+  assert.match(html, /data-feature-prev/);
+  assert.match(html, /data-feature-next/);
+  assert.match(html, /data-feature-pause/);
+  assert.match(html, /data-reveal/);
+  const js = fs.readFileSync(path.join(root, "public", "studio.js"), "utf8");
+  assert.match(js, /reducedMotion/);
+  assert.match(js, /7500/);
+  assert.match(js, /data-gallery-count/);
+  assert.match(js, /pageSize = 18/);
+  assert.match(js, /HTMLDialogElement/);
+  assert.match(js, /visibleImageLinks/);
+  const css = fs.readFileSync(path.join(root, "public", "styles.css"), "utf8");
+  assert.match(css, /prefers-reduced-motion:\s*reduce/);
 });
 
 test("admin still exposes all moderation and repair actions", async () => {
