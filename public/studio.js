@@ -339,7 +339,10 @@
     imageLinks.forEach((link) => link.addEventListener("click", (event) => {
       if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || event.button !== 0) return;
       event.preventDefault();
-      visibleImageLinks = imageLinks.filter(isVisible);
+      const group = link.closest(".profile-gallery, .profile-feature-grid, .submission-history, .creator-wall");
+      visibleImageLinks = imageLinks.filter((candidate) =>
+        isVisible(candidate) && (group ? group.contains(candidate) : true)
+      );
       showImage(Math.max(0, visibleImageLinks.indexOf(link)));
       viewer.showModal();
     }));
