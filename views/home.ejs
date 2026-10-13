@@ -2,125 +2,165 @@
 
 <%
   const examples = Array.isArray(approvedExamples) ? approvedExamples : [];
+  const featured = examples[0] || null;
 %>
 
-<section class="landing-hero">
+<section class="landing-hero" aria-labelledby="factory-title">
   <div class="landing-hero__copy">
-    <p class="eyebrow">Ugly Labs Submission Gate</p>
-    <h1>Squig Survival Image Factory</h1>
-    <p class="creator-hero__tagline">
-      Create the worlds your Squigs survive. Choose an era, find your scene, and help bring Squig Survival to life.
+    <p class="eyebrow">Ugly Labs / Community Creator Studio</p>
+    <h1 id="factory-title">The Squig Survival Image Factory.</h1>
+    <p class="tagline">Your Squigs. Your ideas. Our next world.</p>
+    <p class="lead">
+      Create the scenes that bring Squig Survival to life, from the streets of Ugly City
+      to the wreckage of Squigwreck. The best part of the game is what you make.
     </p>
-    <p class="lead">Admin-approved submissions earn 100 $CHARM and may enter the game image pool. No Squig, no approval.</p>
-
     <div class="landing-actions">
       <% if (!user) { %>
-        <a class="button" href="/auth/discord">Login with Discord</a>
+        <a class="button" href="/auth/discord">Create with Discord &rarr;</a>
       <% } else if (user.isGuildMember) { %>
-        <a class="button" href="/submit">Start Submission</a>
+        <a class="button" href="/submit">Start creating &rarr;</a>
       <% } else { %>
-        <a class="button" href="<%= links.discord %>" target="_blank" rel="noreferrer">Join Ugly Labs Discord</a>
+        <a class="button" href="<%= links.discord %>" target="_blank" rel="noreferrer">Join Ugly Labs Discord &rarr;</a>
       <% } %>
-      <a class="text-cta" href="#rules">Read the rules</a>
+      <a class="text-cta" href="#eras">Explore the eras</a>
+    </div>
+    <div class="hero-proof" aria-label="Creator program features">
+      <span>Any creative tool</span>
+      <span>100 $CHARM per approved image</span>
+      <span>Real game artwork</span>
     </div>
   </div>
 
-  <aside class="landing-hero__visual" aria-label="Approved creator examples">
-    <div class="approved-example-showcase">
-      <div class="approved-example-header">
-        <p class="eyebrow">Approved Creator Examples</p>
+  <aside class="landing-hero__visual" aria-label="Community creations">
+    <div class="feature-art">
+      <div class="feature-art__top">
+        <strong>From the community</strong>
+        <span>Approved creator artwork</span>
       </div>
-      <% if (examples.length) { %>
-        <div class="approved-example-window">
-          <div class="approved-example-track">
-            <% examples.concat(examples).forEach((example, index) => { %>
-              <figure class="approved-example-card">
-                <img src="<%= example.image_url %>" alt="Approved Squig creator image for <%= example.milestone_label || example.milestone_district || example.era_key %>" loading="lazy" />
-                <figcaption>
-                  <span>Approved example</span>
-                  <strong><%= example.milestone_label || example.milestone_district || example.era_key %></strong>
-                </figcaption>
-              </figure>
+      <% if (featured) { %>
+        <a class="feature-art__image" href="<%= featured.image_url %>" target="_blank" rel="noreferrer" aria-label="View featured creation at full size">
+          <img src="<%= featured.image_url %>" alt="Approved Squig Survival artwork" />
+        </a>
+        <div class="feature-art__caption">
+          <strong><%= featured.milestone_label || featured.milestone_district || featured.era_key %></strong>
+          <span>Community creation</span>
+        </div>
+        <% if (examples.length > 1) { %>
+          <div class="feature-thumbnails" aria-label="More approved creations">
+            <% examples.slice(1, 5).forEach((example) => { %>
+              <a class="feature-thumb" href="<%= example.image_url %>" target="_blank" rel="noreferrer" aria-label="Open another approved creation">
+                <img src="<%= example.image_url %>" alt="More Squig Survival creator artwork" loading="lazy" />
+              </a>
             <% }) %>
           </div>
-        </div>
+        <% } %>
       <% } else { %>
-        <div class="approved-example-empty">
-          <span>Approved examples will appear here</span>
-          <p>Your approved image could become one of the examples creators see first.</p>
+        <div class="feature-art__empty">
+          <img src="/squigs-reloaded-logo.png" alt="" />
+          <strong>Your next creation belongs here.</strong>
+          <span>The community gallery will fill up as submissions get approved.</span>
         </div>
       <% } %>
     </div>
   </aside>
 </section>
 
-<section class="creator-section simple-section">
-  <div class="creator-section__heading"><p class="eyebrow">Open Eras</p><h2>Choose your world</h2></div>
-  <div class="simple-steps">
-    <% eras.forEach((era) => { %>
-      <article class="simple-step"><h3><%= era.label %></h3><p><%= era.description %></p>
-      <a class="button" href="/submit?era=<%= encodeURIComponent(era.key) %>">Create for this era</a></article>
-    <% }) %>
-    <% if (!eras.length) { %><p>New submission windows are coming soon.</p><% } %>
+<section class="creator-section" id="eras" aria-labelledby="eras-heading">
+  <div class="section-heading">
+    <p class="eyebrow">Pick your playground</p>
+    <h2 id="eras-heading">Choose your world.</h2>
+    <p>Every era has its own story. Pick one, bring your Squig, and make something worth surviving.</p>
   </div>
+  <% if (!eras.length) { %>
+    <div class="panel"><p>New submission windows are coming soon.</p></div>
+  <% } else { %>
+    <div class="era-grid">
+      <% eras.forEach((era) => {
+        const isRace = era.key === "death_race";
+        const isCity = era.key === "ugly_city";
+        const eraExample = examples.find((example) => example.era_key === era.key);
+      %>
+        <a
+          class="era-card <%= isRace ? 'era-card--race' : isCity ? 'era-card--city' : '' %>"
+          href="/submit?era=<%= encodeURIComponent(era.key) %>"
+          <%- isRace ? 'id="squigwreck"' : '' %>
+        >
+          <div class="era-card__visual">
+            <% if (eraExample) { %>
+              <img src="<%= eraExample.image_url %>" alt="" loading="lazy" />
+            <% } else { %>
+              <span class="era-card__art-title" aria-hidden="true"><%= isRace ? "SQUIGWRECK" : isCity ? "UGLY CITY" : era.label %></span>
+            <% } %>
+          </div>
+          <div class="era-card__body">
+            <span class="era-card__eyebrow"><%= isRace ? "Death race / New era" : isCity ? "Survival / Original era" : "Survival era" %></span>
+            <h3><%= era.label %></h3>
+            <p><%= era.description %></p>
+            <span class="era-card__link">Create for this era</span>
+          </div>
+        </a>
+      <% }) %>
+    </div>
+  <% } %>
 </section>
-<section class="creator-section simple-section" id="squigwreck">
-  <div class="creator-section__heading"><p class="eyebrow">New Era</p><h2>Squigwreck — One Race. One Survivor. Absolute Carnage.</h2></div>
-  <p class="lead">Create wild post-apocalyptic racing scenes featuring one or more Squigs. No milestone matching required. Browse 12 copy-ready AI prompts in the Squigwreck creator hub.</p>
-  <div class="landing-actions"><a class="button" href="/submit?era=death_race">Enter Squigwreck Image Factory</a></div>
+
+<section class="studio-strip" aria-label="Squigwreck creator prompts">
+  <div>
+    <p class="eyebrow" style="color:#a6e8bf">Something to get you started</p>
+    <h2>Got a Squig? We've got ideas.</h2>
+    <p>Grab one of 12 ready-to-copy Squigwreck prompts or bring your own.</p>
+  </div>
+  <a class="button" href="/submit?era=death_race">Explore Squigwreck prompts &rarr;</a>
 </section>
-<section class="creator-section simple-section" id="how-it-works">
-  <div class="creator-section__heading">
-    <p class="eyebrow">How It Works</p>
-    <h2>Keep it simple, keep it UGLY.</h2>
+
+<section class="creator-section" id="how-it-works">
+  <div class="section-heading">
+    <p class="eyebrow">How it works</p>
+    <h2>Make it. Send it. Stay Ugly.</h2>
   </div>
   <div class="simple-steps">
     <article class="simple-step">
       <span>01</span>
-      <h3>Choose your Survival era</h3>
-      <p>Choose an open era. Ugly City uses milestone-specific scenes; Squigwreck accepts images for the entire era.</p>
+      <h3>Pick an era</h3>
+      <p>Choose where your story happens. Ugly City has chapters; Squigwreck is one giant race.</p>
     </article>
     <article class="simple-step">
       <span>02</span>
-      <h3>Upload an image with at least one Squig</h3>
-      <p>Use any tools at your disposal to create images with your Squigs.</p>
+      <h3>Create something great</h3>
+      <p>Draw it, generate it, or build it your way. Just keep at least one recognizable Squig in the scene.</p>
     </article>
     <article class="simple-step">
       <span>03</span>
-      <h3>Admins review it</h3>
-      <p>Approved images may be selected for eligible milestones in their era. Image-use rewards follow the existing game rules.</p>
+      <h3>Get reviewed and rewarded</h3>
+      <p>The team approves submissions. Approved artwork earns 100 $CHARM and enters its eligible game pool.</p>
     </article>
   </div>
 </section>
 
 <section class="creator-section rules-panel" id="rules">
-  <div class="creator-section__heading">
-    <p class="eyebrow">Rules</p>
-    <h2>Simple guidelines to ensure Ugly approval.</h2>
+  <div class="section-heading">
+    <p class="eyebrow">The few rules that matter</p>
+    <h2>Keep it simple. Keep it Squigs.</h2>
   </div>
   <ul class="rules-list-simple">
-    <li>Must include at least one clearly visible Squig.</li>
-    <li>Other NFTs or images are allowed if a Squig is present.</li>
-    <li>Choose the correct era. Select a milestone only when that era requires one.</li>
-    <li>Admin approval is required.</li>
-    <li>Approval does not guarantee final in-game use, image use is randomized within the game.</li>
+    <li>Every submission must clearly include at least one Squig.</li>
+    <li>Other NFTs, collections and memes are welcome when a Squig is present.</li>
+    <li>Choose the correct era, and choose a milestone when the era requires one.</li>
+    <li>Every submission needs approval; being approved doesn't guarantee the image appears in a game.</li>
+    <li>Images are chosen randomly from the eligible pool under existing Survival game rules.</li>
   </ul>
 </section>
 
 <section class="final-cta">
   <div>
-    <p class="eyebrow">Ready to Create</p>
-    <h2>Build the next Squig Survival scene.</h2>
+    <p class="eyebrow">Ready to make something?</p>
+    <h2>Your creation could be next.</h2>
   </div>
-  <div class="actions">
-    <% if (!user) { %>
-      <a class="button" href="/auth/discord">Login with Discord</a>
-    <% } else if (user.isGuildMember) { %>
-      <a class="button" href="/submit">Start Submission</a>
-    <% } else { %>
-      <a class="button" href="<%= links.discord %>" target="_blank" rel="noreferrer">Join Ugly Labs Discord</a>
-    <% } %>
-  </div>
+  <% if (user && user.isGuildMember) { %>
+    <a class="button" href="/submit">Open the Image Factory &rarr;</a>
+  <% } else { %>
+    <a class="button" href="/auth/discord">Get started with Discord &rarr;</a>
+  <% } %>
 </section>
 
 <%- include("partials/footer") %>
