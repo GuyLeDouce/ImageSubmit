@@ -32,6 +32,24 @@ The first redesign was functional and clean, but its huge stacked heading, small
 
 When iterating later, **do not solve "needs personality" by adding visual noise**. Squigs' own artwork, confident type, contrast and useful interactive detail should provide the personality.
 
+## Welcoming motion and gallery repair (visual pass 3)
+
+- Creator profile/archive cards now contain each image inside a dedicated square media frame with absolute-positioned `object-fit: contain` art. Status, date, title and the expandable details sit on an opaque separate card body; artwork cannot overlap them.
+- The creator gallery initially shows 18 images and uses a lightweight "See more creations" control for longer collections. Approval status filters retain the same source data and their working state. The original full archive still renders without JavaScript.
+- The homepage's featured creator image reel has clickable thumbnails, previous/next/pause controls and a gentle 7.5-second automatic transition. It pauses on hover, keyboard focus, hidden tabs and the user's reduced-motion preference.
+- The creator gallery has an accessible artwork viewer with close, Escape and arrow-key navigation. Normal image links still work when JavaScript dialogs are unsupported.
+- A few page sections enter softly when scrolled into view, and era art/cards/buttons respond to hover without constant wiggles or visual clutter.
+- Copy is warmer and simpler, and imagery is still the focus. Motion should always reinforce navigation, never prevent it.
+
+### Official era artwork awaiting original files
+
+Two specific user-supplied images were selected as permanent cover art:
+
+- Squigwreck -> `public/era-artwork/squigwreck.png`
+- Rise of Ugly City -> `public/era-artwork/ugly-city.png`
+
+These exact original image files have not been committed because the current image messages do not expose mountable raw bytes to the GitHub editing workflow. The homepage has a progressive-image fallback: while either file is missing, the existing approved example (or text title) remains visible. Once the original full-resolution assets are committed under the paths above, the dedicated art automatically replaces the example on each card. **Do not fabricate, recreate or crop those supplied images.** If only public direct image links are available, add them properly in the media integration rather than guessing URLs.
+
 ## Safety and compatibility
 No changes to routes, Discord OAuth, sessions, CSRF, PostgreSQL schema, S3/storage, `$CHARM` logic, Gauntlet image insertion, or era identifiers. No frontend frameworks or runtime dependencies were added. Submitted images remain subject to existing validation and the existing 10-file maximum.
 
