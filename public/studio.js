@@ -296,17 +296,24 @@
     viewer.append(close, image, controls);
     document.body.append(viewer);
     let current = 0;
+    let visibleImageLinks = [];
+    const isVisible = (link) => {
+      const card = link.closest("[data-gallery-status]");
+      return !card || !card.hidden;
+    };
     const showImage = (i) => {
-      current = (i + imageLinks.length) % imageLinks.length;
-      const selected = imageLinks[current];
+      if (!visibleImageLinks.length) return;
+      current = (i + visibleImageLinks.length) % visibleImageLinks.length;
+      const selected = visibleImageLinks[current];
       image.src = selected.href;
       image.alt = selected.querySelector("img")?.alt || "Squig Survival creator artwork";
-      info.textContent = (current + 1) + " of " + imageLinks.length;
+      info.textContent = (current + 1) + " of " + visibleImageLinks.length;
     };
-    imageLinks.forEach((link, i) => link.addEventListener("click", (event) => {
+    imageLinks.forEach((link) => link.addEventListener("click", (event) => {
       if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || event.button !== 0) return;
       event.preventDefault();
-      showImage(i);
+      visibleImageLinks = imageLinks.filter(isVisible);
+      showImage(Math.max(0, visibleImageLinks.indexOf(link)));
       viewer.showModal();
     }));
     const step = (delta) => showImage(current + delta);
