@@ -110,6 +110,7 @@
       %>
         <a
           class="era-card <%= isRace ? 'era-card--race' : isCity ? 'era-card--city' : '' %>"
+          data-era-world="<%= era.key %>"
           href="/submit?era=<%= encodeURIComponent(era.key) %>"
           <%- isRace ? 'id="squigwreck"' : '' %>
         >
