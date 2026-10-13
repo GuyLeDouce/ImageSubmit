@@ -636,6 +636,46 @@ dd { margin: 0; color: var(--ink); font-size: .88rem; overflow-wrap: anywhere; }
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* Artwork looks good without needing to visit another tab. */
+.gallery-more { justify-self: center; margin: 12px auto 3px; }
+.studio-image-viewer {
+  position: fixed; inset: 0; box-sizing: border-box;
+  width: min(94vw, 1120px); max-width: min(94vw, 1120px);
+  max-height: 94vh; margin: auto;
+  padding: 12px; border: 2px solid #193328; border-radius: 19px;
+  background: #fffdf6; color: var(--ink); box-shadow: 0 24px 70px rgba(9, 27, 16, .36);
+}
+.studio-image-viewer::backdrop { background: rgba(10, 23, 15, .83); }
+.studio-image-viewer > img {
+  display: block; width: 100%; height: auto;
+  max-height: calc(94vh - 115px); object-fit: contain; border-radius: 11px;
+  background: #edf1eb;
+}
+.studio-image-viewer__close {
+  display: block; width: fit-content; min-height: 37px; margin: 0 0 10px auto;
+  padding: 5px 14px; border: 1px solid #aec6b4; border-radius: 8px;
+  background: white; color: var(--ink); font-weight: 850;
+}
+.studio-image-viewer__controls {
+  display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  margin-top: 10px;
+}
+.studio-image-viewer__controls button {
+  min-height: 39px; padding: 7px 13px; border-radius: 10px;
+  border: 1px solid #cadacb; background: var(--mint); color: var(--ink);
+  font-size: .85rem; font-weight: 850;
+}
+.studio-image-viewer__controls button:hover { background: #b9eccf; }
+.studio-image-viewer__count { color: var(--muted); font-size: .82rem; font-weight: 750; }
+@media (max-width: 640px) {
+  .feature-art__thumb { flex-basis: 46px; width: 46px; height: 43px; }
+  .feature-art__arrows { gap: 3px; }
+  .feature-art__arrow { width: 32px; height: 32px; }
+  .studio-image-viewer { width: 98vw; max-width: 98vw; max-height: 96vh; padding: 9px; }
+  .studio-image-viewer > img { max-height: calc(96vh - 120px); }
+  .studio-image-viewer__controls button { padding: 7px 8px; }
+}
+
 /* Moderation interface stays conservative and fast to scan. */
 .admin-page { gap: 26px; }
 .admin-hero { align-items: flex-start; }
