@@ -102,6 +102,10 @@
         const eraExample = examples.find((example) => example !== featured && !additionalExamples.includes(example) && example.era_key === era.key)
           || examples.find((example) => example !== featured && example.era_key === era.key)
           || examples.find((example) => example.era_key === era.key);
+        // Exact, user-selected art for each world. Community submissions remain in the showcase.
+        const officialEraImage = isRace
+          ? "https://i.imgur.com/amVLHM9.png"
+          : isCity ? "https://i.imgur.com/HHV8GmI.png" : null;
         const tagline = isRace
           ? "An armored death race. One finish line. Anything goes."
           : isCity
@@ -123,8 +127,19 @@
             <span class="era-card__link">Let's create <span aria-hidden="true">&nearr;</span></span>
           </div>
           <div class="era-card__visual">
-            <% if (eraExample) { %>
-              <img src="<%= eraExample.image_url %>" alt="" loading="lazy" />
+            <% if (officialEraImage) { %>
+              <img
+                src="<%= officialEraImage %>"
+                data-official-era-image
+                data-fallback-src="<%= eraExample?.image_url || '' %>"
+                data-era-label="<%= era.label %>"
+                alt="<%= era.label %> official era illustration"
+                loading="lazy"
+                decoding="async"
+                referrerpolicy="no-referrer"
+              />
+            <% } else if (eraExample) { %>
+              <img src="<%= eraExample.image_url %>" alt="<%= era.label %> era illustration" loading="lazy" />
             <% } else { %>
               <span class="era-card__art-title" aria-hidden="true"><%= isRace ? "SQUIGWRECK" : isCity ? "UGLY CITY" : era.label %></span>
             <% } %>
