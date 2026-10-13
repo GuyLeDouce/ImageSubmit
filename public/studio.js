@@ -188,6 +188,33 @@
     updateGallery();
   }
 
+  /* Use dedicated era artwork when the actual assets are present. Until those
+     files are available, the approved-image/fallback preview stays untouched. */
+  const officialEraImages = {
+    ugly_city: "/era-artwork/ugly-city.png",
+    death_race: "/era-artwork/squigwreck.png",
+  };
+  document.querySelectorAll("[data-era-world]").forEach((card) => {
+    const source = officialEraImages[card.dataset.eraWorld];
+    const visual = card.querySelector(".era-card__visual");
+    if (!source || !visual) return;
+    const preload = new Image();
+    preload.onload = () => {
+      const image = visual.querySelector("img");
+      if (image) {
+        image.src = source;
+      } else {
+        const fallback = visual.querySelector(".era-card__art-title");
+        if (fallback) fallback.remove();
+        const artwork = document.createElement("img");
+        artwork.src = source;
+        artwork.alt = "";
+        visual.appendChild(artwork);
+      }
+    };
+    preload.src = source;
+  });
+
   /* Community artwork showcase: gentle automatic changes with a pause button.
      Thumbnails remain conventional image links without JavaScript. */
   const reel = document.querySelector("[data-feature-gallery]");
