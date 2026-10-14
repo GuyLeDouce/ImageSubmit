@@ -39,8 +39,16 @@ const doubleScenes = [
   ["The Final Showdown", "BUILDS: Squig 1 drives a battered, wide armoured muscle car; Squig 2 drives a narrower ram-nosed hot rod. Both engines burn, their personalized armour is bent, and each machine is barely holding together.\nSHOT: Elevated front three-quarter view looking back from the painted finish stripe. Squig 1 is at frame left, Squig 2 at frame right beside an unguarded drop; both drive toward the stripe in the foreground.\nMOMENT: Squig 1's right bumper grinds into Squig 2's left side. Squig 2 steers back into the attack while the outside tires ride the crumbling verge. A trapped wheel begins to buckle between the cars; its sparks connect the collision to the low engine flames. Neither has crossed the line.\nATTITUDE: Both Squigs lean into their steering wheels with exhausted, vindictive defiance. The dark joke is mutual refusal to let go: either could still survive, but each would rather take the other bastard down too. Keep the outcome hanging on that last inch."],
 ];
 
-function makeGroup(id, label, squigCount, instructions, scenes) {
-  const prompts = Object.freeze(scenes.map(([title, scene], index) => Object.freeze({
+// Community contributions stay verbatim instead of inheriting the scene template.
+const sportsRacerPrompt = Object.freeze({
+  id: "death-race-solo-13",
+  title: "Sports Racer (By CrispyDuck)",
+  squigCount: 1,
+  prompt: "Use case: illustration-story. Square 1:1 Squigwreck armored death-racing preview.\nCOMPOSITION FIRST: camera ahead and beside the road; clear road leading beyond the nose and the complete side length. The ENTIRE vehicle silhouette, including wheels, weapons and driver, occupies about 55% of canvas width and no more than 50% of height. Pull the camera back; do not shrink the car body beneath an oversized head. Reserve visible space around every part, a clear stretch of route ahead, and background beyond the car. Environment fills the remaining canvas. This is a scene, not a close-up vehicle portrait. Keep natural driver-to-cockpit proportions and readable original identity; no framing boxes or measurement labels in the art.\nSCENE: sideways drift on a wet night bend. Nose and travel toward IMAGE-RIGHT; rear, takeoff and trailing effects toward IMAGE-LEFT. ROUTE: Nose turns INTO the bend while rear swings OUT; front tires visibly countersteer. Curved wake and two water sprays TRAIL rear tires. Purple/teal reflections, sparse blue city blocks.\nVEHICLE: low armored SPORTS RACER with one rear weapon. Palette reflects the NFT outfit. Complete connected front, cockpit and rear body/bed. TWO axles, FOUR wheels total; separated near-front/rear wheels, far wheels naturally occluded. No central bumper wheel, third axle, detached wheel or missing rear. Weapons firmly mounted behind head or below face.\nImage 1 is the ONLY character identity reference. EXACTLY ONE Squig seated INSIDE its own open cockpit, natural hands or original gloves on the wheel. Original exposed eyes and front clothing graphics visible. No outside driver, extra visible Squig, helmet or goggles.\nIDENTITY: Attached reference pixels are the sole color authority. Structural traits only: Body: Varisty, Eyes: Cyclops, Head: Punk, Mouth: Oh, Status: Reloaded, Special: None. Copy exposed eye count/pupils, expression, hat, skin, ears and inherited text/graphics exactly, never mirrored.\nART: clean flat 2D Squigs cartoon throughout, thick dark outlines, large smooth blocks and minimal cel shadows; no metallic gradients, rivet clutter, gritty texture, CGI or realism.\nSIGNATURE: one tiny rainbow-striped rubber duck, about 3% canvas width, tucked off-center into existing scenery outside the lane, never focal. Exactly one duck. No extra signs, captions, watermarks or gore; preserve inherited character text.",
+});
+
+function makeGroup(id, label, squigCount, instructions, scenes, extraPrompts = []) {
+  const prompts = Object.freeze([...scenes.map(([title, scene], index) => Object.freeze({
     id: `death-race-${id}-${String(index + 1).padStart(2, "0")}`,
     title,
     squigCount,
@@ -54,13 +62,13 @@ function makeGroup(id, label, squigCount, instructions, scenes) {
       "SCENE — " + scene,
       COMPOSITION,
     ].join("\n\n"),
-  })));
+  })), ...extraPrompts]);
   return Object.freeze({ id, label, squigCount, instructions, prompts });
 }
 
 const PROMPT_GROUPS = Object.freeze([
   makeGroup("solo", "1 Squig Attached", 1,
-    "Use exactly ONE Squig driving ONE vehicle, matching the attached reference. Any scrap vehicles are empty.", singleScenes),
+    "Use exactly ONE Squig driving ONE vehicle, matching the attached reference. Any scrap vehicles are empty.", singleScenes, [sportsRacerPrompt]),
   makeGroup("duo", "2 Squigs Attached", 2,
     "Squig 1 is the FIRST attachment; Squig 2 is the SECOND. Show exactly two Squigs in separate vehicles. Keep their traits, vehicle colours and scene roles distinct.", doubleScenes),
 ]);
