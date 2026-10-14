@@ -13,6 +13,21 @@
     updateMilestone();
   }
 
+  const promptTypeSelect = document.querySelector("[data-prompt-type-select]");
+  const promptTypeChoice = document.querySelector("[data-prompt-type-choice]");
+  const promptGroups = document.querySelectorAll("[data-prompt-group]");
+  if (promptTypeSelect && promptTypeChoice && promptGroups.length) {
+    const updatePromptGroup = () => {
+      promptGroups.forEach((group) => {
+        group.hidden = group.dataset.promptGroup !== promptTypeSelect.value;
+      });
+    };
+    promptTypeSelect.addEventListener("change", updatePromptGroup);
+    updatePromptGroup();
+    // Without JavaScript both labelled groups remain readable and copyable.
+    promptTypeChoice.hidden = false;
+  }
+
   document.querySelectorAll("[data-copy-death-race-prompt]").forEach((button) => {
     button.addEventListener("click", async () => {
       const prompt = button.closest(".prompt-card")?.querySelector("textarea");

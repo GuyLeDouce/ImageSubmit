@@ -450,6 +450,10 @@ input[type="file"]::file-selector-button {
 }
 .milestone-concept-note { padding: 14px 17px; border-radius: 10px; background: var(--cream); color: var(--text); }
 .milestone-discord-note { margin-top: 0; }
+.prompt-type-choice { max-width: 360px; margin-bottom: 10px; }
+.prompt-groups { display: grid; gap: 24px; margin-top: 18px; }
+.prompt-group__heading { display: grid; gap: 6px; margin-bottom: 14px; }
+.prompt-group__heading small { color: var(--muted); font-size: .8rem; font-weight: 500; }
 .prompt-library { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); align-items: start; gap: 12px; }
 .prompt-card {
   min-width: 0; overflow: hidden; border: 1.5px solid var(--line-soft);

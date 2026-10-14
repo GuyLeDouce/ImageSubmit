@@ -388,7 +388,7 @@ function createApp() {
         selectedMilestone,
         submitted: req.query.submitted === "1",
         submissions,
-        deathRacePrompts: require("./deathRacePrompts").PROMPTS,
+        deathRacePromptGroups: require("./deathRacePrompts").PROMPT_GROUPS,
       });
     } catch (error) {
       next(error);

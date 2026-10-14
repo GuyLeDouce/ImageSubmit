@@ -5,6 +5,7 @@ const assert = require("node:assert/strict");
 const path = require("node:path");
 const fs = require("node:fs");
 const ejs = require("ejs");
+const { PROMPT_GROUPS } = require("../src/deathRacePrompts");
 
 const root = path.resolve(__dirname, "..");
 const eras = [
@@ -90,7 +91,7 @@ test("Ugly City creator form retains the original submission contract", async ()
     selectedEra: eras[0], selectedMilestone: milestone,
     milestones: eras[0].milestones,
     milestoneConcepts: { empty_lot: "Create an Empty Lot scene." },
-    submitted: false, submissions: [], deathRacePrompts: [],
+    submitted: false, submissions: [], deathRacePromptGroups: [],
   });
   assert.match(html, /action="\/submit" method="post" enctype="multipart\/form-data"/);
   for (const name of ["_csrf", "era_key", "milestone_key", "images", "contains_squig_confirmed", "other_collections_text", "prompt_text"]) {
@@ -102,19 +103,27 @@ test("Ugly City creator form retains the original submission contract", async ()
   assert.match(html, /100 \$CHARM/);
 });
 
-test("Squigwreck prompt cards preserve all prompt text and keep uploads working", async () => {
-  const prompt = "Driver inside cartoon machine. Keep every original eye.";
+test("Squigwreck renders both attachment choices and all complete prompts without changing uploads", async () => {
   const html = await render("submit.ejs", {
     currentPath: "/submit", eras, adminRepairEras: eras,
     selectedEra: eras[1], selectedMilestone: null, milestones: [],
     milestoneConcepts: {}, submitted: false, submissions: [],
-    deathRacePrompts: [{ title: "Full Throttle", prompt }],
+    deathRacePromptGroups: PROMPT_GROUPS,
   });
-  assert.match(html, /Full Throttle/);
-  assert.ok(html.includes(prompt));
-  assert.match(html, /data-copy-death-race-prompt/);
+  assert.match(html, /<option value="solo">1 Squig Attached<\/option>/);
+  assert.match(html, /<option value="duo">2 Squigs Attached<\/option>/);
+  assert.equal((html.match(/data-copy-death-race-prompt/g) || []).length, 24);
+  for (const group of PROMPT_GROUPS) {
+    // Both groups must be available before JS runs, including manual copying.
+    assert.match(html, new RegExp('data-prompt-group="' + group.id + '" aria-labelledby='));
+    for (const item of group.prompts) {
+      assert.ok(html.includes(ejs.escapeXML(item.prompt)), item.title + ": full text rendered");
+    }
+  }
+  assert.match(html, /Upload the finished artwork below/);
   assert.match(html, /name="era_key" value="death_race"/);
   assert.match(html, /name="images"/);
+  assert.match(html, /name="prompt_text" rows="5" maxlength="4000"/);
 });
 
 test("profile gallery preserves user history and status filters", async () => {
