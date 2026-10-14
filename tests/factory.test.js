@@ -30,6 +30,7 @@ const pending = {
   nft_used_type: "squigs", contains_squig_confirmed: true, image_url: "https://example.test/image.png",
   submitted_at: new Date(), status: "pending", reward_points: 100,
 };
+let reviewSubmission = pending;
 const calls = { uploads: [], approvals: [], repairs: [], files: [], reviewPages: [], exampleLimits: [] };
 const dbStub = {
   pool: realDb.pool,
@@ -40,7 +41,7 @@ const dbStub = {
   countModerationSubmissions: async () => ({ pending: 1, approved: 1, declined: 1 }),
   listModerationPage: async ({ status, page }) => {
     calls.reviewPages.push({ status, page });
-    return [status === "pending" ? pending : { ...pending, status }];
+    return [status === "pending" ? reviewSubmission : { ...reviewSubmission, status }];
   },
   MODERATION_PAGE_SIZE: 24,
   listSubmissionsForUser: async () => [pending, { ...pending, id: 8, era_key: "ugly_city", status: "approved" }],
@@ -151,6 +152,65 @@ test("HTTP submission, moderation, and history support a second era", async () =
     assert.match(profile.body, /<dd>Space Test<\/dd>/);
     assert.match(profile.body, /<dd>The Rise of Ugly City<\/dd>/);
   } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
+test("rendered one-click approval submits the saved era and metadata for each pool", async () => {
+  const { server, baseUrl } = await startServer(createApp());
+  let cookie = "";
+  // Decode the entities EJS uses in hidden inputs and textareas, as a browser does.
+  const entities = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'" };
+  const decode = (value) => value.replace(/&#(\d+);|&(amp|lt|gt|quot|apos);/g,
+    (_, number, name) => number ? String.fromCodePoint(Number(number)) : entities[name]);
+  try {
+    for (const eraKey of ["death_race", "ugly_city", "closed_test"]) {
+      const milestone = eras.ERA_CATALOG.find((era) => era.key === eraKey).milestones[0] || null;
+      reviewSubmission = {
+        ...pending, era_key: eraKey, milestone_key: milestone?.key || null,
+        milestone_number: milestone?.number || null, milestone_label: milestone?.label || null,
+        milestone_district: milestone?.district || null,
+        prompt_text: 'A <near miss> & "bad" idea\nWith a second line.',
+        other_collections_text: "Creator's reference & notes", reward_points: 150,
+      };
+      const admin = await request(baseUrl, {
+        path: "/admin", headers: { cookie, "x-test-user-id": pending.discord_user_id },
+      });
+      assert.equal(admin.statusCode, 200);
+      cookie = cookieHeader(cookie, admin);
+      const form = admin.body.match(/<form action="(\/admin\/submissions\/7\/approve)" method="post">([\s\S]*?)<\/form>/);
+      assert.ok(form, "one-click approval form is rendered");
+      const fields = {};
+      for (const [input] of form[2].matchAll(/<input\b[^>]*>/g)) {
+        const name = input.match(/name="([^"]+)"/)?.[1];
+        if (name) fields[name] = decode(input.match(/value="([^"]*)"/)?.[1] || "");
+      }
+      for (const [, name, value] of form[2].matchAll(/<textarea\b[^>]*name="([^"]+)"[^>]*>([\s\S]*?)<\/textarea>/g)) {
+        fields[name] = decode(value);
+      }
+      // Post ONLY controls from the rendered quick form: never supply an era by hand.
+      const before = calls.approvals.length;
+      const approved = await request(baseUrl, {
+        path: form[1], method: "POST",
+        headers: { cookie, "content-type": "application/x-www-form-urlencoded" },
+        body: formBody(fields),
+      });
+      assert.equal(approved.statusCode, 302, eraKey + ": quick approval should succeed");
+      assert.equal(approved.headers.location, "/admin");
+      assert.equal(calls.approvals.length, before + 1);
+      const saved = calls.approvals.at(-1);
+      assert.equal(saved.overrideEraKey, eraKey);
+      assert.deepEqual(saved.overrideMilestone, milestone);
+      assert.equal(saved.overrideDiscordUserId, reviewSubmission.discord_user_id);
+      assert.equal(saved.overrideImageUrl, reviewSubmission.image_url);
+      assert.equal(saved.overridePromptText, reviewSubmission.prompt_text);
+      assert.equal(saved.overrideOtherCollectionsText, reviewSubmission.other_collections_text);
+      assert.equal(saved.overrideContainsSquigConfirmed, true);
+      assert.equal(saved.rewardPoints, 150);
+      assert.equal(saved.expectedRowVersion, reviewSubmission.row_version);
+    }
+  } finally {
+    reviewSubmission = pending;
     await new Promise((resolve) => server.close(resolve));
   }
 });
