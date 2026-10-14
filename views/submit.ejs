@@ -102,21 +102,21 @@
               <span class="stage-number" aria-hidden="true">02</span>
               <div>
                 <h2 id="prompts-heading">Find your inspiration.</h2>
-                <p>24 Squigwreck scene ideas: 12 for one Squig and 12 for two. Choose your attachment count, copy a prompt, and attach your original Squig artwork in your image generator. Or bring your own idea.</p>
+                <p>Last racer alive wins. Pick one or two Squigs for 24 cinematic scenes packed with armoured racers, brutal near misses and dark cartoon humour. Copy a prompt and attach your original Squig artwork in your image generator.</p>
               </div>
             </div>
-            <label class="field prompt-type-choice" data-prompt-type-choice hidden>
-              <span>Squig references attached</span>
-              <select data-prompt-type-select aria-controls="squigwreck-prompt-groups" aria-describedby="prompt-attachment-help">
-                <% deathRacePromptGroups.forEach((group) => { %>
-                  <option value="<%= group.id %>"><%= group.label %></option>
-                <% }) %>
-              </select>
-            </label>
+            <div class="prompt-type-choice" data-prompt-type-choice hidden role="group" aria-label="Squig references attached" aria-describedby="prompt-attachment-help">
+              <% deathRacePromptGroups.forEach((group, index) => { %>
+                <button type="button" class="prompt-type-button" data-prompt-type="<%= group.id %>" aria-pressed="<%= index === 0 ? 'true' : 'false' %>" aria-controls="prompt-panel-<%= group.id %>">
+                  <span><strong><%= group.label %></strong><small><%= group.prompts.length %> battle-ready scenes</small></span>
+                  <span class="prompt-type-button__check" aria-hidden="true">✓</span>
+                </button>
+              <% }) %>
+            </div>
             <p class="field-note" id="prompt-attachment-help">Attach the reference images with your copied prompt in your image generator. Upload the finished artwork below.</p>
             <div id="squigwreck-prompt-groups" class="prompt-groups">
               <% deathRacePromptGroups.forEach((group) => { %>
-                <section class="prompt-group" data-prompt-group="<%= group.id %>" aria-labelledby="prompt-group-<%= group.id %>">
+                <section class="prompt-group" id="prompt-panel-<%= group.id %>" data-prompt-group="<%= group.id %>" aria-labelledby="prompt-group-<%= group.id %>">
                   <header class="prompt-group__heading">
                     <h3 id="prompt-group-<%= group.id %>"><%= group.label %> <small>· <%= group.prompts.length %> prompts</small></h3>
                     <p class="field-note"><%= group.instructions %></p>

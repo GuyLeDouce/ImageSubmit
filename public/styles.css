@@ -450,7 +450,18 @@ input[type="file"]::file-selector-button {
 }
 .milestone-concept-note { padding: 14px 17px; border-radius: 10px; background: var(--cream); color: var(--text); }
 .milestone-discord-note { margin-top: 0; }
-.prompt-type-choice { max-width: 360px; margin-bottom: 10px; }
+.prompt-type-choice { display: flex; flex-wrap: wrap; gap: 12px; max-width: 650px; margin-bottom: 12px; }
+.prompt-type-button {
+  flex: 1 1 230px; min-width: 0; display: flex; align-items: center; justify-content: space-between;
+  gap: 14px; padding: 16px 18px; border: 2px solid var(--line-soft); border-radius: 12px;
+  background: var(--paper); color: var(--ink); text-align: left;
+}
+.prompt-type-button:hover { border-color: var(--green); }
+.prompt-type-button[aria-pressed="true"] { border-color: var(--ink); background: var(--yellow); }
+.prompt-type-button strong { display: block; font-size: 1rem; }
+.prompt-type-button small { display: block; margin-top: 3px; font-size: .8rem; }
+.prompt-type-button__check { visibility: hidden; font-size: 1.25rem; font-weight: 900; }
+.prompt-type-button[aria-pressed="true"] .prompt-type-button__check { visibility: visible; }
 .prompt-groups { display: grid; gap: 24px; margin-top: 18px; }
 .prompt-group__heading { display: grid; gap: 6px; margin-bottom: 14px; }
 .prompt-group__heading small { color: var(--muted); font-size: .8rem; font-weight: 500; }

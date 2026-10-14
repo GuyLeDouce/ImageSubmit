@@ -110,8 +110,12 @@ test("Squigwreck renders both attachment choices and all complete prompts withou
     milestoneConcepts: {}, submitted: false, submissions: [],
     deathRacePromptGroups: PROMPT_GROUPS,
   });
-  assert.match(html, /<option value="solo">1 Squig Attached<\/option>/);
-  assert.match(html, /<option value="duo">2 Squigs Attached<\/option>/);
+  assert.match(html, /<button type="button"[^>]*data-prompt-type="solo" aria-pressed="true" aria-controls="prompt-panel-solo"/);
+  assert.match(html, /<button type="button"[^>]*data-prompt-type="duo" aria-pressed="false" aria-controls="prompt-panel-duo"/);
+  assert.match(html, /<strong>1 Squig Attached<\/strong>/);
+  assert.match(html, /<strong>2 Squigs Attached<\/strong>/);
+  assert.doesNotMatch(html, /data-prompt-type-select|<select/);
+  assert.match(html, /Last racer alive wins/);
   assert.equal((html.match(/data-copy-death-race-prompt/g) || []).length, 24);
   for (const group of PROMPT_GROUPS) {
     // Both groups must be available before JS runs, including manual copying.
