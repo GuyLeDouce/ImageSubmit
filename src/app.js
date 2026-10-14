@@ -143,22 +143,8 @@ function createApp() {
     next();
   });
 
-  app.use((req, res, next) => {
-    res.locals.links = PROJECT_LINKS;
-    res.locals.currentPath = req.path;
-    res.locals.user = req.session.user || null;
-    res.locals.isAdmin = Boolean(req.session.user && config.adminDiscordIds.has(req.session.user.id));
-    res.locals.flash = req.session.flash || null;
-    delete req.session.flash;
-    next();
-  });
-
-  app.use((req, res, next) => {
-    if (!req.session.csrfToken) req.session.csrfToken = crypto.randomBytes(32).toString("hex");
-    res.locals.csrfToken = req.session.csrfToken;
-    next();
-  });
-
+  // Test-only authentication must run before template locals are captured.
+  // Otherwise the test session authenticates while res.locals.user stays null.
   if (config.env === "test" && process.env.ENABLE_TEST_AUTH === "true") {
     app.use((req, res, next) => {
       const testUserId = req.get("x-test-user-id");
@@ -175,6 +161,22 @@ function createApp() {
       next();
     });
   }
+
+  app.use((req, res, next) => {
+    res.locals.links = PROJECT_LINKS;
+    res.locals.currentPath = req.path;
+    res.locals.user = req.session.user || null;
+    res.locals.isAdmin = Boolean(req.session.user && config.adminDiscordIds.has(req.session.user.id));
+    res.locals.flash = req.session.flash || null;
+    delete req.session.flash;
+    next();
+  });
+
+  app.use((req, res, next) => {
+    if (!req.session.csrfToken) req.session.csrfToken = crypto.randomBytes(32).toString("hex");
+    res.locals.csrfToken = req.session.csrfToken;
+    next();
+  });
 
   function requireVerifiedFormRequest(req, res, next) {
     if (["GET", "HEAD", "OPTIONS"].includes(req.method)) return next();

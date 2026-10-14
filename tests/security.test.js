@@ -4,6 +4,18 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const { spawnSync } = require("node:child_process");
 
+// Test-only: keep genuine PostgreSQL sessions without a background pruning
+// timer, so the process can exit once the disposable test servers close.
+const originalPgSessionFactory = require("connect-pg-simple");
+require.cache[require.resolve("connect-pg-simple")].exports = (session) => {
+  const OriginalStore = originalPgSessionFactory(session);
+  return class SessionStoreWithoutTimer extends OriginalStore {
+    constructor(options) {
+      super({ ...options, pruneSessionInterval: false });
+    }
+  };
+};
+
 const { createTestPool, resetDatabase, getTestDatabaseUrl } = require("./helpers/pg");
 const { cookieHeader, extractCsrf, formBody, multipartBody, request, startServer } = require("./helpers/http");
 
@@ -29,7 +41,9 @@ function loadApp(nodeEnv = "test") {
   for (const key of ["../src/app", "../src/db", "../src/config", "../src/errors"]) {
     delete require.cache[require.resolve(key)];
   }
-  return require("../src/app").createApp();
+  const app = require("../src/app").createApp();
+  app.__testDbPool = require("../src/db").pool;
+  return app;
 }
 
 function runMigrate() {
@@ -55,6 +69,24 @@ async function prepareDb() {
   await resetDatabase(pool);
   const migration = runMigrate();
   assert.equal(migration.status, 0, migration.stderr || migration.stdout);
+  // The Gauntlet owns the live table in production. Supply its shape in this
+  // disposable test database before seeding reviewed image rows.
+  await pool.query(`
+    CREATE TABLE squig_survival_images (
+      id BIGSERIAL PRIMARY KEY,
+      image_url TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      added_by TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      era_keys TEXT NOT NULL,
+      reward_points INTEGER NOT NULL DEFAULT 100,
+      prompt_text TEXT,
+      milestone_key TEXT,
+      milestone_number INTEGER,
+      milestone_label TEXT,
+      milestone_district TEXT
+    )
+  `);
   await pool.query(`
     INSERT INTO squig_survival_images (image_url, user_id, added_by, created_at, era_keys, reward_points, prompt_text)
     VALUES ('https://cdn.example.test/approved.webp', '222222222222222222', 'mod', now(), 'airport', 100, 'prompt')
@@ -102,14 +134,16 @@ test("security headers are present on actual responses", { skip: !process.env.TE
   const pool = await prepareDb();
   const app = loadApp();
   const { server, baseUrl } = await startServer(app);
-  const response = await request(baseUrl, { path: "/health/live" });
+  const response = await authenticatedGet(baseUrl, "", "/admin");
+  assert.equal(response.statusCode, 200);
   assert.match(response.headers["content-security-policy"], /frame-ancestors 'none'/);
   assert.match(response.headers["content-security-policy"], /script-src 'self' 'nonce-/);
   assert.equal(response.headers["x-content-type-options"], "nosniff");
   assert.equal(response.headers["referrer-policy"], "strict-origin-when-cross-origin");
   assert.equal(response.headers["x-frame-options"], "DENY");
   assert.equal(response.headers["x-powered-by"], undefined);
-  server.close();
+  await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+  await app.__testDbPool.end();
   await pool.end();
 });
 
@@ -130,7 +164,8 @@ test("production session cookie is secure and httpOnly", { skip: !process.env.TE
   assert.match(setCookie, /HttpOnly/);
   assert.match(setCookie, /Secure/);
   assert.match(setCookie, /SameSite=Lax/);
-  server.close();
+  await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+  await app.__testDbPool.end();
   await pool.end();
 });
 
@@ -187,7 +222,7 @@ test("CSRF and Origin protection covers state-changing form routes", { skip: !pr
 
     const missing = await postForm(baseUrl, cookie, route.path, route.values);
     assert.equal(missing.statusCode, 403, `${route.path} missing token`);
-    assert.doesNotMatch(missing.body, token);
+    assert.equal(missing.body.includes(token), false, "CSRF token must not leak in blocked response");
 
     const invalid = await postForm(baseUrl, cookie, route.path, { ...route.values, _csrf: "bad-token" });
     assert.equal(invalid.statusCode, 403, `${route.path} invalid token`);
@@ -203,7 +238,8 @@ test("CSRF and Origin protection covers state-changing form routes", { skip: !pr
     const valid = await postForm(baseUrl, cookie, route.path, { ...route.values, _csrf: token });
     assert.notEqual(valid.statusCode, 403, `${route.path} valid token`);
 
-    server.close();
+    await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+  await app.__testDbPool.end();
     await pool.end();
   }
 });
@@ -218,7 +254,8 @@ test("OAuth and health GET routes are not blocked by CSRF", { skip: !process.env
   assert.equal(live.statusCode, 200);
   assert.equal(ready.statusCode, 200);
   assert.equal(oauth.statusCode, 302);
-  server.close();
+  await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+  await app.__testDbPool.end();
   await pool.end();
 });
 
@@ -260,6 +297,7 @@ test("invalid-CSRF multipart upload is rejected before rows or storage writes", 
   assert.equal(afterRows.rows[0].count, beforeRows.rows[0].count);
   assert.equal(afterAudit.rows[0].count, beforeAudit.rows[0].count);
   assert.deepEqual(afterFiles, beforeFiles);
-  server.close();
+  await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+  await app.__testDbPool.end();
   await pool.end();
 });
