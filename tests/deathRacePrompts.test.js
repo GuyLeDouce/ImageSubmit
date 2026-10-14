@@ -7,6 +7,7 @@ const {
   ERA_KEY,
   IDENTITY_LOCK,
   ART_STYLE,
+  RACE_TONE,
   VEHICLE_RULES,
   COMPOSITION,
 } = require("../src/deathRacePrompts");
@@ -39,6 +40,9 @@ test("Squigwreck preserves its image pool and offers the requested twelve scenes
 test("every prompt fully preserves Squigs, places drivers inside cartoon death machines, and is square", () => {
   assert.match(IDENTITY_LOCK, /exact eye COUNT/);
   assert.match(ART_STYLE, /thick crisp dark outlines/i);
+  assert.match(RACE_TONE, /LAST RACER ALIVE WINS/);
+  assert.match(RACE_TONE, /Dark adult humour/);
+  assert.match(VEHICLE_RULES, /battle-ready combat racer/);
   assert.match(VEHICLE_RULES, /SEATED INSIDE/);
   assert.match(VEHICLE_RULES, /CARTOONY ARMORED DEATH MACHINE/);
   assert.match(COMPOSITION, /SQUARE 1:1/);
@@ -47,6 +51,7 @@ test("every prompt fully preserves Squigs, places drivers inside cartoon death m
     assert.ok(prompt.startsWith("SQUIGWRECK — " + title.toUpperCase()));
     assert.ok(prompt.includes(IDENTITY_LOCK), title + ": missing identity lock");
     assert.ok(prompt.includes(ART_STYLE), title + ": missing clean 2D art style");
+    assert.ok(prompt.includes(RACE_TONE), title + ": missing cinematic death-race stakes");
     assert.ok(prompt.includes(VEHICLE_RULES), title + ": missing vehicle requirements");
     assert.ok(prompt.includes(COMPOSITION), title + ": missing square composition");
     assert.match(prompt, /steering wheel/i, title + ": Squig must remain an actual driver");

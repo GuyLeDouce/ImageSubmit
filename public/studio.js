@@ -13,17 +13,22 @@
     updateMilestone();
   }
 
-  const promptTypeSelect = document.querySelector("[data-prompt-type-select]");
   const promptTypeChoice = document.querySelector("[data-prompt-type-choice]");
+  const promptTypeButtons = Array.from(promptTypeChoice?.querySelectorAll("[data-prompt-type]") || []);
   const promptGroups = document.querySelectorAll("[data-prompt-group]");
-  if (promptTypeSelect && promptTypeChoice && promptGroups.length) {
-    const updatePromptGroup = () => {
+  if (promptTypeChoice && promptTypeButtons.length && promptGroups.length) {
+    const updatePromptGroup = (selectedType) => {
+      promptTypeButtons.forEach((button) => {
+        button.setAttribute("aria-pressed", String(button.dataset.promptType === selectedType));
+      });
       promptGroups.forEach((group) => {
-        group.hidden = group.dataset.promptGroup !== promptTypeSelect.value;
+        group.hidden = group.dataset.promptGroup !== selectedType;
       });
     };
-    promptTypeSelect.addEventListener("change", updatePromptGroup);
-    updatePromptGroup();
+    promptTypeButtons.forEach((button) => {
+      button.addEventListener("click", () => updatePromptGroup(button.dataset.promptType));
+    });
+    updatePromptGroup(promptTypeButtons[0].dataset.promptType);
     // Without JavaScript both labelled groups remain readable and copyable.
     promptTypeChoice.hidden = false;
   }
