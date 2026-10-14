@@ -95,6 +95,7 @@
                   <input type="hidden" name="override_discord_username" value="<%= submission.discord_username %>" />
                   <input type="hidden" name="override_discord_display_name" value="<%= submission.discord_display_name || '' %>" />
                   <input type="hidden" name="image_url" value="<%= submission.image_url %>" />
+                  <input type="hidden" name="override_era_key" value="<%= submission.era_key %>" />
                   <input type="hidden" name="override_milestone_key" value="<%= submission.milestone_key || '' %>" />
                   <textarea name="prompt_text" hidden><%= submission.prompt_text || "" %></textarea>
                   <textarea name="other_collections_text" hidden><%= submission.other_collections_text || submission.nft_used_text || "" %></textarea>
