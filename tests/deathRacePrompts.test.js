@@ -42,9 +42,9 @@ test("every prompt fully preserves Squigs, places drivers inside cartoon death m
   assert.match(ART_STYLE, /thick crisp dark outlines/i);
   assert.match(RACE_TONE, /LAST RACER ALIVE WINS/);
   assert.match(RACE_TONE, /Dark adult humour/);
-  assert.match(VEHICLE_RULES, /battle-ready combat racer/);
+  assert.match(VEHICLE_RULES, /one chassis/);
   assert.match(VEHICLE_RULES, /SEATED INSIDE/);
-  assert.match(VEHICLE_RULES, /CARTOONY ARMORED DEATH MACHINE/);
+  assert.match(VEHICLE_RULES, /reference proportions/);
   assert.match(COMPOSITION, /SQUARE 1:1/);
 
   for (const { title, prompt } of PROMPTS) {
